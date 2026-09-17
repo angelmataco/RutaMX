@@ -186,6 +186,12 @@ a {
   color: #cdd8d0;
 }
 
+.card__note--formula {
+  font-size: 0.76rem;
+  font-style: italic;
+  margin-top: 6px;
+}
+
 .icon-badge {
   display: inline-flex;
   align-items: center;
@@ -359,7 +365,6 @@ a {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 20px;
-  align-items: start;
 }
 
 .mapa {
@@ -446,6 +451,13 @@ a {
   flex-direction: column;
 }
 
+.card__acciones {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
 .tag {
   align-self: flex-start;
   background: #f4e3dc;
@@ -480,6 +492,11 @@ a {
   margin: 0 0 12px;
 }
 
+.btn--ver-mas {
+  display: block;
+  margin: 24px auto 0;
+}
+
 .empty-state {
   color: var(--color-texto-gris);
   font-size: 0.92rem;
@@ -490,7 +507,6 @@ a {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 20px;
-  align-items: start;
 }
 
 .itinerary-list {

@@ -1,7 +1,10 @@
-from flask import Blueprint, jsonify, render_template, request
+import io
+import re
+
+from flask import Blueprint, jsonify, render_template, request, send_file
 
 from app.models import RutaGuardada, guardar_ruta, listar_rutas
-from app.services import ai_service, route_service
+from app.services import ai_service, pdf_service, route_service
 
 main_bp = Blueprint("main", __name__)
 
@@ -46,9 +49,19 @@ def api_sugerencias():
     except ValueError:
         horas_max = None
 
+    try:
+        limite = int(request.args.get("limite", 4))
+    except ValueError:
+        limite = 4
+
+    excluir = request.args.get("excluir", "")
+    ids_excluidos = {int(i) for i in excluir.split(",") if i.isdigit()}
+
     ruta = route_service.calcular_ruta(origen, destino) if origen and destino else None
 
-    sugerencias = ai_service.sugerir_paradas(lista_intereses, ruta=ruta, horas_max=horas_max)
+    sugerencias = ai_service.sugerir_paradas(
+        lista_intereses, limite=limite, ruta=ruta, horas_max=horas_max, excluir_ids=ids_excluidos
+    )
     return jsonify({"sugerencias": sugerencias})
 
 
@@ -89,3 +102,25 @@ def api_guardar_ruta():
     guardar_ruta(ruta)
 
     return jsonify(ruta.to_dict()), 201
+
+
+@main_bp.route("/api/itinerario/pdf", methods=["POST"])
+def api_pdf_itinerario():
+    datos = request.get_json(silent=True) or {}
+
+    origen = (datos.get("origen") or "").strip()
+    destino = (datos.get("destino") or "").strip()
+
+    if not origen or not destino:
+        return jsonify({"error": "Origen y destino son obligatorios."}), 400
+
+    pdf_bytes = pdf_service.generar_pdf_itinerario(datos)
+
+    nombre_archivo = re.sub(r"[^a-zA-Z0-9_-]+", "_", datos.get("nombre") or "itinerario").strip("_") or "itinerario"
+
+    return send_file(
+        io.BytesIO(pdf_bytes),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"{nombre_archivo}.pdf",
+    )

@@ -13,6 +13,11 @@ const RutaMapa = (() => {
   let mapa = null;
   let control = null;
   let capaRespaldo = null;
+  let alEncontrarRutaCallback = null;
+
+  function alEncontrarRuta(callback) {
+    alEncontrarRutaCallback = callback;
+  }
 
   function init(elementId) {
     const contenedor = document.getElementById(elementId);
@@ -48,6 +53,17 @@ const RutaMapa = (() => {
     }
   }
 
+  function distanciaHaversineMetros(a, b) {
+    const radioTierra = 6371000;
+    const rad = (grados) => (grados * Math.PI) / 180;
+    const dLat = rad(b[0] - a[0]);
+    const dLon = rad(b[1] - a[1]);
+    const x =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLon / 2) ** 2;
+    return radioTierra * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  }
+
   function dibujarLineaRecta(puntos) {
     limpiarRespaldo();
 
@@ -60,6 +76,16 @@ const RutaMapa = (() => {
 
     L.polyline(latlngs, { color: COLOR_RUTA, weight: 3, dashArray: "6 8" }).addTo(capaRespaldo);
     mapa.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+
+    if (alEncontrarRutaCallback) {
+      let totalDistance = 0;
+      for (let i = 1; i < latlngs.length; i++) {
+        totalDistance += distanciaHaversineMetros(latlngs[i - 1], latlngs[i]);
+      }
+      totalDistance *= 1.2; // mismo factor de ajuste por carretera que usa el backend
+      const totalTime = (totalDistance / 1000 / 80) * 3600; // 80 km/h promedio
+      alEncontrarRutaCallback({ totalDistance, totalTime });
+    }
   }
 
   function actualizarRuta(puntos) {
@@ -82,6 +108,11 @@ const RutaMapa = (() => {
           L.marker(waypoint.latLng, { icon: iconoDelPunto(i, total) }).bindPopup(waypoint.name || ""),
       })
         .on("routingerror", () => dibujarLineaRecta(puntos))
+        .on("routesfound", (evento) => {
+          if (alEncontrarRutaCallback && evento.routes && evento.routes[0]) {
+            alEncontrarRutaCallback(evento.routes[0].summary);
+          }
+        })
         .addTo(mapa);
     } else {
       control.setWaypoints(waypoints);
@@ -92,5 +123,5 @@ const RutaMapa = (() => {
     if (mapa) mapa.invalidateSize();
   }
 
-  return { init, actualizarRuta, invalidarTamano };
+  return { init, actualizarRuta, invalidarTamano, alEncontrarRuta };
 })();

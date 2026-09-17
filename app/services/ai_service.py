@@ -109,15 +109,23 @@ def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
     return lugar
 
 
-def _candidatos_en_el_corredor(ruta, limite):
+def _consulta_destinos(excluir_ids):
+    consulta = Destino.query
+    if excluir_ids:
+        consulta = consulta.filter(~Destino.id.in_(excluir_ids))
+    return consulta.all()
+
+
+def _candidatos_en_el_corredor(ruta, limite, excluir_ids):
     """Filtra los destinos de la base que caen cerca de la carretera real
     de `ruta` (dict con "geometria", "distancia_km", "tiempo_h", y los
     puntos de "origen"/"destino").
 
     Excluye el origen y el destino del viaje (no tiene caso "sugerir"
-    llegar al lugar de donde sales o a donde vas). Empieza con un radio
-    de búsqueda estricto y lo va ampliando solo si no alcanza para
-    juntar al menos `limite` destinos.
+    llegar al lugar de donde sales o a donde vas), y cualquier id en
+    `excluir_ids` (destinos que el usuario ya vio o agregó). Empieza con
+    un radio de búsqueda estricto y lo va ampliando solo si no alcanza
+    para juntar al menos `limite` destinos.
 
     Devuelve una lista de (destino, horas_estimadas), o None si `ruta`
     no trae geometría (ej. OSRM no respondió al calcular la ruta).
@@ -133,7 +141,7 @@ def _candidatos_en_el_corredor(ruta, limite):
     punto_destino = (ruta["destino"]["lat"], ruta["destino"]["lon"])
 
     calculados = []
-    for destino in Destino.query.all():
+    for destino in _consulta_destinos(excluir_ids):
         punto_destino_candidato = (destino.lat, destino.lon)
 
         if (
@@ -171,14 +179,14 @@ def _ordenar_candidatos(candidatos, intereses, horas_objetivo):
     return sorted(candidatos, key=puntaje)
 
 
-def _sugerir_desde_base(intereses, limite, ruta, horas_max):
-    candidatos = _candidatos_en_el_corredor(ruta, limite) if ruta else None
+def _sugerir_desde_base(intereses, limite, ruta, horas_max, excluir_ids):
+    candidatos = _candidatos_en_el_corredor(ruta, limite, excluir_ids) if ruta else None
 
     if candidatos is None:
         # No hay geometría de ruta (ej. faltó origen/destino, u OSRM no
         # respondió): se cae a sugerir de toda la base, sin filtro de
         # cercanía, para no dejar la sección vacía.
-        destinos = Destino.query.all()
+        destinos = _consulta_destinos(excluir_ids)
         if not destinos:
             return None
         candidatos = [(d, None) for d in destinos]
@@ -211,7 +219,7 @@ def _sugerir_desde_demo(intereses, limite):
     return resultado
 
 
-def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None):
+def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir_ids=None):
     """Devuelve destinos sugeridos para la ruta actual.
 
     - `ruta`: resumen devuelto por route_service.calcular_ruta (usa su
@@ -219,11 +227,14 @@ def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None):
     - `horas_max`: horas máximas que el usuario quiere manejar seguido;
       si se da, se prioriza a los destinos cercanos al punto del viaje
       donde convendría parar a descansar.
+    - `excluir_ids`: ids de destinos que ya se mostraron/agregaron y no
+      deben repetirse (para "ver más recomendaciones").
     """
     intereses = set(intereses or [])
+    excluir_ids = set(excluir_ids or [])
 
     try:
-        resultado = _sugerir_desde_base(intereses, limite, ruta, horas_max)
+        resultado = _sugerir_desde_base(intereses, limite, ruta, horas_max, excluir_ids)
         if resultado is not None:
             return resultado
     except Exception as error:

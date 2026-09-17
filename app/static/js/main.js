@@ -4,7 +4,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const estado = {
     resumen: null,
     itinerario: [], // lista de { id, nombre }
+    sugerenciasPool: [], // lugares ya traídos del servidor, listos para mostrarse
+    sugerenciasVistosIds: new Set(), // para no repetir con "excluir" al pedir más
+    sugerenciasValores: null, // últimos valores del formulario, para "ver más"
   };
+
+  const MOSTRAR_SUGERENCIAS = 4;
+
+  // Mismos valores que app/services/route_service.py — si cambian ahí,
+  // cambian aquí también.
+  const COSTO_POR_KM = 4.5;
+  const COSTO_BASE_HOSPEDAJE = 600;
 
   const elementos = {
     resultados: document.querySelector("[data-resultados]"),
@@ -24,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     itemOrigen: document.querySelector("[data-item-origen]"),
     itemDestino: document.querySelector("[data-item-destino]"),
     guardarItinerarioBtn: document.querySelector("[data-guardar-itinerario]"),
+    verMasBtn: document.querySelector("[data-ver-mas]"),
     aventuraParadas: document.querySelector("[data-aventura-paradas]"),
     aventuraDistancia: document.querySelector("[data-aventura-distancia]"),
     aventuraTexto: document.querySelector("[data-aventura-texto]"),
@@ -34,6 +45,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (elementos.mapa) {
     RutaMapa.init("mapa");
+    RutaMapa.alEncontrarRuta(actualizarStatsPorRutaReal);
+  }
+
+  function actualizarStatsPorRutaReal(resumenRuta) {
+    if (!estado.resumen || !resumenRuta) return;
+
+    const distanciaKm = Math.round((resumenRuta.totalDistance / 1000) * 10) / 10;
+    const tiempoH = Math.round((resumenRuta.totalTime / 3600) * 100) / 100;
+    const costoEstimado = Math.round(
+      distanciaKm * COSTO_POR_KM + estado.resumen.paradas_estimadas * COSTO_BASE_HOSPEDAJE
+    );
+    const presupuestoSuficiente = Boolean(estado.resumen.presupuesto) && estado.resumen.presupuesto >= costoEstimado;
+
+    // La ruta real (con las paradas) reemplaza la estimación inicial
+    // origen->destino, así "Guardar ruta actual" guarda el dato correcto.
+    estado.resumen = {
+      ...estado.resumen,
+      distancia_km: distanciaKm,
+      tiempo_h: tiempoH,
+      costo_estimado: costoEstimado,
+      presupuesto_suficiente: presupuestoSuficiente,
+    };
+
+    renderResumen(estado.resumen);
+    renderResumenAventura();
   }
 
   function formatoMoneda(valor) {
@@ -100,63 +136,114 @@ document.addEventListener("DOMContentLoaded", () => {
     renderParadasItinerario();
   }
 
-  async function cargarSugerencias(valores) {
-    elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">Buscando ideas para tu recorrido…</p>';
-
+  async function pedirSugerencias(valores, limite, excluirIds) {
     try {
       const query = new URLSearchParams({
         intereses: (valores.intereses || []).join(","),
         origen: valores.origen || "",
         destino: valores.destino || "",
+        limite: String(limite),
       });
       if (valores.horasMax) query.set("horas_max", valores.horasMax);
+      if (excluirIds.length) query.set("excluir", excluirIds.join(","));
 
       const respuesta = await fetch(`/api/sugerencias?${query.toString()}`);
       const datos = await respuesta.json();
-      renderSugerencias(datos.sugerencias || []);
+      return datos.sugerencias || [];
     } catch (err) {
       console.error("Error cargando sugerencias:", err);
-      elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">No se pudieron cargar las sugerencias.</p>';
+      return [];
     }
   }
 
-  function renderSugerencias(lugares) {
+  async function cargarSugerencias(valores) {
+    estado.sugerenciasValores = valores;
+    estado.sugerenciasVistosIds = new Set();
+    elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">Buscando ideas para tu recorrido…</p>';
+    elementos.verMasBtn.hidden = true;
+
+    // Se pide un lote grande una sola vez; la grilla solo muestra 4 a la
+    // vez y va tomando del resto, así siempre hay con qué reponer.
+    estado.sugerenciasPool = await pedirSugerencias(valores, 16, []);
+    mostrarSugerencias(tomarDelPool(MOSTRAR_SUGERENCIAS));
+  }
+
+  function tomarDelPool(cantidad) {
+    const tomados = estado.sugerenciasPool.splice(0, cantidad);
+    tomados.forEach((lugar) => estado.sugerenciasVistosIds.add(lugar.id));
+    return tomados;
+  }
+
+  async function ampliarPool() {
+    if (!estado.sugerenciasValores) return;
+    const nuevoLote = await pedirSugerencias(estado.sugerenciasValores, 8, Array.from(estado.sugerenciasVistosIds));
+    estado.sugerenciasPool.push(...nuevoLote);
+  }
+
+  function mostrarSugerencias(lugares) {
     elementos.sugerenciasContenedor.innerHTML = "";
 
     if (!lugares.length) {
       elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">No encontramos sugerencias para estos intereses todavía.</p>';
+      elementos.verMasBtn.hidden = true;
       return;
     }
 
-    lugares.forEach((lugar) => {
-      const nodo = tplSugerencia.content.cloneNode(true);
-      const card = nodo.querySelector("[data-lugar-card]");
-      card.dataset.lugarId = lugar.id;
-      nodo.querySelector("[data-lugar-categoria]").textContent = lugar.categoria;
-      nodo.querySelector("[data-lugar-nombre]").textContent = lugar.nombre;
-      nodo.querySelector("[data-lugar-descripcion]").textContent = lugar.descripcion;
+    lugares.forEach((lugar) => agregarCardSugerencia(lugar));
+    elementos.verMasBtn.hidden = estado.sugerenciasPool.length === 0;
+  }
 
-      if (typeof lugar.horas_estimadas === "number") {
-        const horasEl = nodo.querySelector("[data-lugar-horas]");
-        horasEl.textContent = `≈${lugar.horas_estimadas} h de camino`;
-        horasEl.hidden = false;
-      }
+  function agregarCardSugerencia(lugar) {
+    const nodo = tplSugerencia.content.cloneNode(true);
+    const card = nodo.querySelector("[data-lugar-card]");
+    card.dataset.lugarId = lugar.id;
+    nodo.querySelector("[data-lugar-categoria]").textContent = lugar.categoria;
+    nodo.querySelector("[data-lugar-nombre]").textContent = lugar.nombre;
+    nodo.querySelector("[data-lugar-descripcion]").textContent = lugar.descripcion;
 
-      if (lugar.buena_para_descanso) {
-        nodo.querySelector("[data-lugar-descanso]").hidden = false;
-      }
+    if (typeof lugar.horas_estimadas === "number") {
+      const horasEl = nodo.querySelector("[data-lugar-horas]");
+      horasEl.textContent = `≈${lugar.horas_estimadas} h de camino`;
+      horasEl.hidden = false;
+    }
 
-      nodo.querySelector("[data-agregar-parada]").addEventListener("click", () => {
-        agregarParada(lugar);
-        card.remove();
-      });
+    if (lugar.buena_para_descanso) {
+      nodo.querySelector("[data-lugar-descanso]").hidden = false;
+    }
 
-      nodo.querySelector("[data-descartar]").addEventListener("click", () => {
-        card.remove();
-      });
-
-      elementos.sugerenciasContenedor.appendChild(nodo);
+    nodo.querySelector("[data-agregar-parada]").addEventListener("click", () => {
+      agregarParada(lugar);
+      reponerSugerencia(card);
     });
+
+    nodo.querySelector("[data-descartar]").addEventListener("click", () => {
+      reponerSugerencia(card);
+    });
+
+    elementos.sugerenciasContenedor.appendChild(nodo);
+  }
+
+  async function reponerSugerencia(card) {
+    card.remove();
+
+    if (!estado.sugerenciasPool.length) {
+      await ampliarPool();
+    }
+
+    const [siguiente] = tomarDelPool(1);
+    if (siguiente) agregarCardSugerencia(siguiente);
+
+    if (!elementos.sugerenciasContenedor.children.length) {
+      elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">No encontramos más sugerencias para estos intereses.</p>';
+    }
+    elementos.verMasBtn.hidden = estado.sugerenciasPool.length === 0;
+  }
+
+  async function verMasSugerencias() {
+    if (estado.sugerenciasPool.length < MOSTRAR_SUGERENCIAS) {
+      await ampliarPool();
+    }
+    mostrarSugerencias(tomarDelPool(MOSTRAR_SUGERENCIAS));
   }
 
   function agregarParada(lugar) {
@@ -265,6 +352,40 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     await guardarRuta();
+    await descargarPdfItinerario();
+  }
+
+  async function descargarPdfItinerario() {
+    const valores = RutaFormularios.obtenerValores();
+
+    try {
+      const respuesta = await fetch("/api/itinerario/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: valores.nombre || `${valores.origen} a ${valores.destino}`,
+          origen: valores.origen,
+          destino: valores.destino,
+          resumen: estado.resumen,
+          paradas: estado.itinerario,
+        }),
+      });
+
+      if (!respuesta.ok) throw new Error("No se pudo generar el PDF");
+
+      const blob = await respuesta.blob();
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = `${valores.nombre || "itinerario"}.pdf`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error generando el PDF:", err);
+      alert("La ruta se guardó, pero no se pudo generar el PDF del itinerario.");
+    }
   }
 
   async function cargarRutasGuardadas() {
@@ -295,6 +416,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (elementos.guardarItinerarioBtn) {
     elementos.guardarItinerarioBtn.addEventListener("click", guardarItinerario);
+  }
+
+  if (elementos.verMasBtn) {
+    elementos.verMasBtn.addEventListener("click", verMasSugerencias);
   }
 
   cargarRutasGuardadas();

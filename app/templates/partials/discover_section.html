@@ -12,6 +12,8 @@
     <div class="cards-grid" data-sugerencias>
       <p class="empty-state">Llena el formulario y calcula tu ruta para ver sugerencias de paradas.</p>
     </div>
+
+    <button type="button" class="btn btn--ghost btn--ver-mas" data-ver-mas hidden>Ver más recomendaciones</button>
   </div>
 </section>
 
@@ -24,7 +26,9 @@
     <h3 class="card__title" data-lugar-nombre></h3>
     <p class="card__subtitle" data-lugar-descripcion></p>
     <p class="card__nota-descanso" data-lugar-descanso hidden>😴 Buen punto para parar a descansar</p>
-    <button type="button" class="btn btn--secondary btn--block" data-agregar-parada>Agregar parada</button>
-    <button type="button" class="btn btn--ghost btn--block" data-descartar>Descartar</button>
+    <div class="card__acciones">
+      <button type="button" class="btn btn--secondary btn--block" data-agregar-parada>Agregar parada</button>
+      <button type="button" class="btn btn--ghost btn--block" data-descartar>Descartar</button>
+    </div>
   </article>
 </template>
