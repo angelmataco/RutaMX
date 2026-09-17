@@ -1,0 +1,68 @@
+<section class="hero">
+  <div class="container">
+    <p class="kicker kicker--center">ROAD TRIPS POR MÉXICO</p>
+    <h1 class="hero__headline">
+      México se disfruta mejor cuando el camino también cuenta.
+    </h1>
+    <p class="hero__lead">
+      Planea un recorrido a tu ritmo, encuentra lugares memorables y
+      transforma cada tramo en parte de la aventura.
+    </p>
+    <p class="hero__note">
+      Las distancias, tiempos y recomendaciones son estimaciones demostrativas
+      para ayudarte a organizar tu viaje.
+    </p>
+
+    <div class="card card--form-hero">
+      <div class="card__header">
+        <div>
+          <p class="kicker">EMPIEZA AQUÍ</p>
+          <h2 class="card__title">Planea en minutos</h2>
+        </div>
+        <span class="icon-badge">🧭</span>
+      </div>
+
+      <form id="hero-form" class="ruta-form" data-role="hero">
+        <div class="ruta-form__row">
+          <div class="field">
+            <label for="hero-origen">Origen</label>
+            <input type="text" id="hero-origen" name="origen" value="Ciudad de México" required />
+          </div>
+          <div class="field">
+            <label for="hero-destino">Destino</label>
+            <input type="text" id="hero-destino" name="destino" value="Oaxaca de Juárez" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="hero-nombre">Nombre de la ruta</label>
+          <input type="text" id="hero-nombre" name="nombre" value="Escapada CDMX a Oaxaca" />
+        </div>
+
+        <div class="ruta-form__row">
+          <div class="field">
+            <label for="hero-presupuesto">Presupuesto (MXN)</label>
+            <input type="number" id="hero-presupuesto" name="presupuesto" value="6500" min="0" step="100" />
+          </div>
+          <div class="field">
+            <label for="hero-horas-max">Horas máximas de manejo seguido</label>
+            <input type="number" id="hero-horas-max" name="horas_max" placeholder="8" min="1" max="16" step="0.5" />
+          </div>
+        </div>
+
+        <div class="field">
+          <p class="field__label">¿Qué buscas?</p>
+          <div class="chips" data-chips>
+            <button type="button" class="chip" data-interes="naturaleza">Naturaleza</button>
+            <button type="button" class="chip" data-interes="playas">Playas</button>
+            <button type="button" class="chip" data-interes="pueblos_magicos">Pueblos mágicos</button>
+            <button type="button" class="chip" data-interes="comida">Comida</button>
+            <button type="button" class="chip" data-interes="descanso">Descanso</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">🗺️ Planea mi ruta</button>
+      </form>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,44 @@
+<div class="map-summary-grid">
+  <div class="card card--map">
+    <h3 class="card__title">Tu ruta en el mapa</h3>
+    <p class="card__subtitle">Marcadores y trayecto estimado para planificar el orden de tus paradas.</p>
+    <div id="mapa" class="mapa" data-map></div>
+  </div>
+
+  <div class="summary-column">
+    <div class="card card--summary">
+      <h3 class="card__title">Resumen del viaje</h3>
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <p class="stat-tile__label">Distancia</p>
+          <p class="stat-tile__value" data-stat="distancia">—</p>
+        </div>
+        <div class="stat-tile">
+          <p class="stat-tile__label">Tiempo</p>
+          <p class="stat-tile__value" data-stat="tiempo">—</p>
+        </div>
+        <div class="stat-tile stat-tile--accent">
+          <p class="stat-tile__label">Estimado</p>
+          <p class="stat-tile__value" data-stat="costo">—</p>
+        </div>
+        <div class="stat-tile">
+          <p class="stat-tile__label">Paradas</p>
+          <p class="stat-tile__value" data-stat="paradas">—</p>
+        </div>
+      </div>
+      <p class="card__note" data-presupuesto-note>
+        Llena el formulario para ver el resumen de tu viaje.
+      </p>
+    </div>
+
+    <div class="card card--save">
+      <h3 class="card__title">Guarda tu plan</h3>
+      <p class="card__subtitle">Conserva tus preferencias y recupera esta ruta para seguir ajustándola después.</p>
+      <button type="button" class="btn btn--primary btn--block" data-guardar-ruta>Guardar ruta actual</button>
+      <label for="rutas-guardadas" class="field__label field__label--spaced">Rutas guardadas</label>
+      <select id="rutas-guardadas" data-rutas-guardadas>
+        <option value="">Elige una ruta guardada</option>
+      </select>
+    </div>
+  </div>
+</div>

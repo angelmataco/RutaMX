@@ -1,0 +1,30 @@
+<section class="section section--descubre" id="descubre">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <p class="kicker">IDEAS PARA EL TRAYECTO</p>
+        <h2 class="section-title">Descubre en el camino</h2>
+        <p class="section-subtitle">Estas paradas son ejemplos de demostración para inspirar tu ruta con más historias y menos prisa.</p>
+      </div>
+      <span class="badge">DATOS DE DEMOSTRACIÓN</span>
+    </div>
+
+    <div class="cards-grid" data-sugerencias>
+      <p class="empty-state">Llena el formulario y calcula tu ruta para ver sugerencias de paradas.</p>
+    </div>
+  </div>
+</section>
+
+<template id="tpl-sugerencia">
+  <article class="card card--lugar" data-lugar-card>
+    <div class="card__etiquetas">
+      <span class="tag" data-lugar-categoria></span>
+      <span class="tag tag--horas" data-lugar-horas hidden></span>
+    </div>
+    <h3 class="card__title" data-lugar-nombre></h3>
+    <p class="card__subtitle" data-lugar-descripcion></p>
+    <p class="card__nota-descanso" data-lugar-descanso hidden>😴 Buen punto para parar a descansar</p>
+    <button type="button" class="btn btn--secondary btn--block" data-agregar-parada>Agregar parada</button>
+    <button type="button" class="btn btn--ghost btn--block" data-descartar>Descartar</button>
+  </article>
+</template>

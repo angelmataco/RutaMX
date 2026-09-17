@@ -1,0 +1,61 @@
+<section class="section section--itinerario" id="itinerario">
+  <div class="container">
+    <p class="kicker">TU AVENTURA, EN ORDEN</p>
+    <h2 class="section-title">Tu itinerario</h2>
+
+    <div class="itinerary-grid">
+      <div class="card card--itinerario">
+        <div class="card__header">
+          <div>
+            <h3 class="card__title">Paradas seleccionadas</h3>
+            <p class="card__subtitle">Reordena, reacomoda o elimina paradas hasta que el recorrido se sienta tuyo.</p>
+          </div>
+          <span class="icon-badge">📋</span>
+        </div>
+
+        <ul class="itinerary-list" data-itinerario-lista>
+          <li class="itinerary-item itinerary-item--origen" data-item-origen hidden>
+            <span class="itinerary-item__badge">ORIGEN</span>
+            <span class="itinerary-item__nombre" data-item-nombre></span>
+          </li>
+          <li class="itinerary-item itinerary-item--destino" data-item-destino hidden>
+            <span class="itinerary-item__badge">DESTINO</span>
+            <span class="itinerary-item__nombre" data-item-nombre></span>
+          </li>
+        </ul>
+        <p class="empty-state" data-itinerario-vacio>Agrega paradas desde "Descubre en el camino" para armar tu itinerario.</p>
+      </div>
+
+      <div class="card card--aventura">
+        <span class="badge badge--light">LISTA PARA SALIR</span>
+        <h3 class="card__title card__title--light">Resumen de aventura</h3>
+        <div class="stat-grid stat-grid--dark">
+          <div class="stat-tile stat-tile--dark">
+            <p class="stat-tile__label">Paradas</p>
+            <p class="stat-tile__value" data-aventura-paradas>0</p>
+          </div>
+          <div class="stat-tile stat-tile--dark">
+            <p class="stat-tile__label">Distancia</p>
+            <p class="stat-tile__value" data-aventura-distancia>—</p>
+          </div>
+        </div>
+        <p class="card__note card__note--light" data-aventura-texto>
+          Calcula una ruta y agrega paradas para ver el resumen de tu aventura.
+        </p>
+        <button type="button" class="btn btn--primary btn--block" data-guardar-itinerario>Guardar itinerario</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<template id="tpl-parada-itinerario">
+  <li class="itinerary-item" data-item-parada>
+    <span class="itinerary-item__numero" data-item-numero></span>
+    <span class="itinerary-item__nombre" data-item-nombre></span>
+    <span class="itinerary-item__acciones">
+      <button type="button" class="icon-btn" data-mover-arriba title="Mover arriba">↑</button>
+      <button type="button" class="icon-btn" data-mover-abajo title="Mover abajo">↓</button>
+      <button type="button" class="icon-btn icon-btn--danger" data-eliminar-parada title="Eliminar">🗑</button>
+    </span>
+  </li>
+</template>

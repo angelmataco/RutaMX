@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% include "partials/hero.html" %}
+
+  <div data-resultados hidden>
+    <section class="section section--recorrido" id="ruta">
+      <div class="container">
+        <p class="kicker">TU RECORRIDO</p>
+        <h2 class="section-title">Dale forma a tu próxima escapada</h2>
+
+        {% include "partials/map_section.html" %}
+      </div>
+    </section>
+
+    {% include "partials/discover_section.html" %}
+
+    {% include "partials/itinerary_section.html" %}
+  </div>
+{% endblock %}

@@ -1,0 +1,232 @@
+"""Sugerencia de paradas/destinos según la ruta y los intereses del
+usuario.
+
+Las sugerencias salen de la tabla `destinos` (Supabase), filtradas por
+cercanía real a la carretera entre origen y destino —no en línea recta—
+usando la geometría que ya calcula `route_service` con OSRM. Si además
+el usuario indicó cuántas horas máximo quiere manejar seguido, se
+prioriza a los destinos que caen cerca de ese punto del camino, como
+sugerencia de dónde parar a descansar.
+
+LUGARES_DEMO se queda solo como respaldo por si la base de datos no
+responde (ej. sin conexión), para que el flujo no se rompa.
+
+# TODO: cuando el destino que busca el usuario no tenga coincidencias en
+# la tabla (ej. un pueblo pequeño que no está en la base), generar la
+# sugerencia con IA cumpliendo la misma plantilla —nombre, tipo,
+# coordenadas (via maps_service.geocodificar), descripción, intereses— e
+# insertarla en `destinos` con fuente="ia_generada".
+"""
+
+import random
+
+from app.models import Destino
+from app.services import maps_service, route_service
+
+ETIQUETAS_TIPO = {
+    "ciudad_principal": "Ciudad",
+    "pueblo_magico": "Pueblo Mágico",
+    "sitio_turistico": "Sitio turístico",
+}
+
+# Qué fracción de las horas máximas de manejo se usa como objetivo para
+# sugerir dónde parar a descansar (8h máximo -> se sugiere cerca de 6.4h).
+FACTOR_DESCANSO = 0.8
+
+# Radios de búsqueda (km) alrededor de la carretera real: se prueba el
+# más estricto primero y se va ampliando solo si no alcanza destinos.
+RADIOS_CORREDOR_KM = [20, 60, 150]
+
+# Si un destino está a menos de esto del origen o del destino, es
+# básicamente el mismo lugar del que sales o a donde llegas: no tiene
+# caso "sugerirlo" como parada en el camino.
+RADIO_EXCLUSION_EXTREMOS_KM = 5
+
+# Qué tan cerca (en horas) del punto objetivo de descanso debe caer un
+# destino para marcarlo como "buena parada para descansar".
+TOLERANCIA_DESCANSO_HORAS = 1.0
+
+LUGARES_DEMO = [
+    {
+        "id": "teotihuacan",
+        "nombre": "Teotihuacán",
+        "categoria": "Sitio cultural",
+        "descripcion": "Pirámides monumentales, gastronomía local y arte, ideal para una parada de demostración.",
+        "intereses": ["pueblos_magicos", "comida"],
+    },
+    {
+        "id": "valle_de_bravo",
+        "nombre": "Valle de Bravo",
+        "categoria": "Naturaleza",
+        "descripcion": "Bosque, lago y aire fresco para tomar un respiro tranquilo antes de seguir el camino.",
+        "intereses": ["naturaleza", "descanso"],
+    },
+    {
+        "id": "bernal",
+        "nombre": "Bernal",
+        "categoria": "Pueblo Mágico",
+        "descripcion": "Un pueblo al pie de la Peña de Bernal, perfecto para una parada breve y panorámica.",
+        "intereses": ["pueblos_magicos"],
+    },
+    {
+        "id": "san_miguel_de_allende",
+        "nombre": "San Miguel de Allende",
+        "categoria": "Sitio cultural",
+        "descripcion": "Arquitectura, mercados y calles para caminar con calma durante una escapada en carretera.",
+        "intereses": ["pueblos_magicos", "comida"],
+    },
+    {
+        "id": "playa_del_carmen",
+        "nombre": "Playa del Carmen",
+        "categoria": "Playa",
+        "descripcion": "Costa caribeña con arena blanca, ideal para una parada de playa y descanso.",
+        "intereses": ["playas", "descanso"],
+    },
+    {
+        "id": "guanajuato",
+        "nombre": "Guanajuato",
+        "categoria": "Sitio cultural",
+        "descripcion": "Callejones coloridos, historia y buena comida en una de las ciudades más fotogénicas del país.",
+        "intereses": ["pueblos_magicos", "comida"],
+    },
+]
+
+
+def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
+    lugar = {
+        "id": destino.id,
+        "nombre": destino.nombre,
+        "categoria": ETIQUETAS_TIPO.get(destino.tipo, "Destino"),
+        "descripcion": destino.descripcion,
+        "lat": destino.lat,
+        "lon": destino.lon,
+    }
+    if horas_estimadas is not None:
+        lugar["horas_estimadas"] = round(horas_estimadas, 1)
+        lugar["buena_para_descanso"] = (
+            horas_objetivo is not None and abs(horas_estimadas - horas_objetivo) <= TOLERANCIA_DESCANSO_HORAS
+        )
+    return lugar
+
+
+def _candidatos_en_el_corredor(ruta, limite):
+    """Filtra los destinos de la base que caen cerca de la carretera real
+    de `ruta` (dict con "geometria", "distancia_km", "tiempo_h", y los
+    puntos de "origen"/"destino").
+
+    Excluye el origen y el destino del viaje (no tiene caso "sugerir"
+    llegar al lugar de donde sales o a donde vas). Empieza con un radio
+    de búsqueda estricto y lo va ampliando solo si no alcanza para
+    juntar al menos `limite` destinos.
+
+    Devuelve una lista de (destino, horas_estimadas), o None si `ruta`
+    no trae geometría (ej. OSRM no respondió al calcular la ruta).
+    """
+    geometria = ruta.get("geometria") if ruta else None
+    if not geometria:
+        return None
+
+    corredor = route_service.preparar_corredor(geometria)
+    distancia_total = ruta.get("distancia_km") or 0
+    tiempo_total = ruta.get("tiempo_h") or 0
+    punto_origen = (ruta["origen"]["lat"], ruta["origen"]["lon"])
+    punto_destino = (ruta["destino"]["lat"], ruta["destino"]["lon"])
+
+    calculados = []
+    for destino in Destino.query.all():
+        punto_destino_candidato = (destino.lat, destino.lon)
+
+        if (
+            route_service.distancia_km(punto_destino_candidato, punto_origen) < RADIO_EXCLUSION_EXTREMOS_KM
+            or route_service.distancia_km(punto_destino_candidato, punto_destino) < RADIO_EXCLUSION_EXTREMOS_KM
+        ):
+            continue
+
+        distancia_perp, avance_km = route_service.distancia_a_corredor(corredor, punto_destino_candidato)
+        horas_estimadas = (avance_km / distancia_total) * tiempo_total if distancia_total else 0
+        calculados.append((destino, horas_estimadas, distancia_perp))
+
+    for radio in RADIOS_CORREDOR_KM:
+        candidatos = [(d, h) for d, h, dist in calculados if dist is not None and dist <= radio]
+        if len(candidatos) >= limite:
+            return candidatos
+
+    # Ni con el radio más amplio alcanzó: se regresa lo que haya (puede
+    # quedar corto, pero es mejor que nada).
+    return [(d, h) for d, h, dist in calculados if dist is not None and dist <= RADIOS_CORREDOR_KM[-1]]
+
+
+def _ordenar_candidatos(candidatos, intereses, horas_objetivo):
+    """Ordena (destino, horas_estimadas) priorizando coincidencia de
+    intereses y, si hay horas_objetivo, cercanía a ese punto del viaje.
+    """
+    random.shuffle(candidatos)  # para no repetir siempre el mismo orden entre empates
+
+    def puntaje(item):
+        destino, horas_estimadas = item
+        coincide_interes = 0 if (intereses and intereses & set(destino.intereses or [])) else 1
+        distancia_a_objetivo = abs(horas_estimadas - horas_objetivo) if horas_objetivo is not None else 0
+        return (coincide_interes, distancia_a_objetivo)
+
+    return sorted(candidatos, key=puntaje)
+
+
+def _sugerir_desde_base(intereses, limite, ruta, horas_max):
+    candidatos = _candidatos_en_el_corredor(ruta, limite) if ruta else None
+
+    if candidatos is None:
+        # No hay geometría de ruta (ej. faltó origen/destino, u OSRM no
+        # respondió): se cae a sugerir de toda la base, sin filtro de
+        # cercanía, para no dejar la sección vacía.
+        destinos = Destino.query.all()
+        if not destinos:
+            return None
+        candidatos = [(d, None) for d in destinos]
+
+    if not candidatos:
+        return []
+
+    horas_objetivo = horas_max * FACTOR_DESCANSO if horas_max else None
+    candidatos = _ordenar_candidatos(candidatos, intereses, horas_objetivo)
+
+    return [
+        _lugar_desde_destino(destino, horas_estimadas, horas_objetivo)
+        for destino, horas_estimadas in candidatos[:limite]
+    ]
+
+
+def _sugerir_desde_demo(intereses, limite):
+    candidatos = list(LUGARES_DEMO)
+    random.shuffle(candidatos)
+
+    if intereses:
+        con_match = [l for l in candidatos if intereses & set(l["intereses"])]
+        sin_match = [l for l in candidatos if l not in con_match]
+        candidatos = con_match + sin_match
+
+    resultado = []
+    for lugar in candidatos[:limite]:
+        lat, lon = maps_service.obtener_coordenadas(lugar["nombre"])
+        resultado.append({**lugar, "lat": lat, "lon": lon})
+    return resultado
+
+
+def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None):
+    """Devuelve destinos sugeridos para la ruta actual.
+
+    - `ruta`: resumen devuelto por route_service.calcular_ruta (usa su
+      geometría real para sugerir solo lugares cerca del camino).
+    - `horas_max`: horas máximas que el usuario quiere manejar seguido;
+      si se da, se prioriza a los destinos cercanos al punto del viaje
+      donde convendría parar a descansar.
+    """
+    intereses = set(intereses or [])
+
+    try:
+        resultado = _sugerir_desde_base(intereses, limite, ruta, horas_max)
+        if resultado is not None:
+            return resultado
+    except Exception as error:
+        print(f"No se pudo consultar la base de destinos, usando catálogo de respaldo: {error}")
+
+    return _sugerir_desde_demo(intereses, limite)

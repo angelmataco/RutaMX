@@ -1,0 +1,605 @@
+:root {
+  --color-crema: #f7f1e6;
+  --color-verde-palido: #eaf1e7;
+  --color-terracota: #c76a4c;
+  --color-terracota-dark: #b25a3e;
+  --color-verde-oscuro: #1f3327;
+  --color-verde-oscuro-2: #16241c;
+  --color-mostaza: #e0a63e;
+  --color-texto: #2b2b26;
+  --color-texto-gris: #6b6b62;
+  --color-blanco: #ffffff;
+  --color-borde: #e7ddc9;
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --shadow-card: 0 12px 30px rgba(31, 51, 39, 0.08);
+  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-texto);
+  background: var(--color-crema);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Navbar */
+.navbar {
+  background: var(--color-crema);
+  padding: 20px 0;
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.navbar__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-verde-oscuro);
+  color: var(--color-blanco);
+  font-size: 1rem;
+}
+
+.navbar__links {
+  display: flex;
+  gap: 28px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Kickers / titles */
+.kicker {
+  color: var(--color-terracota);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.kicker--center {
+  text-align: center;
+}
+
+.section-title {
+  font-family: var(--font-serif);
+  color: var(--color-verde-oscuro);
+  font-size: 2rem;
+  margin: 0 0 24px;
+}
+
+.section-subtitle {
+  color: var(--color-texto-gris);
+  max-width: 520px;
+  margin: 8px 0 0;
+}
+
+/* Hero */
+.hero {
+  background: var(--color-crema);
+  padding: 40px 0 72px;
+  text-align: center;
+}
+
+.hero__headline {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--color-verde-oscuro);
+  font-size: 2.4rem;
+  max-width: 760px;
+  margin: 0 auto 20px;
+  line-height: 1.25;
+}
+
+.hero__lead {
+  color: var(--color-texto-gris);
+  max-width: 560px;
+  margin: 0 auto 8px;
+  font-size: 1.02rem;
+}
+
+.hero__note {
+  color: var(--color-texto-gris);
+  max-width: 560px;
+  margin: 0 auto 36px;
+  font-size: 0.85rem;
+}
+
+/* Cards */
+.card {
+  background: var(--color-blanco);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 28px;
+  text-align: left;
+}
+
+.card--form-hero {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.card__title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  color: var(--color-verde-oscuro);
+  font-family: var(--font-serif);
+}
+
+.card__title--light {
+  color: var(--color-blanco);
+}
+
+.card__subtitle {
+  margin: 0;
+  color: var(--color-texto-gris);
+  font-size: 0.92rem;
+}
+
+.card__note {
+  color: var(--color-texto-gris);
+  font-size: 0.85rem;
+  margin: 14px 0 0;
+}
+
+.card__note--light {
+  color: #cdd8d0;
+}
+
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f4e3dc;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Forms */
+.ruta-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ruta-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label,
+.field__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.field__label--spaced {
+  margin-top: 14px;
+}
+
+.field input,
+.field select {
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  background: var(--color-blanco);
+  color: var(--color-texto);
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--color-terracota);
+  outline-offset: 1px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--color-borde);
+  background: var(--color-blanco);
+  color: var(--color-texto);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip.is-active {
+  background: var(--color-terracota);
+  border-color: var(--color-terracota);
+  color: var(--color-blanco);
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 13px 22px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+}
+
+.btn:active {
+  transform: scale(0.99);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--primary {
+  background: var(--color-terracota);
+  color: var(--color-blanco);
+}
+
+.btn--primary:hover {
+  background: var(--color-terracota-dark);
+}
+
+.btn--secondary {
+  background: var(--color-verde-oscuro);
+  color: var(--color-blanco);
+  margin-top: 4px;
+}
+
+.btn--ghost {
+  background: var(--color-blanco);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
+  margin-top: 8px;
+}
+
+/* Sections */
+.section {
+  padding: 56px 0;
+}
+
+.section--recorrido {
+  background: var(--color-verde-palido);
+}
+
+.section--descubre {
+  background: var(--color-crema);
+}
+
+.section--itinerario {
+  background: var(--color-blanco);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-terracota);
+  white-space: nowrap;
+}
+
+.badge--light {
+  color: var(--color-mostaza);
+  border-color: rgba(224, 166, 62, 0.4);
+}
+
+/* Map + summary */
+.map-summary-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.mapa {
+  height: 340px;
+  border-radius: var(--radius-md);
+  margin-top: 16px;
+  overflow: hidden;
+  background: #dbe6e0;
+}
+
+/* Ocultamos el panel de indicaciones de Leaflet Routing Machine: ya
+   mostramos el itinerario con nuestra propia card. */
+.mapa .leaflet-routing-container {
+  display: none;
+}
+
+.summary-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.stat-tile {
+  background: var(--color-verde-palido);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.stat-tile--accent {
+  background: #f4e3dc;
+}
+
+.stat-tile__label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-texto-gris);
+}
+
+.stat-tile__value {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-verde-oscuro);
+}
+
+.stat-tile--dark {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stat-tile--dark .stat-tile__label {
+  color: #b9c4bd;
+}
+
+.stat-tile--dark .stat-tile__value {
+  color: var(--color-blanco);
+}
+
+.card--save select {
+  width: 100%;
+}
+
+.card--save .btn {
+  margin: 4px 0 16px;
+}
+
+/* Discover cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.card--lugar {
+  display: flex;
+  flex-direction: column;
+}
+
+.tag {
+  align-self: flex-start;
+  background: #f4e3dc;
+  color: var(--color-terracota);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.card__etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag--horas {
+  background: var(--color-verde-palido);
+  color: var(--color-verde-oscuro);
+}
+
+.card__nota-descanso {
+  background: var(--color-verde-palido);
+  color: var(--color-verde-oscuro);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin: 0 0 12px;
+}
+
+.empty-state {
+  color: var(--color-texto-gris);
+  font-size: 0.92rem;
+}
+
+/* Itinerary */
+.itinerary-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.itinerary-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.itinerary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-verde-palido);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.itinerary-item--destino {
+  background: #f4e3dc;
+}
+
+.itinerary-item__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-texto-gris);
+  background: var(--color-blanco);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.itinerary-item__numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-terracota);
+  color: var(--color-blanco);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.itinerary-item__nombre {
+  flex: 1;
+  font-weight: 500;
+}
+
+.itinerary-item__acciones {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  border: 1px solid var(--color-borde);
+  background: var(--color-blanco);
+  border-radius: var(--radius-sm);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn--danger {
+  color: #b3402f;
+}
+
+.card--aventura {
+  background: var(--color-verde-oscuro-2);
+  color: var(--color-blanco);
+}
+
+.card--aventura .stat-grid {
+  margin-bottom: 8px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .map-summary-grid,
+  .itinerary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar__links {
+    gap: 16px;
+    font-size: 0.85rem;
+  }
+
+  .hero__headline {
+    font-size: 1.8rem;
+  }
+
+  .ruta-form__row,
+  .stat-grid,
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
