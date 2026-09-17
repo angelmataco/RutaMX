@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.env
+instance/config.py
+.DS_Store
+*.egg-info/
+.pytest_cache/
+info_proyecto
+
+# Bases de datos locales (cuando se migre de datos en memoria a SQLite)
+*.sqlite3
+*.db
+
+# Editores
+.vscode/
+.idea/
+
+# Reportes de cobertura de tests
+.coverage
+htmlcov/
+
+# Graphify (esquema de la skill de Claude)
+graphify-out 
