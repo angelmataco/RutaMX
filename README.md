@@ -16,8 +16,10 @@ sugerencias → itinerario → guardar):
   línea recta); si OSRM no responde, cae a una estimación en línea recta
   para que el flujo no se rompa.
 - **Base de datos de destinos** (Postgres en Supabase, ver abajo): catálogo
-  de los 32 estados con 130 ciudades principales, pueblos mágicos y sitios
-  turísticos verificados (`app/models.py`, tablas `estados` y `destinos`).
+  de los 32 estados con 369 destinos verificados (`app/models.py`, tablas
+  `estados` y `destinos`): mínimo 8 ciudades/pueblos mágicos y mínimo 3
+  sitios turísticos por estado, con más en los estados grandes o de
+  ciudades muy conocidas.
   Sigue siendo la "plantilla": cada fila exige nombre, estado, tipo,
   coordenadas exactas (verificadas contra Nominatim/OpenStreetMap) y
   descripción.
@@ -95,11 +97,14 @@ RutaMX/
 │   ├── static/               # CSS, JS, imágenes
 │   └── templates/            # HTML (base + partials por sección)
 ├── scripts/
-│   ├── seed_destinos.py       # Carga inicial de estados y destinos
+│   ├── seed_destinos.py       # Carga inicial de estados y destinos (lote 1)
+│   ├── seed_destinos_v2.py    # Lote 2: mínimo 8 ciudades/pueblos + 3 sitios turísticos por estado
 │   ├── verify_coordenadas.py  # Verifica/corrige coordenadas contra Nominatim
 │   ├── fix_intereses.py       # Corrección 1 de etiquetas de interés
 │   ├── fix_intereses_v2.py    # Corrección 2 (mínimo 2 etiquetas por destino)
-│   └── fix_poblacion.py       # Carga población (Censo INEGI 2020)
+│   ├── fix_intereses_v3.py    # Corrección 3 (mismo mínimo, para el lote 2)
+│   ├── fix_poblacion.py       # Carga población lote 1 (Censo INEGI 2020)
+│   └── fix_poblacion_v2.py    # Carga población lote 2 (Censo INEGI 2020)
 ├── tests/                    # Pruebas de rutas y servicios
 ├── instance/config.py        # Configuración local (no se sube a git)
 ├── config.py                  # Configuración general (Dev/Prod)
