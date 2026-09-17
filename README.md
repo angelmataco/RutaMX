@@ -28,8 +28,9 @@ sugerencias → itinerario → guardar):
   indica cuántas horas máximo quiere manejar seguido, prioriza destinos
   cerca de ese punto del viaje como sugerencia de descanso. Si la base de
   datos no responde, cae a un catálogo fijo de respaldo (`LUGARES_DEMO`).
-- **Rutas guardadas**: se guardan en memoria (`app/models.py`), se pierden
-  al reiniciar el servidor. Pendiente de mover a una tabla real.
+- **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`app/models.py`,
+  modelo `RutaGuardada`) — ya no se pierden al reiniciar el servidor.
+  Pendiente: asociarlas a un usuario cuando se decida agregar login.
 
 Los lugares donde falta una integración real están marcados con
 `# TODO: reemplazar ...` en el código.
@@ -49,7 +50,11 @@ de estados y destinos. Para correr el proyecto localmente:
    ```python
    SUPABASE_DB_URL = "postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres"
    ```
-4. Carga los datos iniciales (es seguro correrlo varias veces, no duplica filas):
+4. Crea las tablas que falten (no toca las que ya existen):
+   ```bash
+   python3 -c "from app import create_app; from app.models import db; app = create_app(); app.app_context().push(); db.create_all()"
+   ```
+5. Carga los datos iniciales (es seguro correrlo varias veces, no duplica filas):
    ```bash
    python scripts/seed_destinos.py
    ```
@@ -71,6 +76,10 @@ La app queda disponible en `http://127.0.0.1:5000`.
 pytest
 ```
 
+Algunas pruebas consultan la base de datos real de Supabase y el servicio
+de ruteo real (OSRM) — necesitas `instance/config.py` configurado y
+conexión a internet para que pasen todas.
+
 ## Estructura del proyecto
 
 ```
@@ -78,7 +87,7 @@ RutaMX/
 ├── app/
 │   ├── __init__.py        # Application factory
 │   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas)
-│   ├── models.py          # Modelos: Estado/Destino (Supabase) y Ruta (memoria)
+│   ├── models.py          # Modelos: Estado, Destino, RutaGuardada (Supabase)
 │   ├── services/
 │   │   ├── ai_service.py      # Sugerencias de paradas (filtro por corredor real)
 │   │   ├── route_service.py   # Ruta real (OSRM), distancia/tiempo, corredor
@@ -105,7 +114,6 @@ RutaMX/
   misma plantilla —nombre, tipo, coordenadas exactas (vía
   `maps_service.geocodificar`), descripción, intereses— e insertarlo en
   `destinos` con `fuente="ia_generada"`.
-- Mover las rutas guardadas de memoria a una tabla real en Supabase.
 - Desplegar la app en un hosting público (Render/Railway) para poder
   compartirla con un link.
 - Seguir ampliando el catálogo curado de ciudades/pueblos mágicos por estado

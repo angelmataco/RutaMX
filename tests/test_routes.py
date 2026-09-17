@@ -1,6 +1,7 @@
 import pytest
 
 from app import create_app
+from app.models import RutaGuardada, db
 
 
 @pytest.fixture
@@ -9,6 +10,11 @@ def client():
     app.config.update(TESTING=True)
     with app.test_client() as client:
         yield client
+    # RutaGuardada vive en la base real (Supabase): se limpia lo que haya
+    # creado el test para no dejar basura de prueba en la tabla.
+    with app.app_context():
+        RutaGuardada.query.filter(RutaGuardada.nombre == "Escapada de prueba").delete()
+        db.session.commit()
 
 
 def test_index_ok(client):

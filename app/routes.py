@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request
 
-from app.models import Ruta, guardar_ruta, listar_rutas
+from app.models import RutaGuardada, guardar_ruta, listar_rutas
 from app.services import ai_service, route_service
 
 main_bp = Blueprint("main", __name__)
@@ -72,7 +72,12 @@ def api_guardar_ruta():
     if not origen or not destino:
         return jsonify({"error": "Origen y destino son obligatorios."}), 400
 
-    ruta = Ruta(
+    try:
+        presupuesto = float(presupuesto)
+    except (TypeError, ValueError):
+        presupuesto = 0
+
+    ruta = RutaGuardada(
         nombre=nombre,
         origen=origen,
         destino=destino,

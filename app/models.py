@@ -1,19 +1,15 @@
 """Modelos de datos de RutaMX.
 
-Estado y Destino viven en Postgres (Supabase) vía SQLAlchemy: son el
-catálogo/"plantilla" de estados, ciudades principales y pueblos mágicos
-que alimenta las sugerencias de la app.
+Estado, Destino y RutaGuardada viven en Postgres (Supabase) vía
+SQLAlchemy. Estado/Destino son el catálogo/"plantilla" que alimenta las
+sugerencias; RutaGuardada guarda las rutas que arma cada usuario.
 
-Ruta (rutas guardadas por el usuario) todavía vive en memoria mientras no
-se decide cómo se van a guardar las rutas de cada usuario.
-# TODO: reemplazar RUTAS_GUARDADAS por una tabla real cuando se agregue
-# autenticación de usuarios.
+# TODO: agregar una columna usuario_id a RutaGuardada cuando se decida
+# implementar login, para que cada quien vea solo sus propias rutas.
 """
 
-import itertools
-
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 db = SQLAlchemy()
 
@@ -65,24 +61,20 @@ class Destino(db.Model):
         }
 
 
-_id_counter = itertools.count(1)
+class RutaGuardada(db.Model):
+    """Una ruta de road trip armada y guardada por el usuario."""
 
-# Almacenamiento en memoria de rutas guardadas por el usuario.
-RUTAS_GUARDADAS = []
+    __tablename__ = "rutas_guardadas"
 
-
-class Ruta:
-    """Representa una ruta de road trip armada por el usuario."""
-
-    def __init__(self, nombre, origen, destino, presupuesto, intereses, resumen, paradas):
-        self.id = next(_id_counter)
-        self.nombre = nombre
-        self.origen = origen
-        self.destino = destino
-        self.presupuesto = presupuesto
-        self.intereses = intereses
-        self.resumen = resumen
-        self.paradas = paradas
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.Text, nullable=False)
+    origen = db.Column(db.Text, nullable=False)
+    destino = db.Column(db.Text, nullable=False)
+    presupuesto = db.Column(db.Float)
+    intereses = db.Column(ARRAY(db.Text), nullable=False, default=list)
+    resumen = db.Column(JSONB, nullable=False, default=dict)
+    paradas = db.Column(JSONB, nullable=False, default=list)
+    creado_en = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
     def to_dict(self):
         return {
@@ -91,16 +83,18 @@ class Ruta:
             "origen": self.origen,
             "destino": self.destino,
             "presupuesto": self.presupuesto,
-            "intereses": self.intereses,
-            "resumen": self.resumen,
-            "paradas": self.paradas,
+            "intereses": self.intereses or [],
+            "resumen": self.resumen or {},
+            "paradas": self.paradas or [],
         }
 
 
-def guardar_ruta(ruta: Ruta) -> Ruta:
-    RUTAS_GUARDADAS.append(ruta)
+def guardar_ruta(ruta: RutaGuardada) -> RutaGuardada:
+    db.session.add(ruta)
+    db.session.commit()
     return ruta
 
 
 def listar_rutas():
-    return [ruta.to_dict() for ruta in RUTAS_GUARDADAS]
+    rutas = RutaGuardada.query.order_by(RutaGuardada.creado_en.desc()).all()
+    return [ruta.to_dict() for ruta in rutas]
