@@ -9,6 +9,7 @@ instance/config.py
 *.egg-info/
 .pytest_cache/
 info_proyecto
+.gitignore
 
 # Bases de datos locales (cuando se migre de datos en memoria a SQLite)
 *.sqlite3
