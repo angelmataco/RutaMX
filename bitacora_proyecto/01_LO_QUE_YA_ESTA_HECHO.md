@@ -21,6 +21,29 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   catálogo de 18 ciudades → respaldo.
 - Mapa agrandado (llena toda su tarjeta, sin espacio en blanco).
 
+## Destinos nuevos generados con IA (multi-proveedor)
+
+- Cuando alguien escribe un origen/destino que no está en los 369
+  destinos curados (ej. "Manuel Doblado", con o sin errores de
+  ortografía), `app/services/ia_destinos_service.py` le pide a la IA
+  configurada que identifique el lugar real, busque en internet los datos
+  necesarios (estado, tipo, descripción, intereses, población) y lo
+  inserte en `destinos` con `fuente="ia_generada"`.
+- Las coordenadas nunca se toman de lo que "sepa" la IA — siempre se
+  verifican con `geocodificar()` (Nominatim), igual que los 369 curados.
+- Pasa **una sola vez por lugar**: la siguiente vez que alguien lo
+  escriba, ya está en la tabla y no se vuelve a llamar a la IA.
+- Desde que se inserta, funciona exactamente igual que los curados:
+  aparece en el autocompletado, en sugerencias de paradas para rutas
+  futuras que pasen cerca, y en el cálculo de rutas.
+- **Multi-proveedor de verdad**: `app/services/llm_provider.py` detecta
+  solo con qué variable de entorno esté configurada
+  (`ANTHROPIC_API_KEY` → `OPENAI_API_KEY` → `GEMINI_API_KEY`) cuál usar —
+  Angel puede tener la de Claude, Roberto la que tenga, sin tocar código.
+  Sin ninguna key configurada, la app sigue funcionando igual que antes
+  (cae a Nominatim directo, solo que ese lugar no se guarda para
+  siempre).
+
 ## Base de datos de destinos (Supabase / Postgres)
 
 - Catálogo de los 32 estados con 369 destinos verificados: mínimo 8

@@ -1,12 +1,11 @@
 """Integración con la API/librería de mapas.
 
-# TODO: CIUDADES_DEMO sigue siendo el catálogo rápido que usa el cálculo
-# de ruta en cada request (para no depender de un servicio externo en
-# cada búsqueda). `geocodificar()` de aquí abajo sí consulta un servicio
-# real (Nominatim/OpenStreetMap) y es lo que debe usar cualquier proceso
-# que AGREGUE destinos nuevos a la base de datos (scripts de carga, y más
-# adelante la IA cuando genere restaurantes/lugares puntuales), para que
-# las coordenadas guardadas sean exactas y no aproximadas a mano.
+CIUDADES_DEMO sigue siendo el catálogo rápido que usa `obtener_coordenadas`
+como último respaldo. `geocodificar()` de aquí abajo sí consulta un
+servicio real (Nominatim/OpenStreetMap) y es lo que debe usar cualquier
+proceso que AGREGUE destinos nuevos a la base de datos (scripts de carga,
+y `ia_destinos_service.py` cuando la IA genera un lugar nuevo), para que
+las coordenadas guardadas sean exactas y no aproximadas a mano.
 """
 
 import unicodedata
@@ -78,10 +77,13 @@ def obtener_coordenadas(nombre_ciudad: str):
     """Devuelve (lat, lon) para un lugar, resolviendo en este orden:
 
     1. La tabla `destinos` (369 lugares curados, ya geocodificados).
-    2. Nominatim (`geocodificar`), para cualquier lugar real de México
-       que no esté en la base.
-    3. El catálogo demo (`CIUDADES_DEMO`), como respaldo rápido.
-    4. `COORDENADA_RESPALDO`, si todo lo anterior falla.
+    2. Generar el destino con IA (si hay un proveedor configurado) y
+       guardarlo en la tabla — así queda disponible para siempre en
+       autocompletado/sugerencias, no solo para esta petición.
+    3. Nominatim (`geocodificar`), para cualquier lugar real de México
+       que no esté en la base y que la IA no haya podido generar.
+    4. El catálogo demo (`CIUDADES_DEMO`), como respaldo rápido.
+    5. `COORDENADA_RESPALDO`, si todo lo anterior falla.
     """
     clave = _normalizar(nombre_ciudad or "")
 
@@ -91,6 +93,17 @@ def obtener_coordenadas(nombre_ciudad: str):
             return encontrado
     except Exception as error:
         print(f"No se pudo consultar la tabla de destinos para geocodificar: {error}")
+
+    try:
+        # Import perezoso: ia_destinos_service importa este módulo, así
+        # que importarlo arriba del archivo crearía un import circular.
+        from app.services import ia_destinos_service
+
+        destino_generado = ia_destinos_service.generar_destino_con_ia(nombre_ciudad)
+        if destino_generado:
+            return destino_generado.lat, destino_generado.lon
+    except Exception as error:
+        print(f"No se pudo generar el destino con IA: {error}")
 
     resultado_geocodificado = geocodificar(nombre_ciudad)
     if resultado_geocodificado:

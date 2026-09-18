@@ -11,11 +11,10 @@ sugerencia de dónde parar a descansar.
 LUGARES_DEMO se queda solo como respaldo por si la base de datos no
 responde (ej. sin conexión), para que el flujo no se rompa.
 
-# TODO: cuando el destino que busca el usuario no tenga coincidencias en
-# la tabla (ej. un pueblo pequeño que no está en la base), generar la
-# sugerencia con IA cumpliendo la misma plantilla —nombre, tipo,
-# coordenadas (via maps_service.geocodificar), descripción, intereses— e
-# insertarla en `destinos` con fuente="ia_generada".
+Los destinos que no existían en la tabla se generan con IA en
+`maps_service.obtener_coordenadas()` (ver `ia_destinos_service.py`) antes
+de llegar aquí — por eso este módulo no necesita saber nada de eso, solo
+consulta `destinos` como siempre.
 """
 
 import random

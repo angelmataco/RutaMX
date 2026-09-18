@@ -48,6 +48,32 @@ filtros. Ahora solo se reinicia si el origen o destino cambiaron de
 verdad; si el usuario solo ajusta los filtros de interés sobre el mismo
 viaje, las paradas ya elegidas se conservan.
 
+## Destinos nuevos con IA: por qué es multi-proveedor y no solo Claude
+
+Angel usa Claude, pero Roberto le va a hacer cambios al proyecto con
+Codex y probablemente tenga una key distinta (OpenAI, Gemini, la que
+sea). Diseñar esto para un solo proveedor hubiera obligado a todo el
+equipo a usar la misma IA. Por eso se separó en dos archivos:
+
+- `llm_provider.py` — la única parte que sabe de proveedores. Detecta
+  automáticamente cuál está configurado según la variable de entorno
+  presente, y expone una sola función (`completar_plantilla_destino`)
+  que siempre regresa el mismo formato sin importar cuál se usó.
+- `ia_destinos_service.py` — no sabe nada de Claude/OpenAI/Gemini, solo
+  recibe el resultado ya parseado y decide qué hacer con él (geocodificar
+  de verdad, buscar el estado, insertar en la tabla).
+
+Así, si mañana aparece un cuarto proveedor, solo se agrega una función
+más en `llm_provider.py` — el resto del sistema no se entera.
+
+**Por qué las coordenadas nunca vienen de la IA directamente:** cualquier
+proveedor puede "alucinar" una coordenada que suene razonable pero esté
+mal. Se sigue la misma regla que ya regía para los 369 destinos curados
+—nunca inventar datos geográficos— pidiéndole a la IA solo el *nombre*
+correcto del lugar, y usando `geocodificar()` (Nominatim) para las
+coordenadas de verdad. Si Nominatim no encuentra ese nombre, se descarta
+todo el intento en vez de guardar algo a medias.
+
 ## La bitácora ahora sí se sube a GitHub
 
 Al principio esta carpeta se creó como algo solo local (en `.gitignore`).

@@ -5,3 +5,11 @@ Flask-SQLAlchemy==3.1.1
 psycopg2-binary==2.9.13
 requests==2.32.3
 reportlab==4.2.5
+
+# Generación de destinos nuevos con IA (app/services/llm_provider.py).
+# Cada persona solo necesita instalar/usar el paquete del proveedor cuya
+# API key vaya a conectar en su .env local — los tres se listan para que
+# el proyecto quede listo sin importar cuál elija cada quien.
+anthropic
+openai
+google-genai

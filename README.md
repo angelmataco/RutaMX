@@ -33,6 +33,13 @@ sugerencias → itinerario → guardar):
 - **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`app/models.py`,
   modelo `RutaGuardada`) — ya no se pierden al reiniciar el servidor.
   Pendiente: asociarlas a un usuario cuando se decida agregar login.
+- **Destinos nuevos con IA**: si alguien escribe un origen/destino que no
+  está en la tabla `destinos` (ej. un pueblo pequeño, con o sin errores de
+  ortografía), `app/services/ia_destinos_service.py` le pide a la IA que
+  identifique el lugar real, busque en internet los datos que faltan, y
+  lo inserte con `fuente="ia_generada"` — desde ahí funciona igual que
+  cualquiera de los 369 curados (autocompletado, sugerencias, rutas). Ver
+  "Conectar tu propia IA" más abajo.
 
 Los lugares donde falta una integración real están marcados con
 `# TODO: reemplazar ...` en el código.
@@ -60,6 +67,34 @@ de estados y destinos. Para correr el proyecto localmente:
    ```bash
    python scripts/seed_destinos.py
    ```
+
+## Conectar tu propia IA (destinos nuevos)
+
+Esto es opcional — sin ninguna key configurada, la app sigue funcionando
+igual que hoy (cae a Nominatim directo para lugares que no estén en la
+base, solo que no se guardan). Si quieres que los lugares nuevos se
+agreguen para siempre a la base de datos, conecta **una** de estas en tu
+`.env` local (nunca se sube a git — cada quien usa la suya, no importa
+cuál):
+
+```bash
+# Elige una:
+ANTHROPIC_API_KEY=...   # console.anthropic.com → API Keys
+OPENAI_API_KEY=...      # platform.openai.com → API Keys
+GEMINI_API_KEY=...      # aistudio.google.com/apikey
+```
+
+Se detecta sola (en ese orden de prioridad) — no hace falta tocar código.
+Si tienes varias configuradas y quieres forzar una en específico:
+
+```bash
+IA_PROVEEDOR=anthropic   # o: openai / gemini
+IA_MODELO=claude-opus-5  # opcional, si no lo pones usa el default de cada proveedor
+```
+
+Detalle de cómo funciona: `app/services/llm_provider.py` (conexión con el
+proveedor) y `app/services/ia_destinos_service.py` (qué hace con la
+respuesta).
 
 ## Cómo correrlo
 
@@ -91,9 +126,11 @@ RutaMX/
 │   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas)
 │   ├── models.py          # Modelos: Estado, Destino, RutaGuardada (Supabase)
 │   ├── services/
-│   │   ├── ai_service.py      # Sugerencias de paradas (filtro por corredor real)
-│   │   ├── route_service.py   # Ruta real (OSRM), distancia/tiempo, corredor
-│   │   └── maps_service.py    # Geocodificación (Nominatim) y catálogo demo
+│   │   ├── ai_service.py           # Sugerencias de paradas (filtro por corredor real)
+│   │   ├── route_service.py        # Ruta real (OSRM), distancia/tiempo, corredor
+│   │   ├── maps_service.py         # Geocodificación (Nominatim) y catálogo demo
+│   │   ├── ia_destinos_service.py  # Genera destinos nuevos con IA e inserta en la tabla
+│   │   └── llm_provider.py         # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
 │   ├── static/               # CSS, JS, imágenes
 │   └── templates/            # HTML (base + partials por sección)
 ├── scripts/
@@ -114,11 +151,6 @@ RutaMX/
 
 ## Próximos pasos
 
-- **Fallback de IA**: si el destino que busca el usuario no está en la
-  tabla `destinos` (ej. un pueblo pequeño), generarlo con IA cumpliendo la
-  misma plantilla —nombre, tipo, coordenadas exactas (vía
-  `maps_service.geocodificar`), descripción, intereses— e insertarlo en
-  `destinos` con `fuente="ia_generada"`.
 - Desplegar la app en un hosting público (Render/Railway) para poder
   compartirla con un link.
 - Seguir ampliando el catálogo curado de ciudades/pueblos mágicos por estado
