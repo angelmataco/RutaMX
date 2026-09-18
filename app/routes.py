@@ -3,7 +3,7 @@ import re
 
 from flask import Blueprint, jsonify, render_template, request, send_file
 
-from app.models import RutaGuardada, guardar_ruta, listar_rutas
+from app.models import Destino, RutaGuardada, guardar_ruta, listar_rutas
 from app.services import ai_service, pdf_service, route_service
 
 main_bp = Blueprint("main", __name__)
@@ -63,6 +63,12 @@ def api_sugerencias():
         lista_intereses, limite=limite, ruta=ruta, horas_max=horas_max, excluir_ids=ids_excluidos
     )
     return jsonify({"sugerencias": sugerencias})
+
+
+@main_bp.route("/api/destinos/nombres")
+def api_destinos_nombres():
+    nombres = sorted({d.nombre for d in Destino.query.all()})
+    return jsonify({"nombres": nombres})
 
 
 @main_bp.route("/api/rutas", methods=["GET"])

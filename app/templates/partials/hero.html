@@ -26,13 +26,14 @@
         <div class="ruta-form__row">
           <div class="field">
             <label for="hero-origen">Origen</label>
-            <input type="text" id="hero-origen" name="origen" value="Ciudad de México" required />
+            <input type="text" id="hero-origen" name="origen" value="Ciudad de México" list="destinos-datalist" autocomplete="off" required />
           </div>
           <div class="field">
             <label for="hero-destino">Destino</label>
-            <input type="text" id="hero-destino" name="destino" value="Oaxaca de Juárez" required />
+            <input type="text" id="hero-destino" name="destino" value="Oaxaca de Juárez" list="destinos-datalist" autocomplete="off" required />
           </div>
         </div>
+        <datalist id="destinos-datalist"></datalist>
 
         <div class="field">
           <label for="hero-nombre">Nombre de la ruta</label>

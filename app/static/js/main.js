@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function ampliarPool() {
     if (!estado.sugerenciasValores) return;
-    const nuevoLote = await pedirSugerencias(estado.sugerenciasValores, 8, Array.from(estado.sugerenciasVistosIds));
+    const nuevoLote = await pedirSugerencias(estado.sugerenciasValores, 16, Array.from(estado.sugerenciasVistosIds));
     estado.sugerenciasPool.push(...nuevoLote);
   }
 
@@ -408,6 +408,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  async function cargarDatalistDestinos() {
+    const datalist = document.getElementById("destinos-datalist");
+    if (!datalist) return;
+
+    try {
+      const respuesta = await fetch("/api/destinos/nombres");
+      const datos = await respuesta.json();
+      (datos.nombres || []).forEach((nombre) => {
+        const opcion = document.createElement("option");
+        opcion.value = nombre;
+        datalist.appendChild(opcion);
+      });
+    } catch (err) {
+      console.error("Error cargando el autocompletado de destinos:", err);
+    }
+  }
+
   RutaFormularios.init((valores) => calcularRuta(valores));
 
   if (elementos.guardarRutaBtn) {
@@ -423,4 +440,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   cargarRutasGuardadas();
+  cargarDatalistDestinos();
 });

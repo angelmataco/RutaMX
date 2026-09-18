@@ -63,6 +63,13 @@ def test_sugerencias_excluir_no_repite(client):
     assert not ids_segunda & {l["id"] for l in primera}
 
 
+def test_destinos_nombres_ok(client):
+    respuesta = client.get("/api/destinos/nombres")
+    assert respuesta.status_code == 200
+    datos = respuesta.get_json()
+    assert len(datos["nombres"]) > 0
+
+
 def test_guardar_y_listar_rutas(client):
     respuesta = client.post(
         "/api/rutas",

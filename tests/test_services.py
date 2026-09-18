@@ -14,8 +14,19 @@ def app_context():
 
 def test_obtener_coordenadas_ciudad_conocida():
     lat, lon = maps_service.obtener_coordenadas("Ciudad de Mexico")
-    assert lat == 19.4326
-    assert lon == -99.1332
+    assert lat == pytest.approx(19.4326, abs=0.05)
+    assert lon == pytest.approx(-99.1332, abs=0.05)
+
+
+def test_obtener_coordenadas_destino_real_sin_estar_en_catalogo_demo(app_context):
+    # León y Los Cabos no están en el catálogo demo de 18 ciudades, pero
+    # sí en la tabla `destinos` o vía Nominatim: no deben caer ambos en
+    # la misma coordenada de respaldo (el bug original reportado).
+    coords_leon = maps_service.obtener_coordenadas("Leon")
+    coords_cabos = maps_service.obtener_coordenadas("Los Cabos")
+    assert coords_leon != coords_cabos
+    assert coords_leon != maps_service.COORDENADA_RESPALDO
+    assert coords_cabos != maps_service.COORDENADA_RESPALDO
 
 
 def test_obtener_coordenadas_ciudad_desconocida_usa_respaldo():

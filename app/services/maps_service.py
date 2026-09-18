@@ -13,6 +13,8 @@ import unicodedata
 
 import requests
 
+from app.models import Destino
+
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 # Nominatim exige un User-Agent identificable (política de uso justo).
 USER_AGENT = "RutaMX-App/1.0 (proyecto escolar DASV; contacto: equipo RutaMX)"
@@ -53,13 +55,48 @@ def _normalizar(texto: str) -> str:
     return texto
 
 
-def obtener_coordenadas(nombre_ciudad: str):
-    """Devuelve (lat, lon) para una ciudad del catálogo demo.
+def _buscar_en_destinos(clave: str):
+    """Busca un destino de la base (369 lugares curados) por nombre
+    normalizado, exacto o parcial. Devuelve (lat, lon) o None.
+    """
+    if not clave:
+        return None
 
-    Si la ciudad no está en el catálogo, se usa una coordenada de
-    respaldo para que el flujo no se rompa.
+    for destino in Destino.query.all():
+        if _normalizar(destino.nombre) == clave:
+            return destino.lat, destino.lon
+
+    for destino in Destino.query.all():
+        nombre_normalizado = _normalizar(destino.nombre)
+        if clave in nombre_normalizado or nombre_normalizado in clave:
+            return destino.lat, destino.lon
+
+    return None
+
+
+def obtener_coordenadas(nombre_ciudad: str):
+    """Devuelve (lat, lon) para un lugar, resolviendo en este orden:
+
+    1. La tabla `destinos` (369 lugares curados, ya geocodificados).
+    2. Nominatim (`geocodificar`), para cualquier lugar real de México
+       que no esté en la base.
+    3. El catálogo demo (`CIUDADES_DEMO`), como respaldo rápido.
+    4. `COORDENADA_RESPALDO`, si todo lo anterior falla.
     """
     clave = _normalizar(nombre_ciudad or "")
+
+    try:
+        encontrado = _buscar_en_destinos(clave)
+        if encontrado:
+            return encontrado
+    except Exception as error:
+        print(f"No se pudo consultar la tabla de destinos para geocodificar: {error}")
+
+    resultado_geocodificado = geocodificar(nombre_ciudad)
+    if resultado_geocodificado:
+        lat, lon, _ = resultado_geocodificado
+        return lat, lon
+
     if clave in CIUDADES_DEMO:
         return CIUDADES_DEMO[clave]
 

@@ -26,23 +26,35 @@
         <p class="empty-state" data-itinerario-vacio>Agrega paradas desde "Descubre en el camino" para armar tu itinerario.</p>
       </div>
 
-      <div class="card card--aventura">
-        <span class="badge badge--light">LISTA PARA SALIR</span>
-        <h3 class="card__title card__title--light">Resumen de aventura</h3>
-        <div class="stat-grid stat-grid--dark">
-          <div class="stat-tile stat-tile--dark">
-            <p class="stat-tile__label">Paradas</p>
-            <p class="stat-tile__value" data-aventura-paradas>0</p>
+      <div class="summary-column">
+        <div class="card card--aventura">
+          <span class="badge badge--light">LISTA PARA SALIR</span>
+          <h3 class="card__title card__title--light">Resumen de aventura</h3>
+          <div class="stat-grid stat-grid--dark">
+            <div class="stat-tile stat-tile--dark">
+              <p class="stat-tile__label">Paradas</p>
+              <p class="stat-tile__value" data-aventura-paradas>0</p>
+            </div>
+            <div class="stat-tile stat-tile--dark">
+              <p class="stat-tile__label">Distancia</p>
+              <p class="stat-tile__value" data-aventura-distancia>—</p>
+            </div>
           </div>
-          <div class="stat-tile stat-tile--dark">
-            <p class="stat-tile__label">Distancia</p>
-            <p class="stat-tile__value" data-aventura-distancia>—</p>
-          </div>
+          <p class="card__note card__note--light" data-aventura-texto>
+            Calcula una ruta y agrega paradas para ver el resumen de tu aventura.
+          </p>
+          <button type="button" class="btn btn--primary btn--block" data-guardar-itinerario>Guardar itinerario</button>
         </div>
-        <p class="card__note card__note--light" data-aventura-texto>
-          Calcula una ruta y agrega paradas para ver el resumen de tu aventura.
-        </p>
-        <button type="button" class="btn btn--primary btn--block" data-guardar-itinerario>Guardar itinerario</button>
+
+        <div class="card card--save">
+          <h3 class="card__title">Guarda tu plan</h3>
+          <p class="card__subtitle">Conserva tus preferencias y recupera esta ruta para seguir ajustándola después.</p>
+          <button type="button" class="btn btn--primary btn--block" data-guardar-ruta>Guardar ruta actual</button>
+          <label for="rutas-guardadas" class="field__label field__label--spaced">Rutas guardadas</label>
+          <select id="rutas-guardadas" data-rutas-guardadas>
+            <option value="">Elige una ruta guardada</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>

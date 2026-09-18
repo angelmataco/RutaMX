@@ -42,6 +42,12 @@ RADIOS_CORREDOR_KM = [20, 60, 150]
 # caso "sugerirlo" como parada en el camino.
 RADIO_EXCLUSION_EXTREMOS_KM = 5
 
+# Un destino a menos de esto (en horas de manejo real) del origen está
+# prácticamente dentro de la ciudad de la que sales: no tiene caso
+# "sugerirlo" como parada en el camino. Cerca del destino sí se permite
+# sugerir (cuando ya llegaste, también quieres recomendaciones).
+HORAS_MINIMAS_DESDE_ORIGEN = 1.0
+
 # Qué tan cerca (en horas) del punto objetivo de descanso debe caer un
 # destino para marcarlo como "buena parada para descansar".
 TOLERANCIA_DESCANSO_HORAS = 1.0
@@ -144,14 +150,19 @@ def _candidatos_en_el_corredor(ruta, limite, excluir_ids):
     for destino in _consulta_destinos(excluir_ids):
         punto_destino_candidato = (destino.lat, destino.lon)
 
-        if (
-            route_service.distancia_km(punto_destino_candidato, punto_origen) < RADIO_EXCLUSION_EXTREMOS_KM
-            or route_service.distancia_km(punto_destino_candidato, punto_destino) < RADIO_EXCLUSION_EXTREMOS_KM
-        ):
+        # El punto exacto del destino no tiene caso "sugerirlo" (ya es a
+        # donde vas), pero sí se permiten lugares cerca de él.
+        if route_service.distancia_km(punto_destino_candidato, punto_destino) < RADIO_EXCLUSION_EXTREMOS_KM:
             continue
 
         distancia_perp, avance_km = route_service.distancia_a_corredor(corredor, punto_destino_candidato)
         horas_estimadas = (avance_km / distancia_total) * tiempo_total if distancia_total else 0
+
+        # Descarta lo que está a menos de 1h de manejo real del origen
+        # (básicamente dentro de la ciudad de la que sales).
+        if horas_estimadas < HORAS_MINIMAS_DESDE_ORIGEN:
+            continue
+
         calculados.append((destino, horas_estimadas, distancia_perp))
 
     for radio in RADIOS_CORREDOR_KM:

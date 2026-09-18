@@ -367,8 +367,14 @@ a {
   gap: 20px;
 }
 
+.card--map {
+  display: flex;
+  flex-direction: column;
+}
+
 .mapa {
-  height: 340px;
+  flex: 1;
+  min-height: 340px;
   border-radius: var(--radius-md);
   margin-top: 16px;
   overflow: hidden;
@@ -531,6 +537,10 @@ a {
   background: #f4e3dc;
 }
 
+.itinerary-item--origen {
+  background: #faf1de;
+}
+
 .itinerary-item__badge {
   font-size: 0.65rem;
   font-weight: 700;
@@ -587,8 +597,16 @@ a {
   color: var(--color-blanco);
 }
 
+.card--aventura .badge--light {
+  margin-bottom: 10px;
+}
+
 .card--aventura .stat-grid {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.card--aventura .card__note--light {
+  margin-bottom: 18px;
 }
 
 /* Responsive */
