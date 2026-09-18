@@ -24,16 +24,17 @@
 
       <form id="hero-form" class="ruta-form" data-role="hero">
         <div class="ruta-form__row">
-          <div class="field">
+          <div class="field field--autocomplete">
             <label for="hero-origen">Origen</label>
-            <input type="text" id="hero-origen" name="origen" value="Ciudad de México" list="destinos-datalist" autocomplete="off" required />
+            <input type="text" id="hero-origen" name="origen" value="Ciudad de México" autocomplete="off" data-autocomplete-destino required />
+            <ul class="autocomplete-list" data-autocomplete-lista hidden></ul>
           </div>
-          <div class="field">
+          <div class="field field--autocomplete">
             <label for="hero-destino">Destino</label>
-            <input type="text" id="hero-destino" name="destino" value="Oaxaca de Juárez" list="destinos-datalist" autocomplete="off" required />
+            <input type="text" id="hero-destino" name="destino" value="Oaxaca de Juárez" autocomplete="off" data-autocomplete-destino required />
+            <ul class="autocomplete-list" data-autocomplete-lista hidden></ul>
           </div>
         </div>
-        <datalist id="destinos-datalist"></datalist>
 
         <div class="field">
           <label for="hero-nombre">Nombre de la ruta</label>

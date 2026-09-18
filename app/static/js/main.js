@@ -428,18 +428,104 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function cargarDatalistDestinos() {
-    const datalist = document.getElementById("destinos-datalist");
-    if (!datalist) return;
+  function normalizarAcentos(texto) {
+    return normalizarClave(texto)
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "");
+  }
 
+  function initAutocompletado(nombres) {
+    const MAX_SUGERENCIAS = 8;
+
+    document.querySelectorAll("[data-autocomplete-destino]").forEach((input) => {
+      const lista = input.parentElement.querySelector("[data-autocomplete-lista]");
+      if (!lista) return;
+
+      let coincidencias = [];
+      let indiceActivo = -1;
+
+      function cerrar() {
+        lista.hidden = true;
+        lista.innerHTML = "";
+        coincidencias = [];
+        indiceActivo = -1;
+      }
+
+      function marcarActivo() {
+        Array.from(lista.children).forEach((li, i) => li.classList.toggle("is-activa", i === indiceActivo));
+      }
+
+      function elegir(nombre) {
+        input.value = nombre;
+        cerrar();
+      }
+
+      function actualizar() {
+        const clave = normalizarAcentos(input.value);
+        if (!clave) {
+          cerrar();
+          return;
+        }
+
+        coincidencias = nombres.filter((nombre) => normalizarAcentos(nombre).includes(clave)).slice(0, MAX_SUGERENCIAS);
+
+        if (!coincidencias.length) {
+          cerrar();
+          return;
+        }
+
+        indiceActivo = 0;
+        lista.innerHTML = "";
+        coincidencias.forEach((nombre) => {
+          const item = document.createElement("li");
+          item.className = "autocomplete-item";
+          item.textContent = nombre;
+          item.addEventListener("mousedown", (evento) => {
+            evento.preventDefault(); // evita el blur antes del click
+            elegir(nombre);
+          });
+          lista.appendChild(item);
+        });
+        marcarActivo();
+        lista.hidden = false;
+      }
+
+      input.addEventListener("input", actualizar);
+
+      input.addEventListener("keydown", (evento) => {
+        if (lista.hidden || !coincidencias.length) return;
+
+        if (evento.key === "ArrowDown") {
+          evento.preventDefault();
+          indiceActivo = (indiceActivo + 1) % coincidencias.length;
+          marcarActivo();
+        } else if (evento.key === "ArrowUp") {
+          evento.preventDefault();
+          indiceActivo = (indiceActivo - 1 + coincidencias.length) % coincidencias.length;
+          marcarActivo();
+        } else if (evento.key === "Enter") {
+          // Completa con la sugerencia resaltada en vez de enviar el
+          // formulario de inmediato.
+          evento.preventDefault();
+          elegir(coincidencias[indiceActivo]);
+        } else if (evento.key === "Tab") {
+          // Completa con la sugerencia resaltada y deja que el Tab
+          // continúe moviendo el foco al siguiente campo con normalidad.
+          elegir(coincidencias[indiceActivo]);
+        } else if (evento.key === "Escape") {
+          cerrar();
+        }
+      });
+
+      input.addEventListener("blur", cerrar);
+    });
+  }
+
+  async function cargarDatalistDestinos() {
     try {
       const respuesta = await fetch("/api/destinos/nombres");
       const datos = await respuesta.json();
-      (datos.nombres || []).forEach((nombre) => {
-        const opcion = document.createElement("option");
-        opcion.value = nombre;
-        datalist.appendChild(opcion);
-      });
+      initAutocompletado(datos.nombres || []);
     } catch (err) {
       console.error("Error cargando el autocompletado de destinos:", err);
     }
