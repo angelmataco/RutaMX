@@ -4,10 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const estado = {
     resumen: null,
     itinerario: [], // lista de { id, nombre }
+    ultimoOrigenDestino: null, // { origen, destino } del último viaje calculado
     sugerenciasPool: [], // lugares ya traídos del servidor, listos para mostrarse
     sugerenciasVistosIds: new Set(), // para no repetir con "excluir" al pedir más
     sugerenciasValores: null, // últimos valores del formulario, para "ver más"
   };
+
+  function normalizarClave(texto) {
+    return (texto || "").trim().toLowerCase();
+  }
 
   const MOSTRAR_SUGERENCIAS = 4;
 
@@ -95,8 +100,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const resumen = await respuesta.json();
+
+      const esMismoViaje =
+        estado.ultimoOrigenDestino &&
+        normalizarClave(estado.ultimoOrigenDestino.origen) === normalizarClave(valores.origen) &&
+        normalizarClave(estado.ultimoOrigenDestino.destino) === normalizarClave(valores.destino);
+
       estado.resumen = resumen;
-      estado.itinerario = [];
+      // Solo se reinicia el itinerario si es un viaje nuevo (origen o
+      // destino distintos). Si solo cambiaron los filtros de intereses,
+      // las paradas ya elegidas se conservan.
+      if (!esMismoViaje) {
+        estado.itinerario = [];
+      }
+      estado.ultimoOrigenDestino = { origen: valores.origen, destino: valores.destino };
 
       elementos.resultados.hidden = false;
       if (elementos.mapa) RutaMapa.invalidarTamano();
@@ -158,13 +175,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function cargarSugerencias(valores) {
     estado.sugerenciasValores = valores;
-    estado.sugerenciasVistosIds = new Set();
+    // Las paradas que ya están en el itinerario no deben ofrecerse de
+    // nuevo como sugerencia (evita agregarlas dos veces al refrescar
+    // filtros sobre el mismo viaje).
+    estado.sugerenciasVistosIds = new Set(estado.itinerario.map((parada) => parada.id));
     elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">Buscando ideas para tu recorrido…</p>';
     elementos.verMasBtn.hidden = true;
 
     // Se pide un lote grande una sola vez; la grilla solo muestra 4 a la
     // vez y va tomando del resto, así siempre hay con qué reponer.
-    estado.sugerenciasPool = await pedirSugerencias(valores, 16, []);
+    estado.sugerenciasPool = await pedirSugerencias(valores, 16, Array.from(estado.sugerenciasVistosIds));
     mostrarSugerencias(tomarDelPool(MOSTRAR_SUGERENCIAS));
   }
 
