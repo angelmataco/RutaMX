@@ -1,10 +1,10 @@
 import io
 import re
 
-from flask import Blueprint, jsonify, render_template, request, send_file
+from flask import Blueprint, jsonify, render_template, request, send_file, session
 
-from app.models import Destino, RutaGuardada, guardar_ruta, listar_rutas
-from app.services import ai_service, pdf_service, route_service
+from app.models import Destino, RutaGuardada, Usuario, guardar_ruta, listar_rutas
+from app.services import ai_service, auth_service, pdf_service, route_service
 
 main_bp = Blueprint("main", __name__)
 
@@ -71,13 +71,66 @@ def api_destinos_nombres():
     return jsonify({"nombres": nombres})
 
 
+@main_bp.route("/api/auth/registro", methods=["POST"])
+def api_auth_registro():
+    datos = request.get_json(silent=True) or {}
+    try:
+        usuario = auth_service.registrar_usuario(
+            datos.get("nombre"), datos.get("apellido"), datos.get("pin")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    session["usuario_id"] = usuario.id
+    return jsonify({"usuario": usuario.to_dict()}), 201
+
+
+@main_bp.route("/api/auth/login", methods=["POST"])
+def api_auth_login():
+    datos = request.get_json(silent=True) or {}
+    usuario = auth_service.verificar_login(
+        datos.get("nombre"), datos.get("apellido"), datos.get("pin")
+    )
+    if not usuario:
+        return jsonify({"error": "Nombre, apellido o PIN incorrectos."}), 401
+
+    session["usuario_id"] = usuario.id
+    return jsonify({"usuario": usuario.to_dict()})
+
+
+@main_bp.route("/api/auth/logout", methods=["POST"])
+def api_auth_logout():
+    session.pop("usuario_id", None)
+    return jsonify({"ok": True})
+
+
+@main_bp.route("/api/auth/yo")
+def api_auth_yo():
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"usuario": None})
+
+    usuario = Usuario.query.get(usuario_id)
+    if not usuario:
+        session.pop("usuario_id", None)
+        return jsonify({"usuario": None})
+    return jsonify({"usuario": usuario.to_dict()})
+
+
 @main_bp.route("/api/rutas", methods=["GET"])
 def api_listar_rutas():
-    return jsonify({"rutas": listar_rutas()})
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"error": "Inicia sesión para ver tus rutas guardadas."}), 401
+    return jsonify({"rutas": listar_rutas(usuario_id)})
 
 
 @main_bp.route("/api/rutas", methods=["POST"])
 def api_guardar_ruta():
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return jsonify({"error": "Inicia sesión para guardar tu ruta."}), 401
+
     datos = request.get_json(silent=True) or {}
 
     nombre = (datos.get("nombre") or "Ruta sin nombre").strip()
@@ -104,6 +157,7 @@ def api_guardar_ruta():
         intereses=intereses,
         resumen=resumen,
         paradas=paradas,
+        usuario_id=usuario_id,
     )
     guardar_ruta(ruta)
 

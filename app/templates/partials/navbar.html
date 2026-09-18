@@ -9,5 +9,66 @@
       <a href="#descubre">Descubre</a>
       <a href="#itinerario">Itinerario</a>
     </nav>
+    <div class="navbar__auth" data-auth-widget>
+      <button type="button" class="btn btn--ghost" data-abrir-login>Iniciar sesión</button>
+      <div class="navbar__usuario" data-usuario-info hidden>
+        <span data-usuario-nombre></span>
+        <button type="button" class="btn btn--ghost" data-cerrar-sesion>Cerrar sesión</button>
+      </div>
+    </div>
   </div>
 </header>
+
+<dialog class="modal-auth" data-modal-auth>
+  <form method="dialog" class="modal-auth__cerrar">
+    <button type="submit" class="icon-btn" aria-label="Cerrar">✕</button>
+  </form>
+
+  <div data-vista-login>
+    <h3 class="card__title">Iniciar sesión</h3>
+    <form class="ruta-form" data-form-login>
+      <div class="field">
+        <label for="login-nombre">Nombre</label>
+        <input type="text" id="login-nombre" name="nombre" required />
+      </div>
+      <div class="field">
+        <label for="login-apellido">Apellido</label>
+        <input type="text" id="login-apellido" name="apellido" required />
+      </div>
+      <div class="field">
+        <label for="login-pin">PIN (4 dígitos)</label>
+        <input type="password" id="login-pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required />
+      </div>
+      <p class="empty-state" data-error-login hidden></p>
+      <button type="submit" class="btn btn--primary btn--block">Entrar</button>
+    </form>
+    <p class="card__note">
+      ¿No tienes cuenta?
+      <a href="#" data-ir-a-registro>Regístrate</a>
+    </p>
+  </div>
+
+  <div data-vista-registro hidden>
+    <h3 class="card__title">Crear cuenta</h3>
+    <form class="ruta-form" data-form-registro>
+      <div class="field">
+        <label for="registro-nombre">Nombre</label>
+        <input type="text" id="registro-nombre" name="nombre" required />
+      </div>
+      <div class="field">
+        <label for="registro-apellido">Apellido</label>
+        <input type="text" id="registro-apellido" name="apellido" required />
+      </div>
+      <div class="field">
+        <label for="registro-pin">PIN (4 dígitos)</label>
+        <input type="password" id="registro-pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required />
+      </div>
+      <p class="empty-state" data-error-registro hidden></p>
+      <button type="submit" class="btn btn--primary btn--block">Crear cuenta</button>
+    </form>
+    <p class="card__note">
+      ¿Ya tienes cuenta?
+      <a href="#" data-ir-a-login>Inicia sesión</a>
+    </p>
+  </div>
+</dialog>

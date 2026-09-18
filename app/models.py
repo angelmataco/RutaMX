@@ -1,11 +1,10 @@
 """Modelos de datos de RutaMX.
 
-Estado, Destino y RutaGuardada viven en Postgres (Supabase) vía
+Estado, Destino, Usuario y RutaGuardada viven en Postgres (Supabase) vía
 SQLAlchemy. Estado/Destino son el catálogo/"plantilla" que alimenta las
-sugerencias; RutaGuardada guarda las rutas que arma cada usuario.
-
-# TODO: agregar una columna usuario_id a RutaGuardada cuando se decida
-# implementar login, para que cada quien vea solo sus propias rutas.
+sugerencias; Usuario es la cuenta (nombre + apellido + PIN, sin correo —
+decisión explícita para este proyecto escolar); RutaGuardada guarda las
+rutas que arma cada usuario, ligadas a su cuenta.
 """
 
 from flask_sqlalchemy import SQLAlchemy
@@ -61,6 +60,27 @@ class Destino(db.Model):
         }
 
 
+class Usuario(db.Model):
+    """Cuenta de usuario: nombre + apellido + PIN de 4 dígitos, sin
+    correo — suficiente para un proyecto escolar. Si más adelante se
+    lanza la app al público, ahí sí valdría la pena agregar correo.
+    """
+
+    __tablename__ = "usuarios"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.Text, nullable=False)
+    apellido = db.Column(db.Text, nullable=False)
+    # nombre+apellido normalizado (sin acentos/mayúsculas), para detectar
+    # duplicados sin importar cómo los haya escrito cada quien.
+    clave_normalizada = db.Column(db.Text, nullable=False, unique=True)
+    pin_hash = db.Column(db.Text, nullable=False)
+    creado_en = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+
+    def to_dict(self):
+        return {"id": self.id, "nombre": self.nombre, "apellido": self.apellido}
+
+
 class RutaGuardada(db.Model):
     """Una ruta de road trip armada y guardada por el usuario."""
 
@@ -74,6 +94,9 @@ class RutaGuardada(db.Model):
     intereses = db.Column(ARRAY(db.Text), nullable=False, default=list)
     resumen = db.Column(JSONB, nullable=False, default=dict)
     paradas = db.Column(JSONB, nullable=False, default=list)
+    # Nullable a propósito: no rompe filas guardadas antes de que
+    # existiera el login.
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     creado_en = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
     def to_dict(self):
@@ -95,6 +118,10 @@ def guardar_ruta(ruta: RutaGuardada) -> RutaGuardada:
     return ruta
 
 
-def listar_rutas():
-    rutas = RutaGuardada.query.order_by(RutaGuardada.creado_en.desc()).all()
+def listar_rutas(usuario_id: int):
+    rutas = (
+        RutaGuardada.query.filter_by(usuario_id=usuario_id)
+        .order_by(RutaGuardada.creado_en.desc())
+        .all()
+    )
     return [ruta.to_dict() for ruta in rutas]

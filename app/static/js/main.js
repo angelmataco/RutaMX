@@ -336,7 +336,12 @@ document.addEventListener("DOMContentLoaded", () => {
   async function guardarRuta() {
     if (!estado.resumen) {
       alert("Primero calcula una ruta antes de guardarla.");
-      return;
+      return false;
+    }
+
+    if (typeof RutaAuth !== "undefined" && !RutaAuth.obtenerUsuarioActual()) {
+      RutaAuth.abrirModalLogin();
+      return false;
     }
 
     const valores = RutaFormularios.obtenerValores();
@@ -356,13 +361,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }),
       });
 
+      if (respuesta.status === 401) {
+        RutaAuth.abrirModalLogin();
+        return false;
+      }
       if (!respuesta.ok) throw new Error("No se pudo guardar la ruta");
 
       await cargarRutasGuardadas();
       alert("Ruta guardada.");
+      return true;
     } catch (err) {
       console.error(err);
       alert("Ocurrió un error al guardar la ruta.");
+      return false;
     }
   }
 
@@ -371,7 +382,8 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Primero calcula una ruta antes de guardar el itinerario.");
       return;
     }
-    await guardarRuta();
+    const guardado = await guardarRuta();
+    if (!guardado) return;
     await descargarPdfItinerario();
   }
 
@@ -410,9 +422,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function cargarRutasGuardadas() {
     if (!elementos.rutasGuardadasSelect) return;
+    if (typeof RutaAuth !== "undefined" && !RutaAuth.obtenerUsuarioActual()) {
+      elementos.rutasGuardadasSelect.innerHTML = '<option value="">Elige una ruta guardada</option>';
+      return;
+    }
 
     try {
       const respuesta = await fetch("/api/rutas");
+      if (respuesta.status === 401) return;
       const datos = await respuesta.json();
       const rutas = datos.rutas || [];
 
@@ -545,6 +562,11 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.verMasBtn.addEventListener("click", verMasSugerencias);
   }
 
-  cargarRutasGuardadas();
+  if (typeof RutaAuth !== "undefined") {
+    RutaAuth.listo().then(cargarRutasGuardadas);
+    RutaAuth.alIniciarSesion(cargarRutasGuardadas);
+  } else {
+    cargarRutasGuardadas();
+  }
   cargarDatalistDestinos();
 });

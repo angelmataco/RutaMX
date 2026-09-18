@@ -1,7 +1,10 @@
 import pytest
 
 from app import create_app
-from app.models import RutaGuardada, db
+from app.models import RutaGuardada, Usuario, db
+
+NOMBRE_USUARIO_PRUEBA = "Prueba"
+APELLIDO_USUARIO_PRUEBA = "Bitacora"
 
 
 @pytest.fixture
@@ -10,11 +13,19 @@ def client():
     app.config.update(TESTING=True)
     with app.test_client() as client:
         yield client
-    # RutaGuardada vive en la base real (Supabase): se limpia lo que haya
-    # creado el test para no dejar basura de prueba en la tabla.
+    # RutaGuardada y Usuario viven en la base real (Supabase): se limpia
+    # lo que haya creado el test para no dejar basura de prueba.
     with app.app_context():
         RutaGuardada.query.filter(RutaGuardada.nombre == "Escapada de prueba").delete()
+        Usuario.query.filter(Usuario.nombre == NOMBRE_USUARIO_PRUEBA).delete()
         db.session.commit()
+
+
+def _registrar_y_loguear(client, apellido=APELLIDO_USUARIO_PRUEBA, pin="1234"):
+    return client.post(
+        "/api/auth/registro",
+        json={"nombre": NOMBRE_USUARIO_PRUEBA, "apellido": apellido, "pin": pin},
+    )
 
 
 def test_index_ok(client):
@@ -70,7 +81,17 @@ def test_destinos_nombres_ok(client):
     assert len(datos["nombres"]) > 0
 
 
+def test_guardar_ruta_sin_sesion_devuelve_401(client):
+    respuesta = client.post(
+        "/api/rutas",
+        json={"nombre": "Escapada de prueba", "origen": "Ciudad de Mexico", "destino": "Oaxaca de Juarez"},
+    )
+    assert respuesta.status_code == 401
+
+
 def test_guardar_y_listar_rutas(client):
+    _registrar_y_loguear(client)
+
     respuesta = client.post(
         "/api/rutas",
         json={
@@ -88,6 +109,55 @@ def test_guardar_y_listar_rutas(client):
     respuesta_lista = client.get("/api/rutas")
     datos = respuesta_lista.get_json()
     assert any(r["nombre"] == "Escapada de prueba" for r in datos["rutas"])
+
+
+def test_registro_y_login(client):
+    respuesta_registro = _registrar_y_loguear(client)
+    assert respuesta_registro.status_code == 201
+    assert respuesta_registro.get_json()["usuario"]["nombre"] == NOMBRE_USUARIO_PRUEBA
+
+    client.post("/api/auth/logout")
+    respuesta_yo = client.get("/api/auth/yo")
+    assert respuesta_yo.get_json()["usuario"] is None
+
+    respuesta_login = client.post(
+        "/api/auth/login",
+        json={"nombre": NOMBRE_USUARIO_PRUEBA, "apellido": APELLIDO_USUARIO_PRUEBA, "pin": "1234"},
+    )
+    assert respuesta_login.status_code == 200
+    assert respuesta_login.get_json()["usuario"]["nombre"] == NOMBRE_USUARIO_PRUEBA
+
+
+def test_login_pin_incorrecto(client):
+    _registrar_y_loguear(client)
+    client.post("/api/auth/logout")
+
+    respuesta = client.post(
+        "/api/auth/login",
+        json={"nombre": NOMBRE_USUARIO_PRUEBA, "apellido": APELLIDO_USUARIO_PRUEBA, "pin": "0000"},
+    )
+    assert respuesta.status_code == 401
+
+
+def test_registro_pin_invalido(client):
+    respuesta = client.post(
+        "/api/auth/registro",
+        json={"nombre": NOMBRE_USUARIO_PRUEBA, "apellido": APELLIDO_USUARIO_PRUEBA, "pin": "12"},
+    )
+    assert respuesta.status_code == 400
+
+
+def test_una_cuenta_no_ve_rutas_de_otra(client):
+    _registrar_y_loguear(client, apellido="Uno")
+    client.post(
+        "/api/rutas",
+        json={"nombre": "Escapada de prueba", "origen": "Ciudad de Mexico", "destino": "Oaxaca de Juarez"},
+    )
+    client.post("/api/auth/logout")
+
+    _registrar_y_loguear(client, apellido="Dos")
+    datos = client.get("/api/rutas").get_json()
+    assert not any(r["nombre"] == "Escapada de prueba" for r in datos["rutas"])
 
 
 def test_pdf_itinerario_ok(client):

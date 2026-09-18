@@ -4,14 +4,34 @@
 
 ## Pendiente marcado en el código (TODOs reales)
 
-- **Rutas guardadas sin usuario** (`app/models.py`): `RutaGuardada` no
-  tiene columna `usuario_id`. Falta implementar login para que cada quien
-  vea solo sus propias rutas. Hoy todas las rutas guardadas son públicas
-  entre quien use la app.
 - **Navegación en vivo** (`app/static/js/map.js`): comentario dejado para
   cuando se quiera agregar algo tipo Waze/Google Maps (seguimiento en
   tiempo real). No es prioridad para el proyecto escolar, pero quedó
   anotado.
+
+## ✅ Ya implementado: cuentas de usuario (nombre + apellido + PIN)
+
+Cada quien inicia sesión con nombre + apellido + PIN de 4 dígitos (sin
+correo — decisión explícita para este proyecto escolar, ver
+`03_DECISIONES_Y_NOTAS.md`). `app/services/auth_service.py` maneja
+registro/login; la sesión usa la cookie firmada que ya trae Flask (nada
+nuevo que instalar). Solo **guardar** una ruta requiere sesión — calcular
+rutas y pedir sugerencias sigue abierto sin cuenta.
+
+`RutaGuardada` ahora tiene `usuario_id` (migración en
+`scripts/agregar_usuario_id.py`, correrla una vez después de
+`db.create_all()`) y `/api/rutas` (GET y POST) filtra/exige sesión.
+
+**Lo que sigue pendiente de esto:**
+- No hay "recuperar PIN" (sin correo no hay a dónde mandarlo) — si
+  alguien lo olvida, se resetea a mano desde la base. Aceptado a
+  propósito para el alcance escolar.
+- Nombre + apellido debe ser único por cuenta — si dos personas reales
+  se llaman exactamente igual, la segunda no puede registrarse con ese
+  nombre. No es problema real para el grupo de prueba (Angel, Roberto).
+- El modal de login/registro usa el elemento `<dialog>` nativo de HTML —
+  funciona en todos los navegadores modernos, pero si alguien prueba en
+  un navegador muy viejo podría no abrir.
 
 ## ✅ Ya implementado: destinos nuevos con IA (multi-proveedor)
 

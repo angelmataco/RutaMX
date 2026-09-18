@@ -30,9 +30,14 @@ sugerencias → itinerario → guardar):
   indica cuántas horas máximo quiere manejar seguido, prioriza destinos
   cerca de ese punto del viaje como sugerencia de descanso. Si la base de
   datos no responde, cae a un catálogo fijo de respaldo (`LUGARES_DEMO`).
+- **Cuentas de usuario**: nombre + apellido + PIN de 4 dígitos, sin correo
+  (proyecto escolar — ver `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`).
+  `app/services/auth_service.py` maneja registro/login, sesión con la
+  cookie firmada de Flask. Solo hace falta iniciar sesión para *guardar*
+  una ruta — calcular rutas y ver sugerencias sigue abierto sin cuenta.
 - **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`app/models.py`,
-  modelo `RutaGuardada`) — ya no se pierden al reiniciar el servidor.
-  Pendiente: asociarlas a un usuario cuando se decida agregar login.
+  modelo `RutaGuardada`), ligadas a la cuenta que las guardó — ya no se
+  pierden al reiniciar el servidor, y cada quien solo ve las suyas.
 - **Destinos nuevos con IA**: si alguien escribe un origen/destino que no
   está en la tabla `destinos` (ej. un pueblo pequeño, con o sin errores de
   ortografía), `app/services/ia_destinos_service.py` le pide a la IA que
@@ -63,7 +68,12 @@ de estados y destinos. Para correr el proyecto localmente:
    ```bash
    python3 -c "from app import create_app; from app.models import db; app = create_app(); app.app_context().push(); db.create_all()"
    ```
-5. Carga los datos iniciales (es seguro correrlo varias veces, no duplica filas):
+5. Agrega la columna de usuario a las rutas guardadas (migración,
+   seguro correrla varias veces):
+   ```bash
+   python scripts/agregar_usuario_id.py
+   ```
+6. Carga los datos iniciales (es seguro correrlo varias veces, no duplica filas):
    ```bash
    python scripts/seed_destinos.py
    ```
@@ -123,17 +133,19 @@ conexión a internet para que pasen todas.
 RutaMX/
 ├── app/
 │   ├── __init__.py        # Application factory
-│   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas)
-│   ├── models.py          # Modelos: Estado, Destino, RutaGuardada (Supabase)
+│   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas, /api/auth/*)
+│   ├── models.py          # Modelos: Estado, Destino, Usuario, RutaGuardada (Supabase)
 │   ├── services/
 │   │   ├── ai_service.py           # Sugerencias de paradas (filtro por corredor real)
 │   │   ├── route_service.py        # Ruta real (OSRM), distancia/tiempo, corredor
 │   │   ├── maps_service.py         # Geocodificación (Nominatim) y catálogo demo
 │   │   ├── ia_destinos_service.py  # Genera destinos nuevos con IA e inserta en la tabla
-│   │   └── llm_provider.py         # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
+│   │   ├── llm_provider.py         # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
+│   │   └── auth_service.py         # Registro/login (nombre + apellido + PIN de 4 dígitos)
 │   ├── static/               # CSS, JS, imágenes
 │   └── templates/            # HTML (base + partials por sección)
 ├── scripts/
+│   ├── agregar_usuario_id.py  # Migración: agrega usuario_id a rutas_guardadas
 │   ├── seed_destinos.py       # Carga inicial de estados y destinos (lote 1)
 │   ├── seed_destinos_v2.py    # Lote 2: mínimo 8 ciudades/pueblos + 3 sitios turísticos por estado
 │   ├── verify_coordenadas.py  # Verifica/corrige coordenadas contra Nominatim

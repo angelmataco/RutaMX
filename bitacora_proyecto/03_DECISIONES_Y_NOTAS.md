@@ -48,6 +48,35 @@ filtros. Ahora solo se reinicia si el origen o destino cambiaron de
 verdad; si el usuario solo ajusta los filtros de interés sobre el mismo
 viaje, las paradas ya elegidas se conservan.
 
+## Cuentas de usuario: por qué nombre + apellido + PIN y no correo
+
+Angel decidió explícitamente que, por ser proyecto escolar, pedir correo
+es de más. Nombre + apellido + PIN de 4 dígitos es suficiente para que
+cada quien tenga sus propias rutas guardadas. Si en algún momento se
+quiere lanzar la app al público, ahí sí valdría la pena agregar correo
+(recuperación de contraseña, evitar duplicados de nombre, etc.) — pero
+esa decisión se toma cuando llegue ese momento, no antes.
+
+Consecuencias de esa decisión, aceptadas a propósito:
+- Sin correo no hay "olvidé mi contraseña" self-service.
+- Nombre + apellido debe ser único; dos personas con el mismo nombre
+  exacto no pueden registrarse ambas (normalizado sin acentos/mayúsculas
+  con la misma función `_normalizar()` que ya usa el proyecto para
+  comparar nombres de destinos).
+- El PIN sí se hashea (nunca texto plano) con `werkzeug.security`, que ya
+  viene con Flask — no se agregó ninguna dependencia nueva para esto.
+
+**Por qué solo "guardar" pide login y no todo el flujo:** calcular una
+ruta y ver sugerencias no tiene nada que proteger — cualquiera puede
+planear un viaje. Lo único que tiene dueño es lo que se guarda
+permanentemente. Pedir login para "todo" hubiera sido fricción
+innecesaria para solo probar la app.
+
+**Por qué `<dialog>` nativo y no una librería de modales:** es un
+elemento HTML estándar con `.showModal()`/`.close()` — cero JavaScript
+extra para el overlay, cero dependencia nueva. Coherente con el resto del
+proyecto (evitar librerías cuando la plataforma ya resuelve el problema).
+
 ## Destinos nuevos con IA: por qué es multi-proveedor y no solo Claude
 
 Angel usa Claude, pero Roberto le va a hacer cambios al proyecto con

@@ -21,6 +21,28 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   catálogo de 18 ciudades → respaldo.
 - Mapa agrandado (llena toda su tarjeta, sin espacio en blanco).
 
+## Cuentas de usuario (nombre + apellido + PIN, sin correo)
+
+- Registro e inicio de sesión con nombre + apellido + PIN de 4 dígitos —
+  sin correo, decisión explícita para este proyecto escolar (ver
+  `03_DECISIONES_Y_NOTAS.md`).
+- `app/services/auth_service.py` hashea el PIN (nunca se guarda en texto
+  plano) y detecta nombre+apellido duplicados sin importar acentos o
+  mayúsculas.
+- Sesión con la cookie firmada que ya trae Flask — no se instaló ninguna
+  librería nueva (nada de Flask-Login).
+- Endpoints: `POST /api/auth/registro`, `POST /api/auth/login`,
+  `POST /api/auth/logout`, `GET /api/auth/yo`.
+- Solo **guardar** una ruta (`POST /api/rutas`) requiere sesión iniciada;
+  calcular rutas y pedir sugerencias sigue abierto sin cuenta.
+  `GET /api/rutas` ahora filtra por dueño — cada quien ve solo sus
+  propias rutas guardadas.
+- Modal de login/registro en el navbar (elemento `<dialog>` nativo de
+  HTML, sin librerías extra) — si intentas guardar una ruta sin sesión,
+  se abre solo en vez de fallar con un error confuso.
+- Probado en vivo: registro → guardar ruta → cerrar sesión (ya no
+  aparece en el selector) → volver a iniciar sesión (reaparece).
+
 ## Destinos nuevos generados con IA (multi-proveedor)
 
 - Cuando alguien escribe un origen/destino que no está en los 369
@@ -93,17 +115,20 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Calidad / pruebas
 
-- 25 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
-  sugerencias, guardado de rutas, generación de PDF y generación de
-  destinos con IA (con el proveedor mockeado, sin gastar tokens reales).
+- 34 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+  sugerencias, guardado de rutas, generación de PDF, generación de
+  destinos con IA (con el proveedor mockeado, sin gastar tokens reales) y
+  cuentas de usuario (registro, login, aislamiento entre cuentas).
 - Grafo de conocimiento del proyecto generado con graphify
   (`graphify-out/`), se actualiza con `/graphify update`.
 
-## Commits recientes (los últimos 4, de la sesión más reciente)
+## Commits recientes (los últimos 5, de la sesión más reciente)
 
-1. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
+1. Cuentas de usuario (nombre + apellido + PIN de 4 dígitos, sin correo) —
+   ver sección de arriba.
+2. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
    cuando el lugar no está en la base — ver sección de arriba.
-2. Autocompletado propio con Tab/Enter y sin distinguir acentos.
-3. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
-4. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
+3. Autocompletado propio con Tab/Enter y sin distinguir acentos.
+4. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
+5. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
    de 16 + colores de origen/destino + reubicación de "Guarda tu plan".
