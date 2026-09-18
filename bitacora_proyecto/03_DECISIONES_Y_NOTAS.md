@@ -1,0 +1,72 @@
+# Decisiones y notas — RutaMX
+
+Última actualización: 2026-09-18
+
+El "por qué" detrás de decisiones que no son obvias con solo leer el
+código. Se va agregando conforme pasa.
+
+## Geocoding: por qué se cambió el orden de resolución
+
+**Problema:** al pedir una ruta de León a Los Cabos, el mapa quedaba en
+blanco. Causa: `obtener_coordenadas()` solo reconocía un catálogo fijo de
+18 ciudades (`CIUDADES_DEMO`, de los primeros días del MVP). Ni León ni
+Los Cabos estaban ahí, así que ambos caían en la misma coordenada de
+respaldo (centro de México) — la app pedía una "ruta" entre un punto y sí
+mismo.
+
+**Decisión:** en vez de ampliar el catálogo a mano, se conectó el cálculo
+de ruta a la tabla `destinos` (que ya tiene 369 lugares reales,
+geocodificados contra Nominatim) y, si el lugar no está ahí, se llama a
+Nominatim en vivo. El catálogo de 18 ciudades se dejó como último
+respaldo rápido, no se borró.
+
+## Sugerencias: por qué el origen y el destino se tratan distinto
+
+Antes se excluían destinos a menos de 5km en línea recta tanto del origen
+como del destino. Angel pidió explícitamente que cerca del **destino** sí
+se pudiera sugerir (tiene sentido: llegando a la ciudad, quieres
+recomendaciones), pero cerca del **origen** no (es básicamente dentro de
+la ciudad de la que sales). Se cambió a un criterio de tiempo real de
+manejo (menos de 1 hora desde el origen = descartado) en vez de un radio
+fijo en km, porque el tiempo real de carretera representa mejor "qué tan
+lejos se siente" que la distancia en línea recta.
+
+## Autocompletado: por qué se dejó de usar `<datalist>` nativo
+
+El `<datalist>` del navegador solo acepta la sugerencia resaltada con
+Enter — Tab no está bajo control de JavaScript en ese elemento — y hace
+coincidencia literal de caracteres, sin quitar acentos. Por eso escribir
+"leon" nunca encontraba "León". Se reemplazó por un dropdown propio en JS
+donde si se controla el comportamiento de Tab y la comparación se hace
+ignorando acentos y mayúsculas.
+
+## Itinerario: por qué a veces se borraban las paradas y ya no
+
+`calcularRuta()` reiniciaba `estado.itinerario` cada vez que se enviaba el
+formulario, sin distinguir si era un viaje nuevo o solo un cambio de
+filtros. Ahora solo se reinicia si el origen o destino cambiaron de
+verdad; si el usuario solo ajusta los filtros de interés sobre el mismo
+viaje, las paradas ya elegidas se conservan.
+
+## La bitácora ahora sí se sube a GitHub
+
+Al principio esta carpeta se creó como algo solo local (en `.gitignore`).
+Angel decidió que en realidad sí vale la pena tenerla en GitHub, porque
+Roberto le va a hacer cambios al proyecto usando Codex, y estos archivos
+sirven como el contexto compartido para que cualquier IA (Claude o Codex)
+entienda el proyecto antes de tocar código, sin importar quién la esté
+usando. Por eso se agregaron `AGENTS.md` y `CLAUDE.md` en la raíz del
+proyecto, que le indican a cualquier agente que lea esta carpeta primero
+y la mantenga actualizada después de cada cambio.
+
+## Patrón de trabajo con Angel (para quien retome esto, incluido Roberto)
+
+- Verificar todo en la app corriendo de verdad (navegador), no solo con
+  tests automatizados — varios bugs reales solo se detectaron probando en
+  vivo, no con `pytest`.
+- No inventar datos: coordenadas y población siempre verificadas contra
+  fuentes reales (Nominatim para coordenadas).
+- Explicar el "por qué" de un bug antes o junto con el arreglo, no solo
+  aplicar el fix.
+- Para cambios grandes o con varios pasos, planear primero y confirmar
+  antes de tocar código.
