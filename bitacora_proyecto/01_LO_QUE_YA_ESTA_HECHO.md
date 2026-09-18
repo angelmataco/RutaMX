@@ -93,14 +93,17 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Calidad / pruebas
 
-- 21 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
-  sugerencias, guardado de rutas y generación de PDF.
+- 25 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+  sugerencias, guardado de rutas, generación de PDF y generación de
+  destinos con IA (con el proveedor mockeado, sin gastar tokens reales).
 - Grafo de conocimiento del proyecto generado con graphify
   (`graphify-out/`), se actualiza con `/graphify update`.
 
-## Commits recientes (los últimos 3, de la sesión más reciente)
+## Commits recientes (los últimos 4, de la sesión más reciente)
 
-1. Autocompletado propio con Tab/Enter y sin distinguir acentos.
-2. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
-3. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
+1. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
+   cuando el lugar no está en la base — ver sección de arriba.
+2. Autocompletado propio con Tab/Enter y sin distinguir acentos.
+3. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
+4. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
    de 16 + colores de origen/destino + reubicación de "Guarda tu plan".
