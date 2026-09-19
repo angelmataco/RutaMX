@@ -32,6 +32,7 @@
 
 <template id="tpl-sugerencia">
   <article class="card card--lugar" data-lugar-card>
+    <span class="card__estrella" data-lugar-estrella hidden aria-label="Gastronomía reconocida" role="img">★</span>
     <div class="card__etiquetas">
       <span class="tag" data-lugar-categoria></span>
       <span class="tag tag--horas" data-lugar-horas hidden></span>
@@ -39,6 +40,7 @@
     <h3 class="card__title" data-lugar-nombre></h3>
     <p class="card__subtitle" data-lugar-descripcion></p>
     <p class="card__nota-descanso" data-lugar-descanso hidden></p>
+    <p class="card__nota-gastronomia" data-lugar-gastronomia hidden></p>
     <div class="card__acciones">
       <button type="button" class="btn btn--secondary btn--block" data-agregar-parada>Agregar parada</button>
       <button type="button" class="btn btn--ghost btn--block" data-descartar>Descartar</button>

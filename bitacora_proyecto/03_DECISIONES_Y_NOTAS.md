@@ -108,6 +108,20 @@ OpenStreetMap está mapeado de forma desigual (León 51 restaurantes vs Oaxaca
 etiqueta "comida" se apoya en reconocimientos públicos (UNESCO, Michelin) y en
 la decisión del equipo, no en el conteo.
 
+## Gastronomía destacada: por qué aditivo y no se quitó "comida" todavía
+
+Para no dejar los tramos de "Comer" vacíos, primero se AGREGÓ una marca
+(`gastronomia_destacada`) en vez de quitar la etiqueta "comida" a los demás
+(que es lo que filtra el tramo estricto). Se poda cuando existan los
+restaurantes. Criterio de la marca: solo reconocimientos públicos con fuente
+(UNESCO Ciudad Creativa de la Gastronomía; Guía Michelin México 2026 con
+estrella, o Bib Gourmand con la ciudad confirmada). La lista de "recomendados"
+de Michelin (133) no se usó porque no se pudo confirmar la ciudad de cada uno.
+Se usaron estrellas, la lista completa de Bib Gourmand con ciudad (Wikipedia)
+y Latin America's 50 Best 2025 (Forbes México). Sesgo conocido: estas fuentes
+favorecen alta cocina y pocas ciudades (23 de 32 estados quedan sin ningún
+lugar destacado), así que no sirven solas para decidir dónde NO hay buena comida.
+
 ## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al

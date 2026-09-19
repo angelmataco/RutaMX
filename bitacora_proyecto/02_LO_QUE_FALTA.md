@@ -20,7 +20,13 @@ la regla completa en `AGENTS.md`.
   con las tablas nuevas; (4) nueva forma de recomendar (restaurantes primero,
   luego pueblos/ciudades con muy buena comida, marcados claramente). Decisión
   abierta principal: cómo definir "bueno" sin pagar (las calificaciones de
-  Tripadvisor/Google no se pueden guardar ni son gratis).
+  Tripadvisor/Google no se pueden guardar ni son gratis). **Ya hecho:** marcar
+  la gastronomía destacada por UNESCO y Michelin (ver bitácora 01). **Decidido:** la poda de "comida" espera a los restaurantes; se
+  conservan los 21 lugares destacados (lista y regla en el plan `04`, copia de
+  seguridad en `scripts/datos/`). **Falta:**
+  revisar las demás etiquetas (cultura, naturaleza, playas, descanso), podar
+  "comida" de los ~84 lugares que no son destacados (hacerlo cuando ya haya
+  restaurantes, para que "Comer" no quede vacío) y el resto del plan.
 
 - **Tiempo de la app vs Google Maps.** León → Cabo San Lucas: la app dice
   ~50 h y Google Maps ~44 h. Causa probable: OSRM (servidor demo) usa

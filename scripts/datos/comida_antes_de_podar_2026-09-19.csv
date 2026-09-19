@@ -1,0 +1,108 @@
+id,nombre,estado,tipo,intereses_actuales,se_queda_con_comida,motivo
+103,Ensenada,Baja California,ciudad_principal,comida|playas,SI,"UNESCO Ciudad Creativa de la Gastronomía (2015). Guía Michelin México 2026: Olivea Farm to Table (1 estrella) y 5 Bib Gourmand (Casa Marcelo, Fauna, Humo y Sal, La Concheria, Sabina). Latin America's 50 Best 2025: Fauna (#18)"
+3,Tijuana,Baja California,ciudad_principal,comida|cultura,SI,Guía Michelin México 2026: Bib Gourmand Carmelita Molino y Cocina
+138,Valle de Guadalupe,Baja California,sitio_turistico,comida|naturaleza,SI,"Guía Michelin México 2026: Animalón, Conchas de Piedra, Damiana y Lunario (1 estrella) y Bib Gourmand (La Cocina de Doña Esthela, Villa Torél). Latin America's 50 Best 2025: Villa Torél (#17) y Lunario (#90)"
+414,Cabo San Lucas,Baja California Sur,ciudad_principal,comida|playas,SI,Guía Michelin México 2026: Bib Gourmand Metate
+417,El Pescadero,Baja California Sur,sitio_turistico,comida,SI,Guía Michelin México 2026: Bib Gourmand Cocina de Campo by Agricole
+5,Los Cabos,Baja California Sur,ciudad_principal,playas|descanso|comida,SI,Guía Michelin México 2026: Cocina de Autor Los Cabos (1 estrella)
+141,San José del Cabo,Baja California Sur,ciudad_principal,cultura|playas|comida,SI,Guía Michelin México 2026: Bib Gourmand Flora's Field Kitchen
+9,Ciudad de México,Ciudad de México,ciudad_principal,comida|cultura,SI,"Guía Michelin México 2026: Pujol y Quintonil (2 estrellas), 9 restaurantes con 1 estrella y 27 Bib Gourmand. Latin America's 50 Best 2025: Quintonil (#7), Máximo (#30), Rosetta (#39), Pujol, Sud 777, Em, Nicos"
+18,Guadalajara,Jalisco,ciudad_principal,comida|cultura,SI,"Guía Michelin México 2026: Alcalde y Xokol (1 estrella) y 2 Bib Gourmand (PalReal, Tacos y gorditas Elvira). Latin America's 50 Best 2025: Alcalde (#15)"
+19,Puerto Vallarta,Jalisco,ciudad_principal,playas|descanso|comida,SI,Guía Michelin México 2026: Bib Gourmand ICÚ
+24,Monterrey,Nuevo León,ciudad_principal,cultura|comida,SI,Guía Michelin México 2026: KOLI Cocina de Origen (1 estrella) y Bib Gourmand Tacos Doña Mary La Gritona. Latin America's 50 Best 2025: Cara de Vaca (#54)
+201,San Pedro Garza García,Nuevo León,ciudad_principal,comida|cultura,SI,Guía Michelin México 2026: Pangea (1 estrella) y Bib Gourmand El Bambi's Café
+25,Oaxaca de Juárez,Oaxaca,ciudad_principal,comida|cultura,SI,"Guía Michelin México 2026: Los Danzantes Oaxaca y Levadura de Olla (1 estrella) y 5 Bib Gourmand (La Olla, Labo Fermento, Las Quince Letras, Tierra del Sol, Xaok)"
+316,Atlixco,Puebla,pueblo_magico,cultura|naturaleza|comida,SI,Guía Michelin México 2026: Bib Gourmand Vica
+26,Puebla de Zaragoza,Puebla,ciudad_principal,comida|cultura,SI,"Guía Michelin México 2026: 7 Bib Gourmand (Cultivo, El Güero Marinero, Jacinto y Yo, Los Camellos, Moyuelo, Casareyna, Semitas Beto)"
+116,Playa del Carmen,Quintana Roo,ciudad_principal,playas|descanso|comida,SI,Guía Michelin México 2026: HA' (1 estrella) y Bib Gourmand Axiote Cocina de México
+415,Puerto Morelos,Quintana Roo,sitio_turistico,comida|playas,SI,Guía Michelin México 2026: Bib Gourmand Punta Corcho. Latin America's 50 Best 2025: Le Chique (#58)
+92,Tulum,Quintana Roo,pueblo_magico,playas|naturaleza|cultura|comida,SI,Guía Michelin México 2026: Bib Gourmand Cetli y Mestixa. Latin America's 50 Best 2025: Arca (#22)
+411,Chocholá,Yucatán,sitio_turistico,comida,SI,"Guía Michelin México 2026: Ixi'im (1 estrella, Estrella Verde)"
+39,Mérida,Yucatán,ciudad_principal,cultura|comida,SI,"UNESCO Ciudad Creativa de la Gastronomía (2019). Guía Michelin México 2026: Huniik y La Barra de Huniik (1 estrella) y 2 Bib Gourmand (Pancho Maíz, Taquerías Kisín). Latin America's 50 Best 2025: Huniik (#32)"
+416,Tixkokob,Yucatán,sitio_turistico,comida,SI,Guía Michelin México 2026: Bib Gourmand Pueblo Pibil
+1,Aguascalientes,Aguascalientes,ciudad_principal,cultura|comida,NO,
+66,Calvillo,Aguascalientes,pueblo_magico,naturaleza|comida,NO,
+261,Rincón de Romos,Aguascalientes,ciudad_principal,comida|cultura,NO,
+2,Mexicali,Baja California,ciudad_principal,comida|cultura,NO,
+67,Tecate,Baja California,pueblo_magico,comida|naturaleza,NO,
+105,Tapachula,Chiapas,ciudad_principal,comida|cultura,NO,
+106,Ciudad Juárez,Chihuahua,ciudad_principal,cultura|comida,NO,
+152,Cuauhtémoc,Chihuahua,ciudad_principal,comida|cultura,NO,
+272,Delicias,Chihuahua,ciudad_principal,comida|cultura,NO,
+126,Centro Histórico de la Ciudad de México,Ciudad de México,sitio_turistico,cultura|comida,NO,
+127,Coyoacán,Ciudad de México,sitio_turistico,cultura|comida,NO,
+159,Polanco,Ciudad de México,sitio_turistico,comida|cultura,NO,
+158,San Ángel,Ciudad de México,sitio_turistico,cultura|comida,NO,
+162,Arteaga,Coahuila,pueblo_magico,naturaleza|comida,NO,
+60,Parras,Coahuila,pueblo_magico,comida|cultura,NO,
+160,Piedras Negras,Coahuila,ciudad_principal,comida|cultura,NO,
+10,Saltillo,Coahuila,ciudad_principal,cultura|comida,NO,
+107,Torreón,Coahuila,ciudad_principal,cultura|comida,NO,
+62,Comala,Colima,pueblo_magico,comida|cultura,NO,
+284,Quesería,Colima,ciudad_principal,comida|cultura,NO,
+167,Tecomán,Colima,ciudad_principal,comida|cultura,NO,
+285,Canatlán,Durango,ciudad_principal,naturaleza|comida,NO,
+12,Durango,Durango,ciudad_principal,cultura|comida,NO,
+169,Gómez Palacio,Durango,ciudad_principal,cultura|comida,NO,
+287,Vicente Guerrero,Durango,ciudad_principal,comida|cultura,NO,
+110,Celaya,Guanajuato,ciudad_principal,comida|cultura,NO,
+124,Centro Histórico de León,Guanajuato,sitio_turistico,cultura|comida,NO,
+56,Dolores Hidalgo,Guanajuato,pueblo_magico,cultura|comida,NO,
+13,Guanajuato,Guanajuato,ciudad_principal,cultura|comida,NO,
+109,Irapuato,Guanajuato,ciudad_principal,comida|cultura,NO,
+14,León,Guanajuato,ciudad_principal,cultura|comida,NO,
+44,San Miguel de Allende,Guanajuato,pueblo_magico,cultura|comida,NO,
+125,Zona Piel y Calzado de León,Guanajuato,sitio_turistico,cultura|comida,NO,
+178,Chilapa de Álvarez,Guerrero,ciudad_principal,cultura|comida,NO,
+15,Chilpancingo,Guerrero,ciudad_principal,cultura|comida,NO,
+17,Pachuca,Hidalgo,ciudad_principal,cultura|comida,NO,
+78,Real del Monte,Hidalgo,pueblo_magico,comida|cultura,NO,
+183,Zimapán,Hidalgo,pueblo_magico,comida|cultura,NO,
+130,Centro Histórico de Guadalajara,Jalisco,sitio_turistico,cultura|comida,NO,
+79,Lagos de Moreno,Jalisco,pueblo_magico,cultura|comida,NO,
+42,Tequila,Jalisco,pueblo_magico,comida|cultura,NO,
+112,Zapopan,Jalisco,ciudad_principal,cultura|comida,NO,
+188,Metepec,México,sitio_turistico,cultura|comida,NO,
+20,Toluca,México,ciudad_principal,naturaleza|comida,NO,
+21,Morelia,Michoacán,ciudad_principal,cultura|comida,NO,
+113,Uruapan,Michoacán,ciudad_principal,naturaleza|comida,NO,
+299,Zamora de Hidalgo,Michoacán,ciudad_principal,comida|cultura,NO,
+206,Linares,Nuevo León,ciudad_principal,comida|cultura,NO,
+307,Montemorelos,Nuevo León,ciudad_principal,comida|cultura,NO,
+207,Hierve el Agua,Oaxaca,sitio_turistico,naturaleza|comida,NO,
+211,Teotitlán del Valle,Oaxaca,sitio_turistico,cultura|comida,NO,
+311,Tlacolula de Matamoros,Oaxaca,ciudad_principal,comida|cultura,NO,
+214,Izúcar de Matamoros,Puebla,ciudad_principal,cultura|comida,NO,
+315,Tehuacán,Puebla,ciudad_principal,comida|cultura,NO,
+90,Zacatlán,Puebla,pueblo_magico,naturaleza|comida|cultura,NO,
+27,Querétaro,Querétaro,ciudad_principal,cultura|comida,NO,
+216,San Juan del Río,Querétaro,ciudad_principal,cultura|comida,NO,
+91,Tequisquiapan,Querétaro,pueblo_magico,descanso|comida|cultura,NO,
+30,San Luis Potosí,San Luis Potosí,ciudad_principal,cultura|comida,NO,
+31,Culiacán,Sinaloa,ciudad_principal,cultura|comida,NO,
+328,Escuinapa,Sinaloa,ciudad_principal,comida|cultura,NO,
+326,Guasave,Sinaloa,ciudad_principal,comida|cultura,NO,
+331,Caborca,Sonora,ciudad_principal,comida|cultura,NO,
+33,Hermosillo,Sonora,ciudad_principal,cultura|comida,NO,
+231,Nogales,Sonora,ciudad_principal,cultura|comida,NO,
+239,Comalcalco,Tabasco,ciudad_principal,comida|cultura,NO,
+335,Jalpa de Méndez,Tabasco,ciudad_principal,comida|cultura,NO,
+336,Ciudad Mante,Tamaulipas,ciudad_principal,comida|cultura,NO,
+242,Matamoros,Tamaulipas,ciudad_principal,cultura|comida,NO,
+241,Nuevo Laredo,Tamaulipas,ciudad_principal,comida|cultura,NO,
+121,Reynosa,Tamaulipas,ciudad_principal,cultura|comida,NO,
+97,Tula,Tamaulipas,pueblo_magico,comida|cultura,NO,
+98,Huamantla,Tlaxcala,pueblo_magico,cultura|comida,NO,
+340,Zacatelco,Tlaxcala,ciudad_principal,comida|cultura,NO,
+57,Coatepec,Veracruz,pueblo_magico,naturaleza|comida,NO,
+122,Córdoba,Veracruz,ciudad_principal,comida|cultura,NO,
+99,Papantla,Veracruz,pueblo_magico,comida|cultura,NO,
+38,Veracruz,Veracruz,ciudad_principal,playas|comida|cultura,NO,
+37,Xalapa,Veracruz,ciudad_principal,naturaleza|comida|cultura,NO,
+100,Xico,Veracruz,pueblo_magico,naturaleza|comida,NO,
+54,Izamal,Yucatán,pueblo_magico,cultura|comida,NO,
+343,Motul,Yucatán,ciudad_principal,comida|cultura,NO,
+342,Ticul,Yucatán,ciudad_principal,comida|cultura,NO,
+258,Fresnillo,Zacatecas,ciudad_principal,cultura|comida,NO,
+101,Jerez,Zacatecas,pueblo_magico,cultura|comida,NO,
+40,Zacatecas,Zacatecas,ciudad_principal,cultura|comida,NO,

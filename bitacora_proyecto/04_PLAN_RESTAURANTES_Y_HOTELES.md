@@ -109,10 +109,75 @@ los hoteles trae `stars` y el 46 % sitio web.
 
 ## 3. Fase 1 — Re-etiquetar la base actual (PRIMERO)
 
+**Estado (2026-09-19): parte 1 hecha, parte 2 pendiente.**
+- ✅ Hecho: marcar gastronomía destacada con UNESCO + Guía Michelin 2026
+  (estrellas y Bib Gourmand) + Latin America's 50 Best 2025: **21 lugares**, 5 de
+  ellos agregados a la base (ver bitácora 01 y
+  `scripts/marcar_gastronomia_destacada.py`).
+- ⏳ Falta: revisar cultura/naturaleza/playas/descanso y **podar "comida"** de
+  los lugares que no son destacados.
+
+**¿Se puede limpiar ya o hay que esperar a los restaurantes? (respuesta):** se
+puede en dos tiempos. Lo **aditivo** (agregar la marca de gastronomía destacada,
+dar prioridad) se hizo ya porque no rompe nada. Lo **destructivo** (quitar
+"comida" a ~84 lugares) conviene hacerlo **cuando ya existan los restaurantes**:
+hoy un tramo de "Comer" filtra por la etiqueta "comida"; si se quitara de golpe
+a casi todos, "Comer" quedaría vacío o casi vacío. Con la tabla de restaurantes
+lista, "Comer" se llena con restaurantes y ahí sí se puede podar sin riesgo.
+Revisar cultura/naturaleza/playas/descanso (que no dependen de restaurantes) sí
+se puede hacer antes, con criterios de la sección 3.1.
+
+**Impacto medido de podar "comida" hoy (2026-09-19):** 107 lugares la tienen;
+solo los 21 destacados la conservarían y **86 la perderían** (56 ciudades, 20
+pueblos mágicos y 10 sitios; entre ellos León, Ciudad Juárez, Zapopan, Saltillo,
+Aguascalientes, Hermosillo, Querétaro, Morelia). **23 de 32 estados quedarían
+sin ningún lugar de comida** (Guanajuato, Querétaro, Michoacán, Veracruz,
+Chiapas, Sonora, etc.), y un tramo de "Comer" en esas rutas saldría vacío. Además
+las fuentes (Michelin, 50 Best) están sesgadas hacia alta cocina y hacia unas
+pocas ciudades: no reflejan la buena comida tradicional de muchas regiones. Por
+eso la poda solo es segura cuando ya existan los restaurantes (Fase 2), o si se
+agrega un respaldo para que "Comer" no quede vacío.
+
 Estado actual (369 destinos): 358 tienen 2 etiquetas y 11 tienen 3. Etiquetas:
 cultura 310 (84 %), naturaleza 247, comida 96, playas 54, descanso 42. Es
 demasiado genérico: 84 % "cultura" no dice nada. Ciudades con "comida": 65 de
 161; pueblos mágicos con "comida": 20 de 100.
+
+### Decisión de Angel (2026-09-19): la poda de "comida" ESPERA a los restaurantes
+
+Se acordó **no podar todavía** la etiqueta "comida". Cuando llegue el momento
+(después de la Fase 2, con la tabla de restaurantes ya cargada):
+
+- **Se conservan con la etiqueta "comida" estos 21 lugares** (los de gastronomía
+  destacada; en la base tienen `gastronomia_destacada = true`). **No se les
+  quita nada**: a estos se les **agregan además** sus restaurantes.
+
+| Estado | Lugares que se quedan |
+|---|---|
+| Baja California | Ensenada, Tijuana, Valle de Guadalupe |
+| Baja California Sur | Los Cabos, Cabo San Lucas, San José del Cabo, El Pescadero |
+| Ciudad de México | Ciudad de México |
+| Jalisco | Guadalajara, Puerto Vallarta |
+| Nuevo León | Monterrey, San Pedro Garza García |
+| Oaxaca | Oaxaca de Juárez |
+| Puebla | Puebla de Zaragoza, Atlixco |
+| Quintana Roo | Playa del Carmen, Tulum, Puerto Morelos |
+| Yucatán | Mérida, Chocholá, Tixkokob |
+
+- **Regla exacta de la poda (para no equivocarse):** quitar "comida" **solo** de
+  los destinos con `gastronomia_destacada = false`. Nunca por nombre a mano. El
+  script (`scripts/podar_comida.py`, **por escribir**) debe hacer eso, avisar
+  cuántos cambia (hoy serían 86) y no tocar las demás etiquetas.
+- **Copia de seguridad:** `scripts/datos/comida_antes_de_podar_2026-09-19.csv`
+  guarda, para los 107 lugares que hoy tienen "comida", su estado, tipo,
+  etiquetas actuales y si se quedan (SI/NO) y por qué. Sirve para revertir o
+  revisar.
+- **Antes de podar, ver el riesgo:** 86 lugares la pierden y 23 estados quedan
+  sin ninguno (ver más abajo). Se poda cuando ya haya restaurantes en esos
+  lugares, o con un respaldo para que "Comer" no quede vacío.
+- Posibilidad abierta: agregar lugares con buena comida **regional** que estas
+  fuentes no cubren (ej. Michoacán) por decisión del equipo, para no dejar
+  estados enteros sin ninguno.
 
 ### 3.1 Criterios (que se puedan comprobar, no "a ojo")
 
@@ -238,8 +303,10 @@ implementada).
 
 - [ ] Fase 0: Angel decide cómo definir "calidad" sin pagar (ver 2.2) y confirma
       los cupos (4.2).
-- [ ] Fase 1: script de propuesta de etiquetas → reporte → revisión de Angel →
-      aplicar → tests.
+- [x] Fase 1a: gastronomía destacada por UNESCO + Michelin (hecho).
+- [ ] Fase 1b: script de propuesta de etiquetas (cultura, naturaleza, playas,
+      descanso) → reporte → revisión de Angel → aplicar → tests. La poda de
+      "comida" se hace después de la Fase 2.
 - [ ] Fase 2: tabla `establecimientos`, carga desde OSM con reporte previo,
       selección de calidad.
 - [ ] Fase 3: adaptar toda la app y la IA (sección 5) con pruebas y prueba en

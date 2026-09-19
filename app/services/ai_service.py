@@ -226,6 +226,10 @@ def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
         "lat": destino.lat,
         "lon": destino.lon,
         "intereses": destino.intereses or [],
+        # Gastronomía reconocida (UNESCO / Guía Michelin): se muestra con una estrellita
+        # y en los tramos de "comer" va primero.
+        "gastronomia_destacada": bool(getattr(destino, "gastronomia_destacada", False)),
+        "reconocimiento_gastronomico": getattr(destino, "reconocimiento_gastronomico", None),
     }
     if horas_estimadas is not None:
         lugar["horas_estimadas"] = round(horas_estimadas, 1)
@@ -429,7 +433,9 @@ def asignar_paradas_a_objetivos(candidatos, objetivos):
                 continue
             coincide_proposito = 0 if _coincide_proposito(destino.intereses or [], destino.tipo, objetivo["proposito"]) else 1
             distancia_hora = abs(horas_estimadas - objetivo["hora_objetivo"])
-            puntaje = (coincide_proposito, distancia_hora)
+            # Para comer, primero los lugares con gastronomía destacada.
+            destacado = 0 if (objetivo["proposito"] == "comida" and getattr(destino, "gastronomia_destacada", False)) else 1
+            puntaje = (coincide_proposito, destacado, distancia_hora)
             if mejor_puntaje is None or puntaje < mejor_puntaje:
                 mejor_puntaje = puntaje
                 mejor = (destino, horas_estimadas)
@@ -532,6 +538,7 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
         dentro.sort(
             key=lambda item: (
                 0 if _coincide_proposito(item[0].intereses or [], item[0].tipo, objetivo["proposito"]) else 1,
+                0 if (objetivo["proposito"] == "comida" and getattr(item[0], "gastronomia_destacada", False)) else 1,
                 0 if (intereses and intereses & set(item[0].intereses or [])) else 1,
                 -(item[0].poblacion or 0) if objetivo["proposito"] == "descanso" else 0,
             )

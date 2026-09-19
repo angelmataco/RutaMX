@@ -1504,3 +1504,45 @@ a {
   border-color: var(--color-terracota);
   color: var(--color-terracota);
 }
+
+/* Estrellita de gastronomía reconocida (UNESCO / Guía Michelin / 50 Best) */
+.card--lugar {
+  position: relative;
+}
+
+.card__estrella {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fbf0d4;
+  color: #d99a1c;
+  font-size: 1.05rem;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgba(122, 90, 18, 0.25);
+  cursor: help;
+}
+
+.card__estrella[hidden] {
+  display: none; /* el display:flex de arriba no debe ganarle al atributo hidden */
+}
+
+.card--lugar.tiene-estrella .card__etiquetas {
+  padding-right: 38px; /* deja lugar a la estrella */
+}
+
+.card__nota-gastronomia {
+  margin: 8px 0 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: #fbf0d4;
+  color: #7a5a12;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: help;
+}

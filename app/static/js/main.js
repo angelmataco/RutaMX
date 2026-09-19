@@ -444,6 +444,17 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No encontramos sugerencias en este tramo todavía. Prueba con otro tramo.";
   }
 
+  // "Recomendado por la Guía Michelin y la UNESCO" a partir del texto de la base.
+  function textoDeReconocimiento(reconocimiento) {
+    const fuentes = [];
+    if (/michelin/i.test(reconocimiento || "")) fuentes.push("la Guía Michelin");
+    if (/unesco/i.test(reconocimiento || "")) fuentes.push("la UNESCO");
+    if (/50 best/i.test(reconocimiento || "")) fuentes.push("Latin America's 50 Best");
+    if (!fuentes.length) return "Gastronomía reconocida";
+    const lista = fuentes.length > 1 ? `${fuentes.slice(0, -1).join(", ")} y ${fuentes[fuentes.length - 1]}` : fuentes[0];
+    return `Gastronomía recomendada por ${lista}`;
+  }
+
   function agregarCardSugerencia(lugar) {
     const nodo = tplSugerencia.content.cloneNode(true);
     const card = nodo.querySelector("[data-lugar-card]");
@@ -457,6 +468,20 @@ document.addEventListener("DOMContentLoaded", () => {
       horasEl.textContent =
         `≈${formatoDuracion(lugar.horas_estimadas)} de camino` + (lugar.hora_llegada ? ` · llegas ${lugar.hora_llegada}` : "");
       horasEl.hidden = false;
+    }
+
+    if (lugar.gastronomia_destacada) {
+      // Estrellita en la esquina + una línea que dice quién lo recomienda.
+      const estrella = nodo.querySelector("[data-lugar-estrella]");
+      const detalle = lugar.reconocimiento_gastronomico || "Gastronomía reconocida";
+      estrella.title = detalle;
+      estrella.hidden = false;
+      card.classList.add("tiene-estrella");
+
+      const nota = nodo.querySelector("[data-lugar-gastronomia]");
+      nota.textContent = `★ ${textoDeReconocimiento(lugar.reconocimiento_gastronomico)}`;
+      nota.title = detalle;
+      nota.hidden = false;
     }
 
     const nota = nodo.querySelector("[data-lugar-descanso]");
@@ -513,6 +538,8 @@ document.addEventListener("DOMContentLoaded", () => {
       intereses: lugar.intereses || [],
       horas_estimadas: lugar.horas_estimadas,
       proposito: lugar.proposito,
+      gastronomia_destacada: lugar.gastronomia_destacada,
+      reconocimiento_gastronomico: lugar.reconocimiento_gastronomico,
     });
     renderParadasItinerario();
   }
@@ -541,7 +568,9 @@ document.addEventListener("DOMContentLoaded", () => {
     estado.itinerario.forEach((parada, indice) => {
       const nodo = tplParadaItinerario.content.cloneNode(true);
       nodo.querySelector("[data-item-numero]").textContent = indice + 1;
-      nodo.querySelector("[data-item-nombre]").textContent = parada.nombre;
+      const nombreEl = nodo.querySelector("[data-item-nombre]");
+      nombreEl.textContent = (parada.gastronomia_destacada ? "★ " : "") + parada.nombre;
+      if (parada.gastronomia_destacada && parada.reconocimiento_gastronomico) nombreEl.title = parada.reconocimiento_gastronomico;
       nodo.querySelector("[data-mover-arriba]").addEventListener("click", () => moverParada(indice, -1));
       nodo.querySelector("[data-mover-abajo]").addEventListener("click", () => moverParada(indice, 1));
       nodo.querySelector("[data-eliminar-parada]").addEventListener("click", () => eliminarParada(indice));
@@ -1044,6 +1073,8 @@ document.addEventListener("DOMContentLoaded", () => {
         intereses: p.intereses || [],
         horas_estimadas: p.horas_estimadas,
         proposito: p.proposito,
+        gastronomia_destacada: p.gastronomia_destacada,
+        reconocimiento_gastronomico: p.reconocimiento_gastronomico,
       }));
       estado.ultimoOrigenDestino = { origen: opcion.resumen.origen.nombre, destino: opcion.resumen.destino.nombre };
 

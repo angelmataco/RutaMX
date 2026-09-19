@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const paradasHtml = opcion.paradas
         .map(
           (parada) =>
-            `<li><span class="tag tag--horas">≈${parada.horas_estimadas != null ? formatoDuracion(parada.horas_estimadas) : "?"}${parada.hora_llegada ? ` · ${parada.hora_llegada}` : ""}</span> <strong>${parada.nombre}</strong> <span class="opcion-ia-card__proposito">(${nombreDeProposito(parada.proposito)})</span></li>`
+            `<li><span class="tag tag--horas">≈${parada.horas_estimadas != null ? formatoDuracion(parada.horas_estimadas) : "?"}${parada.hora_llegada ? ` · ${parada.hora_llegada}` : ""}</span> <strong title="${parada.reconocimiento_gastronomico || ""}">${parada.gastronomia_destacada ? "★ " : ""}${parada.nombre}</strong> <span class="opcion-ia-card__proposito">(${nombreDeProposito(parada.proposito)})</span></li>`
         )
         .join("");
 

@@ -396,6 +396,44 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   nombre, personas, hora de salida, intereses) y se recargan tramos y
   sugerencias con esos datos.
 
+## Gastronomía destacada (UNESCO, Guía Michelin y Latin America's 50 Best)
+
+- Primer paso del plan `04_PLAN_RESTAURANTES_Y_HOTELES.md`. Se marcaron **21
+  lugares** con gastronomía reconocida públicamente (columnas nuevas
+  `gastronomia_destacada` y `reconocimiento_gastronomico` en `destinos`, con la
+  fuente y los restaurantes en el texto). Ciudad de México, Guadalajara, Puerto
+  Vallarta, Ensenada, Valle de Guadalupe, Tijuana, Mérida, Playa del Carmen,
+  Tulum, Los Cabos, San José del Cabo, Oaxaca de Juárez, Monterrey, San Pedro
+  Garza García, Puebla de Zaragoza, Atlixco y 5 lugares **agregados nuevos**
+  (coordenadas reales de Nominatim): Chocholá, Cabo San Lucas, Puerto Morelos,
+  Tixkokob y El Pescadero. La base tiene ahora **374 destinos**.
+- **Fuentes (todas con la ciudad de cada restaurante confirmada):** UNESCO
+  Ciudades Creativas de la Gastronomía (solo Ensenada y Mérida en México);
+  Guía Michelin México 2026 — estrellas y la **lista completa de Bib Gourmand**
+  ([Wikipedia](https://en.wikipedia.org/wiki/List_of_Michelin_Bib_Gourmand_restaurants_in_Mexico),
+  [estrellas](https://en.wikipedia.org/wiki/List_of_Michelin-starred_restaurants_in_Mexico));
+  y Latin America's 50 Best Restaurants 2025, lugares 1-100
+  ([Forbes México](https://forbes.com.mx/forbes-life/cuales-son-los-representantes-mexicanos-en-la-edicion-2025-de-latin-americas-50-best-restaurants/)).
+  **No se usaron:** los 133 "recomendados" de Michelin y la cocina tradicional
+  mexicana de la UNESCO (patrimonio inmaterial, paradigma Michoacán), porque no
+  dan una ciudad por restaurante.
+- Nadie perdió ninguna etiqueta: solo se agregó "comida" a los que no la tenían
+  (Puerto Vallarta, Playa del Carmen, Los Cabos, San José del Cabo, Tulum,
+  Atlixco).
+- En la app: cuando una sugerencia es de uno de estos lugares (para comer o
+  para visitar, en cualquier tramo), la tarjeta lleva una **estrellita ★ dorada
+  arriba a la derecha** y una línea en la descripción que dice quién lo
+  recomienda ("★ Gastronomía recomendada por la Guía Michelin y la UNESCO"),
+  con el detalle de restaurantes al pasar el mouse. La parada también lleva ★
+  en el itinerario y en las opciones del chat de IA. En un tramo de **Comer**
+  esos lugares salen primero (también en `asignar_paradas_a_objetivos`, o sea
+  en "Planear con IA"). Código: `textoDeReconocimiento` en `main.js`, plantilla
+  `discover_section.html`, estilos `.card__estrella`.
+- Script: `scripts/marcar_gastronomia_destacada.py` (migración + marcado +
+  alta de lugares nuevos; seguro de repetir).
+- Nota técnica: la columna `fuente` de `destinos` solo acepta `curada` o
+  `ia_generada` (restricción de la base); los lugares nuevos quedaron `curada`.
+
 ## Calidad / pruebas
 
 - 100 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,

@@ -338,3 +338,33 @@ def test_ia_comida_es_estricta_y_tiene_ventana():
     listos = ai_service.preparar_objetivos_ia([{"proposito": "comida", "hora_objetivo": 5.0}], 10, "08:00")
     assert listos[0]["estricto"] is True
     assert listos[0]["ventana"] == (3.5, 6.5)
+
+
+def test_gastronomia_destacada_ciudades_unesco_y_michelin(app_context):
+    """Ensenada y Mérida (UNESCO) y Oaxaca (Michelin) están marcadas, con su fuente."""
+    reconocidos = {d.nombre: d for d in Destino.query.filter_by(gastronomia_destacada=True).all()}
+    for nombre in ("Ensenada", "Mérida", "Oaxaca de Juárez", "Ciudad de México"):
+        assert nombre in reconocidos
+        assert "comida" in reconocidos[nombre].intereses
+        assert reconocidos[nombre].reconocimiento_gastronomico
+    # segunda pasada de fuentes: Bib Gourmand y Latin America's 50 Best
+    for nombre in ("Tijuana", "Tulum", "Puerto Vallarta", "Atlixco", "Cabo San Lucas", "Puerto Morelos", "Tixkokob"):
+        assert nombre in reconocidos, nombre
+    assert len(reconocidos) >= 21
+    assert "UNESCO" in reconocidos["Mérida"].reconocimiento_gastronomico
+    assert "Michelin" in reconocidos["Oaxaca de Juárez"].reconocimiento_gastronomico
+
+
+def test_para_comer_la_gastronomia_destacada_va_primero():
+    from types import SimpleNamespace as D
+
+    comun = D(id=1, nombre="Común", tipo="pueblo_magico", intereses=["comida"], gastronomia_destacada=False,
+              reconocimiento_gastronomico=None, lat=0, lon=0, descripcion="", poblacion=None)
+    famoso = D(id=2, nombre="Famoso", tipo="ciudad_principal", intereses=["comida"], gastronomia_destacada=True,
+               reconocimiento_gastronomico="Guía Michelin", lat=0, lon=0, descripcion="", poblacion=None)
+    # el común está exactamente en la hora pedida; el famoso un poco más lejos, pero gana por gastronomía
+    asignadas = ai_service.asignar_paradas_a_objetivos(
+        [(comun, 3.0), (famoso, 3.6)], [{"proposito": "comida", "hora_objetivo": 3.0}]
+    )
+    assert asignadas[0]["id"] == 2
+    assert asignadas[0]["gastronomia_destacada"] is True

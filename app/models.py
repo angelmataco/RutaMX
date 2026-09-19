@@ -40,6 +40,11 @@ class Destino(db.Model):
     descripcion = db.Column(db.Text, nullable=False)
     intereses = db.Column(ARRAY(db.Text), nullable=False, default=list)
     poblacion = db.Column(db.Integer)
+    # Gastronomía reconocida públicamente (UNESCO Ciudad Creativa de la
+    # Gastronomía o Guía Michelin). Solo se marca con una fuente verificable;
+    # `reconocimiento_gastronomico` dice cuál. Ver scripts/marcar_gastronomia_destacada.py.
+    gastronomia_destacada = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    reconocimiento_gastronomico = db.Column(db.Text)
     fuente = db.Column(db.Text, nullable=False, default="curada")
     creado_en = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
@@ -56,6 +61,8 @@ class Destino(db.Model):
             "descripcion": self.descripcion,
             "intereses": self.intereses or [],
             "poblacion": self.poblacion,
+            "gastronomia_destacada": bool(self.gastronomia_destacada),
+            "reconocimiento_gastronomico": self.reconocimiento_gastronomico,
             "fuente": self.fuente,
         }
 
