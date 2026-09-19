@@ -54,7 +54,9 @@ aspecto de un `<datalist>` con CSS). Se reemplazó por una fila de
 "burbujas" deslizable — el mismo componente visual que ya usan los chips
 de "¿Qué buscas?" (`.chip` → aquí `.bubble`, mismo lenguaje visual) — con
 una burbuja "Otro" al final que revela el `<input>` normal para un valor
-exacto. Presupuesto va de $1,000 a $20,000 de $1,000 en $1,000; horas
+exacto. Presupuesto: $1,000, $3,000, $5,000, $7,000, $9,000 (saltando de
+2,000 en 2,000, pedido explícito — la primera versión iba de 1,000 en
+1,000 hasta 20,000, pero eran demasiadas burbujas); horas
 máximas de 1 a 16.
 
 **Bug de layout al construirlo:** la fila de burbujas, al ser más ancha

@@ -79,7 +79,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - **Presupuesto** y **Horas máximas de manejo**: en vez de una lista
   plana de `<datalist>` (se veía sosa), ahora son una fila de "burbujas"
   deslizable — mismo estilo que los chips de "¿Qué buscas?" — con montos
-  predefinidos (presupuesto: $1,000 a $20,000 de $1,000 en $1,000; horas:
+  predefinidos (presupuesto: $1,000, $3,000, $5,000, $7,000, $9,000; horas:
   1 a 16) más una burbuja "Otro" que revela un campo normal para escribir
   un valor exacto distinto.
 - `app/static/js/time_picker.js` y `app/static/js/bubble_picker.js`

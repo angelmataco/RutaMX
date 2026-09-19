@@ -45,7 +45,7 @@
           <p class="field__label">Presupuesto (MXN)</p>
           <div class="bubble-picker" data-bubble-picker>
             <div class="bubble-picker__scroll" data-bubble-lista>
-              {% for monto in range(1000, 20001, 1000) %}
+              {% for monto in range(1000, 10001, 2000) %}
               <button type="button" class="bubble" data-bubble-valor="{{ monto }}">${{ '{:,}'.format(monto) }}</button>
               {% endfor %}
             </div>
