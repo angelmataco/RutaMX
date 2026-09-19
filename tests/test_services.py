@@ -103,3 +103,82 @@ def test_sugerir_paradas_marca_buena_para_descanso(app_context):
     for lugar in sugerencias:
         if lugar.get("buena_para_descanso"):
             assert abs(lugar["horas_estimadas"] - objetivo) <= ai_service.TOLERANCIA_DESCANSO_HORAS
+
+
+class _DestinoFalso:
+    """Doble simple de `Destino` para probar asignación sin tocar la BD."""
+
+    def __init__(self, id_, nombre, intereses):
+        self.id = id_
+        self.nombre = nombre
+        self.intereses = intereses
+        self.tipo = "pueblo_magico"
+        self.descripcion = "Descripción de prueba."
+        self.lat = 20.0
+        self.lon = -100.0
+
+
+def test_asignar_paradas_a_objetivos_no_repite_destinos():
+    candidatos = [
+        (_DestinoFalso(1, "Comedero Uno", ["comida"]), 4.0),
+        (_DestinoFalso(2, "Comedero Dos", ["comida"]), 4.5),
+        (_DestinoFalso(3, "Posada de Descanso", ["descanso"]), 8.0),
+    ]
+    objetivos = [{"proposito": "comida", "hora_objetivo": 4.0}, {"proposito": "descanso", "hora_objetivo": 8.0}]
+
+    asignadas = ai_service.asignar_paradas_a_objetivos(candidatos, objetivos)
+
+    assert len(asignadas) == 2
+    ids = {lugar["id"] for lugar in asignadas}
+    assert len(ids) == 2  # nunca el mismo destino en dos objetivos
+    comida = next(l for l in asignadas if l["proposito"] == "comida")
+    assert comida["id"] == 1  # el más cercano a la hora objetivo, entre los dos con el mismo interés
+
+
+def test_asignar_paradas_a_objetivos_omite_si_no_hay_candidato():
+    candidatos = [(_DestinoFalso(1, "Único Lugar", ["comida"]), 4.0)]
+    objetivos = [{"proposito": "comida", "hora_objetivo": 4.0}, {"proposito": "playas", "hora_objetivo": 8.0}]
+
+    asignadas = ai_service.asignar_paradas_a_objetivos(candidatos, objetivos)
+
+    assert len(asignadas) == 1
+    assert asignadas[0]["proposito"] == "comida"
+
+
+def test_filtrar_objetivos_por_hora_del_dia_reclasifica_descanso_de_dia():
+    objetivos = [{"proposito": "descanso", "hora_objetivo": 4.0}]  # sale 8am + 4h = 12pm, pleno día
+    filtrados = ai_service.filtrar_objetivos_por_hora_del_dia(objetivos, "08:00", ["cultura"])
+    assert filtrados[0]["proposito"] == "cultura"
+
+
+def test_filtrar_objetivos_por_hora_del_dia_prioriza_descanso_de_noche():
+    objetivos = [{"proposito": "comida", "hora_objetivo": 14.0}]  # sale 8am + 14h = 10pm, de noche
+    filtrados = ai_service.filtrar_objetivos_por_hora_del_dia(objetivos, "08:00")
+    assert filtrados[0]["proposito"] == "descanso"
+
+
+def test_filtrar_objetivos_por_hora_del_dia_sin_hora_salida_no_cambia_nada():
+    objetivos = [{"proposito": "descanso", "hora_objetivo": 4.0}]
+    filtrados = ai_service.filtrar_objetivos_por_hora_del_dia(objetivos, None)
+    assert filtrados == objetivos
+
+
+def test_generar_objetivos_automaticos_sin_horas_max_devuelve_vacio():
+    assert ai_service.generar_objetivos_automaticos(10, None) == []
+
+
+def test_generar_objetivos_automaticos_genera_comida_y_descanso():
+    objetivos = ai_service.generar_objetivos_automaticos(12, 4)
+    assert len(objetivos) == 2
+    assert objetivos[0]["proposito"] == "comida"
+    assert objetivos[1]["proposito"] == "descanso"
+
+
+def test_sugerir_paradas_con_hora_salida_reparte_por_proposito(app_context):
+    ruta = route_service.calcular_ruta("Ciudad de México", "Cancún")
+    sugerencias = ai_service.sugerir_paradas([], limite=6, ruta=ruta, horas_max=4, hora_salida="08:00")
+
+    con_proposito = [s for s in sugerencias if s.get("proposito")]
+    assert con_proposito  # al menos una parada vino del reparto por objetivos
+    ids = [s["id"] for s in con_proposito]
+    assert len(ids) == len(set(ids))  # nunca el mismo destino en dos objetivos

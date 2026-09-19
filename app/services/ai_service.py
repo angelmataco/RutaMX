@@ -114,6 +114,160 @@ def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
     return lugar
 
 
+def obtener_pool_con_horas(ruta, excluir_ids=None, limite=40):
+    """Envoltorio público sobre `_candidatos_en_el_corredor` con un límite
+    amplio — para tener de dónde elegir varios objetivos de parada (por
+    propósito y hora) sin repetir destinos. Usado tanto por el chat de IA
+    (`planificador_ia_service.py`) como por el reparto automático de
+    paradas sin IA de aquí abajo.
+    """
+    if not ruta:
+        return []
+    candidatos = _candidatos_en_el_corredor(ruta, limite, set(excluir_ids or []))
+    return candidatos or []
+
+
+# Antes de esta hora del día no tiene caso proponer "descanso" (dormir) —
+# todavía hay luz/actividad y se siente forzado.
+HORA_LIMITE_DESCANSO_DE_DIA = 20.0
+
+# Después de esta hora ya conviene priorizar una parada de descanso en
+# vez de una visita, aunque el propósito original fuera otro.
+HORA_LIMITE_NOCHE = 21.0
+
+
+def _hora_del_reloj(hora_salida: str, horas_transcurridas: float):
+    """`hora_salida` en formato "HH:MM" + horas transcurridas desde la
+    salida -> hora del reloj real (0-24), o None si `hora_salida` no
+    tiene un formato válido.
+    """
+    try:
+        horas, minutos = hora_salida.split(":")
+        salida = int(horas) + int(minutos) / 60
+    except (ValueError, AttributeError, TypeError):
+        return None
+    return (salida + horas_transcurridas) % 24
+
+
+def filtrar_objetivos_por_hora_del_dia(objetivos, hora_salida, intereses_usuario=None):
+    """Ajusta el propósito de cada objetivo según la hora real del día en
+    la que caería (no solo las horas transcurridas del viaje). Comparte
+    esta lógica el chat de IA y el reparto automático sin IA — protege
+    incluso si la IA propuso algo que no cuadra con la hora del día (ej.
+    "dormir" a media tarde).
+
+    Sin `hora_salida` no se puede calcular la hora real, así que se
+    regresan los objetivos sin tocar.
+    """
+    if not hora_salida:
+        return list(objetivos)
+
+    interes_de_dia = (intereses_usuario or ["cultura"])[0]
+    ajustados = []
+    for objetivo in objetivos:
+        hora_reloj = _hora_del_reloj(hora_salida, objetivo["hora_objetivo"])
+        proposito = objetivo["proposito"]
+        if hora_reloj is not None:
+            if proposito == "descanso" and hora_reloj < HORA_LIMITE_DESCANSO_DE_DIA:
+                proposito = interes_de_dia
+            elif proposito != "descanso" and hora_reloj >= HORA_LIMITE_NOCHE:
+                proposito = "descanso"
+        ajustados.append({**objetivo, "proposito": proposito})
+    return ajustados
+
+
+def generar_objetivos_automaticos(tiempo_h, horas_max, hora_salida=None, intereses_usuario=None):
+    """Versión sin IA de "decidir dónde conviene parar": si el usuario dio
+    horas máximas de manejo seguido, propone una parada de comida en el
+    primer tramo y de descanso en cada tramo siguiente, cada
+    `horas_max` horas — después las ajusta con `filtrar_objetivos_por_hora_del_dia`
+    igual que haría el chat de IA. Esto es lo que hace que el trabajo
+    hecho para el chat también mejore las sugerencias del formulario
+    manual, sin llamar a ningún proveedor de IA.
+    """
+    if not horas_max or not tiempo_h:
+        return []
+
+    objetivos = []
+    hora = horas_max
+    es_el_primero = True
+    while hora < tiempo_h:
+        objetivos.append({"proposito": "comida" if es_el_primero else "descanso", "hora_objetivo": round(hora, 1)})
+        es_el_primero = False
+        hora += horas_max
+
+    return filtrar_objetivos_por_hora_del_dia(objetivos, hora_salida, intereses_usuario)
+
+
+def asignar_paradas_a_objetivos(candidatos, objetivos):
+    """Por cada objetivo (propósito + hora), elige el mejor candidato aún
+    no usado: prioriza que su propósito esté entre los intereses del
+    destino, y de ahí la cercanía en horas al objetivo. Nunca repite el
+    mismo destino en dos objetivos de la misma lista — evita el problema
+    de varios candidatos casi idénticos en tiempo/distancia. Si un
+    objetivo se queda sin un candidato razonable, se omite (nunca fuerza
+    un lugar que no encaja).
+
+    `candidatos` es una lista de (Destino, horas_estimadas) como la que
+    devuelve `obtener_pool_con_horas`. Devuelve una lista de lugares (con
+    el mismo shape que `_lugar_desde_destino`) más `proposito` y
+    `hora_objetivo`, ordenada por hora.
+    """
+    usados = set()
+    resultado = []
+
+    for objetivo in sorted(objetivos, key=lambda o: o["hora_objetivo"]):
+        mejor = None
+        mejor_puntaje = None
+        for destino, horas_estimadas in candidatos:
+            if destino.id in usados or horas_estimadas is None:
+                continue
+            coincide_proposito = 0 if objetivo["proposito"] in (destino.intereses or []) else 1
+            distancia_hora = abs(horas_estimadas - objetivo["hora_objetivo"])
+            puntaje = (coincide_proposito, distancia_hora)
+            if mejor_puntaje is None or puntaje < mejor_puntaje:
+                mejor_puntaje = puntaje
+                mejor = (destino, horas_estimadas)
+
+        if mejor is None:
+            continue
+
+        destino, horas_estimadas = mejor
+        usados.add(destino.id)
+        lugar = _lugar_desde_destino(destino, horas_estimadas)
+        lugar["proposito"] = objetivo["proposito"]
+        lugar["hora_objetivo"] = objetivo["hora_objetivo"]
+        resultado.append(lugar)
+
+    return resultado
+
+
+def _sugerir_con_objetivos_automaticos(intereses, limite, ruta, horas_max, hora_salida, excluir_ids):
+    """Usa `generar_objetivos_automaticos` + `asignar_paradas_a_objetivos`
+    para dar las primeras paradas (una por propósito/hora, sin
+    duplicados cercanos), y rellena el resto del cupo con las sugerencias
+    normales ordenadas por interés. Devuelve `None` si no hay suficiente
+    información para armar objetivos (así `sugerir_paradas` cae al
+    comportamiento de siempre).
+    """
+    pool = obtener_pool_con_horas(ruta, excluir_ids, limite=max(limite, 20))
+    if not pool:
+        return None
+
+    objetivos = generar_objetivos_automaticos(ruta.get("tiempo_h"), horas_max, hora_salida, list(intereses) or None)
+    if not objetivos:
+        return None
+
+    asignadas = asignar_paradas_a_objetivos(pool, objetivos)
+    if not asignadas:
+        return None
+
+    ids_usados = {lugar["id"] for lugar in asignadas}
+    restantes = _ordenar_candidatos([(d, h) for d, h in pool if d.id not in ids_usados], intereses, None)
+    relleno = [_lugar_desde_destino(d, h) for d, h in restantes[: max(0, limite - len(asignadas))]]
+    return (asignadas + relleno)[:limite]
+
+
 def _consulta_destinos(excluir_ids):
     consulta = Destino.query
     if excluir_ids:
@@ -229,7 +383,7 @@ def _sugerir_desde_demo(intereses, limite):
     return resultado
 
 
-def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir_ids=None):
+def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir_ids=None, hora_salida=None):
     """Devuelve destinos sugeridos para la ruta actual.
 
     - `ruta`: resumen devuelto por route_service.calcular_ruta (usa su
@@ -237,6 +391,11 @@ def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir
     - `horas_max`: horas máximas que el usuario quiere manejar seguido;
       si se da, se prioriza a los destinos cercanos al punto del viaje
       donde convendría parar a descansar.
+    - `hora_salida`: hora aproximada de salida ("HH:MM"), opcional. Con
+      `horas_max` + `hora_salida` se reparten paradas por propósito y
+      hora del día (comida/descanso, evitando proponer dormir de día) en
+      vez de solo marcar un punto de descanso — mismo mecanismo que usa
+      el chat de IA, sin necesitar ningún proveedor.
     - `excluir_ids`: ids de destinos que ya se mostraron/agregaron y no
       deben repetirse (para "ver más recomendaciones").
     """
@@ -244,6 +403,11 @@ def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir
     excluir_ids = set(excluir_ids or [])
 
     try:
+        if ruta and horas_max and hora_salida:
+            resultado = _sugerir_con_objetivos_automaticos(intereses, limite, ruta, horas_max, hora_salida, excluir_ids)
+            if resultado:
+                return resultado
+
         resultado = _sugerir_desde_base(intereses, limite, ruta, horas_max, excluir_ids)
         if resultado is not None:
             return resultado

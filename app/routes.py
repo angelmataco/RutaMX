@@ -4,7 +4,7 @@ import re
 from flask import Blueprint, jsonify, render_template, request, send_file, session
 
 from app.models import Destino, RutaGuardada, Usuario, guardar_ruta, listar_rutas
-from app.services import ai_service, auth_service, pdf_service, route_service
+from app.services import ai_service, auth_service, llm_provider, pdf_service, planificador_ia_service, route_service
 
 main_bp = Blueprint("main", __name__)
 
@@ -57,12 +57,32 @@ def api_sugerencias():
     excluir = request.args.get("excluir", "")
     ids_excluidos = {int(i) for i in excluir.split(",") if i.isdigit()}
 
+    hora_salida = request.args.get("hora_salida", "").strip() or None
+
     ruta = route_service.calcular_ruta(origen, destino) if origen and destino else None
 
     sugerencias = ai_service.sugerir_paradas(
-        lista_intereses, limite=limite, ruta=ruta, horas_max=horas_max, excluir_ids=ids_excluidos
+        lista_intereses,
+        limite=limite,
+        ruta=ruta,
+        horas_max=horas_max,
+        excluir_ids=ids_excluidos,
+        hora_salida=hora_salida,
     )
     return jsonify({"sugerencias": sugerencias})
+
+
+@main_bp.route("/api/ia/disponible")
+def api_ia_disponible():
+    return jsonify({"disponible": llm_provider.hay_proveedor_configurado()})
+
+
+@main_bp.route("/api/ia/planear", methods=["POST"])
+def api_ia_planear():
+    datos = request.get_json(silent=True) or {}
+    mensajes = datos.get("mensajes") or []
+    resultado = planificador_ia_service.procesar_turno(mensajes)
+    return jsonify(resultado)
 
 
 @main_bp.route("/api/destinos/nombres")

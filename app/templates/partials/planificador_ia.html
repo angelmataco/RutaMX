@@ -1,0 +1,28 @@
+<dialog class="modal-ia" data-modal-ia>
+  <form method="dialog" class="modal-ia__cerrar">
+    <button type="submit" class="icon-btn" aria-label="Cerrar">✕</button>
+  </form>
+
+  <div class="modal-ia__header">
+    <span class="icon-badge">🤖</span>
+    <div>
+      <p class="kicker">PLANEAR CON IA</p>
+      <h3 class="card__title">Cuéntame tu viaje</h3>
+    </div>
+  </div>
+
+  <div class="chat-transcript" data-chat-transcript>
+    <div class="chat-burbuja chat-burbuja--ia">
+      ¡Hola! Cuéntame cómo te imaginas tu road trip — de dónde a dónde,
+      con quién vas, qué te gustaría hacer en el camino — y te propongo
+      un itinerario.
+    </div>
+  </div>
+
+  <div class="chat-opciones-ia" data-chat-opciones hidden></div>
+
+  <form class="chat-form" data-chat-form>
+    <input type="text" name="mensaje" placeholder="Escribe aquí..." data-chat-input autocomplete="off" />
+    <button type="submit" class="btn btn--primary">Enviar</button>
+  </form>
+</dialog>

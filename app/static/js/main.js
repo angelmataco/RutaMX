@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         limite: String(limite),
       });
       if (valores.horasMax) query.set("horas_max", valores.horasMax);
+      if (valores.horaSalida) query.set("hora_salida", valores.horaSalida);
       if (excluirIds.length) query.set("excluir", excluirIds.join(","));
 
       const respuesta = await fetch(`/api/sugerencias?${query.toString()}`);
@@ -569,4 +570,23 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarRutasGuardadas();
   }
   cargarDatalistDestinos();
+
+  // Punto de entrada para "Planear con IA" (planificador_ia.js): aplica
+  // la opción elegida reusando el mismo render que el flujo manual, para
+  // no duplicar lógica de mapa/resumen/itinerario.
+  window.RutaApp = {
+    aplicarPlanIA(opcion) {
+      estado.resumen = opcion.resumen;
+      estado.itinerario = opcion.paradas.map((p) => ({ id: p.id, nombre: p.nombre, lat: p.lat, lon: p.lon }));
+      estado.ultimoOrigenDestino = { origen: opcion.resumen.origen.nombre, destino: opcion.resumen.destino.nombre };
+
+      elementos.resultados.hidden = false;
+      if (elementos.mapa) RutaMapa.invalidarTamano();
+
+      renderResumen(estado.resumen);
+      renderItinerarioBase(estado.resumen);
+
+      elementos.resultados.scrollIntoView({ behavior: "smooth" });
+    },
+  };
 });

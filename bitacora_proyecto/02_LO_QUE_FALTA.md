@@ -65,11 +65,62 @@ se sube a git) — ver la sección "Conectar tu propia IA" en `README.md`.
   si alguien conecta esas keys y falla la llamada, revisar la forma
   exacta contra la documentación vigente de cada proveedor.
 
-## Ideas guardadas para después (todavía sin planear a detalle)
+## ✅ Ya implementado: "Planear con IA" (chat + reparto inteligente de paradas)
 
-- **"IA de ayuda"**: un cuadro/asistente conversacional dentro de la app
-  para ayudar al usuario a planear su viaje. Angel dijo explícitamente
-  "solo guárdalo como idea" — no se ha diseñado ni empezado.
+Lo que antes estaba en "ideas guardadas" como "IA de ayuda" ya se
+implementó, con bastante más diseño del que se anotó originalmente.
+Botón "🤖 Planear con IA" en el formulario principal, abre un panel de
+chat grande y centrado (efecto vidrio esmerilado con `<dialog>` nativo).
+El usuario describe su viaje en lenguaje natural, la IA hace como máximo
+5 preguntas de seguimiento (con hasta 3 respuestas rápidas sugeridas +
+"Otro" para texto libre) y entrega **dos itinerarios distintos** para
+elegir.
+
+Piezas nuevas:
+- `app/services/llm_provider.py` — se generalizó (dispatcher compartido
+  `_llamar_proveedor`) y ganó `extraer_slots_viaje()` (interpreta la
+  conversación) y `generar_opciones_objetivos()` (propone 2 conjuntos de
+  objetivos: propósito + hora, sin elegir lugar).
+- `app/services/ai_service.py` — nuevas funciones deterministas:
+  `asignar_paradas_a_objetivos()` (reparte objetivos entre lugares reales
+  sin repetir), `filtrar_objetivos_por_hora_del_dia()` (no propone
+  "dormir" de día ni "visita corta" ya entrada la noche),
+  `generar_objetivos_automaticos()` (la versión **sin IA**, con fórmula
+  fija en vez de conversación).
+- `app/services/planificador_ia_service.py` (nuevo) — orquesta cada turno
+  del chat.
+- Endpoints `GET /api/ia/disponible` y `POST /api/ia/planear`.
+- **La IA nunca elige el lugar exacto** — solo decide propósito + hora;
+  la asignación a un destino real siempre es el mismo algoritmo
+  determinista, verificado, sin inventar nada.
+
+**La pieza más importante para el proyecto sin usar el botón de IA:**
+`sugerir_paradas()` ahora, si le das `horas_max` **y** `hora_salida`
+(campo nuevo, opcional, en el formulario), reparte las sugerencias por
+propósito y hora usando exactamente el mismo motor
+(`asignar_paradas_a_objetivos` + `filtrar_objetivos_por_hora_del_dia`)
+que el chat, solo que los objetivos los genera una fórmula en vez de una
+conversación. **Probado en vivo**: CDMX→Oaxaca con horas_max=4 y
+hora_salida=08:00 devolvió Tehuacán marcado `proposito: "comida"` a la
+hora correcta — funciona sin tocar la IA.
+
+**Lo que sigue pendiente de esto:**
+- **El chat en sí no se ha podido probar de punta a punta con una IA
+  real todavía.** Se probó con una key presente en el entorno de
+  desarrollo, pero resultó inválida para uso directo del SDK (error 401
+  "API key is invalid") — el manejo de error funcionó perfecto (mensaje
+  claro al usuario, no rompe nada), pero falta la prueba real con una key
+  de Anthropic/OpenAI/Gemini genuina para confirmar que el chat completo
+  (preguntas, quick-replies, las dos opciones finales) funciona de
+  extremo a extremo.
+- El campo "personas" se captura en la conversación pero no se guarda en
+  ningún lado (ni en `RutaGuardada` ni en `Destino`) — hoy solo influye
+  en el razonamiento de la IA sobre qué proponer, no se persiste.
+- Los tests de `planificador_ia_service.py` y de la asignación de
+  objetivos están con el proveedor mockeado (correcto para no gastar
+  tokens en cada `pytest`), pero por lo mismo no prueban el prompt real
+  contra un modelo de verdad — si el modelo devuelve algo fuera de lo
+  esperado en producción, revisar primero el prompt en `llm_provider.py`.
 
 ## Cosas que valdría la pena revisar pronto (no urgentes, no pedidas aún)
 

@@ -66,6 +66,39 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (cae a Nominatim directo, solo que ese lugar no se guarda para
   siempre).
 
+## "Planear con IA" — chat que arma el itinerario completo
+
+- Botón "🤖 Planear con IA" en el formulario principal — abre un panel de
+  chat grande y centrado, efecto vidrio esmerilado (`<dialog>` nativo +
+  `backdrop-filter: blur`), sin librerías nuevas.
+- El usuario describe su viaje en lenguaje natural; la IA hace máximo 5
+  preguntas de seguimiento, cada una con hasta 3 respuestas rápidas
+  sugeridas + botón "Otro" para texto libre.
+- Al final propone **dos itinerarios genuinamente distintos** (cantidad,
+  propósito y horario de cada parada los decide la IA según ese viaje —
+  no hay plantilla fija de "2 paradas vs 1 combinada").
+- **La IA nunca elige el lugar exacto** — solo decide propósito de parada
+  (comida/descanso/cultura/etc.) + a qué hora del viaje conviene. La
+  asignación a un destino real de la tabla (`ai_service.asignar_paradas_a_objetivos`)
+  siempre es un algoritmo determinista que nunca repite el mismo lugar en
+  dos objetivos.
+- **Hora de salida** (campo nuevo, opcional): con eso se calcula la hora
+  real del reloj de cada parada — no propone "dormir" en pleno día ni
+  solo visitas cortas ya entrada la noche
+  (`ai_service.filtrar_objetivos_por_hora_del_dia`).
+- **Funciona también sin usar el botón de IA**: si en el formulario
+  manual pones horas máximas de manejo + hora de salida,
+  `sugerir_paradas()` usa el mismo motor de reparto por propósito/hora
+  (con una fórmula fija en vez de una conversación) — probado en vivo,
+  CDMX→Oaxaca con horas_max=4 + hora_salida=08:00 devolvió una parada de
+  comida a la hora correcta.
+- Endpoints nuevos: `GET /api/ia/disponible` (oculta el botón si nadie
+  tiene una key conectada), `POST /api/ia/planear`.
+- `llm_provider.py` se generalizó a un dispatcher compartido — las
+  mismas 3 funciones por proveedor (Claude/OpenAI/Gemini) ahora sirven
+  tanto para generar destinos nuevos como para el chat, sin duplicar
+  código de detección de proveedor.
+
 ## Base de datos de destinos (Supabase / Postgres)
 
 - Catálogo de los 32 estados con 369 destinos verificados: mínimo 8
@@ -115,20 +148,24 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Calidad / pruebas
 
-- 34 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 49 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
-  destinos con IA (con el proveedor mockeado, sin gastar tokens reales) y
-  cuentas de usuario (registro, login, aislamiento entre cuentas).
+  destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
+  cuentas de usuario (registro, login, aislamiento entre cuentas), y el
+  chat de planeación con IA (asignación de objetivos, filtro de hora del
+  día, orquestación del chat — todo con el proveedor mockeado).
 - Grafo de conocimiento del proyecto generado con graphify
   (`graphify-out/`), se actualiza con `/graphify update`.
 
-## Commits recientes (los últimos 5, de la sesión más reciente)
+## Commits recientes (los últimos 6, de la sesión más reciente)
 
-1. Cuentas de usuario (nombre + apellido + PIN de 4 dígitos, sin correo) —
+1. "Planear con IA" — chat que arma el itinerario, con reparto
+   inteligente de paradas reutilizable sin IA — ver sección de arriba.
+2. Cuentas de usuario (nombre + apellido + PIN de 4 dígitos, sin correo) —
    ver sección de arriba.
-2. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
+3. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
    cuando el lugar no está en la base — ver sección de arriba.
-3. Autocompletado propio con Tab/Enter y sin distinguir acentos.
-4. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
-5. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
+4. Autocompletado propio con Tab/Enter y sin distinguir acentos.
+5. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
+6. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
    de 16 + colores de origen/destino + reubicación de "Guarda tu plan".

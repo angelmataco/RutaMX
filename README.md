@@ -45,6 +45,19 @@ sugerencias → itinerario → guardar):
   lo inserte con `fuente="ia_generada"` — desde ahí funciona igual que
   cualquiera de los 369 curados (autocompletado, sugerencias, rutas). Ver
   "Conectar tu propia IA" más abajo.
+- **"Planear con IA"**: botón en el formulario que abre un chat (panel
+  centrado con efecto de vidrio esmerilado) donde describes tu viaje en
+  lenguaje natural. La IA hace hasta 5 preguntas de seguimiento (con
+  respuestas rápidas sugeridas) y propone 2 itinerarios distintos — pero
+  nunca elige el lugar exacto por su cuenta: solo decide propósito de
+  parada (comida/descanso/cultura/...) y a qué hora del viaje conviene;
+  la asignación al destino real siempre es el mismo algoritmo
+  determinista de `ai_service.py`. Ese mismo motor de reparto por
+  propósito/hora también mejora las sugerencias **sin usar el botón de
+  IA**: si pones horas máximas de manejo + hora de salida en el
+  formulario manual, ya reparte paradas de comida/descanso en vez de
+  amontonarlas. `app/services/planificador_ia_service.py` orquesta el
+  chat, endpoints `GET /api/ia/disponible` y `POST /api/ia/planear`.
 
 Los lugares donde falta una integración real están marcados con
 `# TODO: reemplazar ...` en el código.
@@ -133,15 +146,16 @@ conexión a internet para que pasen todas.
 RutaMX/
 ├── app/
 │   ├── __init__.py        # Application factory
-│   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas, /api/auth/*)
+│   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas, /api/auth/*, /api/ia/*)
 │   ├── models.py          # Modelos: Estado, Destino, Usuario, RutaGuardada (Supabase)
 │   ├── services/
-│   │   ├── ai_service.py           # Sugerencias de paradas (filtro por corredor real)
-│   │   ├── route_service.py        # Ruta real (OSRM), distancia/tiempo, corredor
-│   │   ├── maps_service.py         # Geocodificación (Nominatim) y catálogo demo
-│   │   ├── ia_destinos_service.py  # Genera destinos nuevos con IA e inserta en la tabla
-│   │   ├── llm_provider.py         # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
-│   │   └── auth_service.py         # Registro/login (nombre + apellido + PIN de 4 dígitos)
+│   │   ├── ai_service.py               # Sugerencias de paradas + reparto por propósito/hora
+│   │   ├── route_service.py            # Ruta real (OSRM), distancia/tiempo, corredor
+│   │   ├── maps_service.py             # Geocodificación (Nominatim) y catálogo demo
+│   │   ├── ia_destinos_service.py      # Genera destinos nuevos con IA e inserta en la tabla
+│   │   ├── llm_provider.py             # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
+│   │   ├── planificador_ia_service.py  # Orquesta el chat "Planear con IA"
+│   │   └── auth_service.py             # Registro/login (nombre + apellido + PIN de 4 dígitos)
 │   ├── static/               # CSS, JS, imágenes
 │   └── templates/            # HTML (base + partials por sección)
 ├── scripts/

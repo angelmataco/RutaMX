@@ -5,6 +5,54 @@
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
 
+## "Planear con IA": por qué la IA nunca elige el lugar, solo el propósito y la hora
+
+La tentación fácil hubiera sido dejar que la IA "arme el itinerario" y
+devuelva nombres de lugares directamente. No se hizo así a propósito:
+cualquier proveedor puede alucinar un lugar que suene bien pero no exista
+o esté mal ubicado — rompería la regla que ya seguía todo el proyecto
+(nunca inventar datos geográficos). En vez de eso, la IA solo decide
+*propósito de parada + a qué hora del viaje conviene* (`{proposito,
+hora_objetivo}`), y un algoritmo 100% determinista
+(`ai_service.asignar_paradas_a_objetivos`) es quien elige el destino real
+de la tabla, verificado, sin excepción.
+
+## Por qué la misma lógica de reparto sirve con IA y sin IA
+
+Angel pidió explícitamente que el trabajo hecho para el chat "entrenara"
+la app aunque nadie usara el botón de IA. La forma de lograrlo sin
+aprendizaje automático real fue separar "quién decide los objetivos" de
+"quién los convierte en lugares": la IA los decide conversando
+(`llm_provider.generar_opciones_objetivos`), pero una fórmula fija
+(`ai_service.generar_objetivos_automaticos`, basada solo en `horas_max` +
+`hora_salida`) puede generar objetivos igual de válidos sin ningún
+proveedor. Ambos caminos terminan en la misma función de asignación —
+por eso agregar el campo "hora de salida" al formulario manual mejora las
+sugerencias de cualquiera, use o no la IA.
+
+## Por qué se agregó "hora de salida" y el filtro de hora del día
+
+Sin saber la hora real del reloj en la que caería cada parada, un viaje
+de 12h que sale a las 8am terminaría a las 8pm — de día — y no tiene
+sentido sugerir "parar a dormir" a media tarde. `hora_salida` es opcional
+(si no se da, todo funciona igual que antes, sin este filtro) pero cuando
+está, `ai_service.filtrar_objetivos_por_hora_del_dia` reclasifica
+objetivos de descanso que caen de día a una visita corta, y viceversa
+prioriza descanso si ya es de noche — corre después de generar objetivos
+(por IA o por fórmula) y antes de asignar lugares, así protege incluso si
+la IA se equivocó en su propuesta.
+
+## Diseño del chat: vidrio esmerilado + respuestas rápidas
+
+El panel usa el elemento `<dialog>` nativo de HTML con
+`backdrop-filter: blur()` en vez de una librería de modales — mismo
+patrón ya usado para el modal de login, cero dependencias nuevas. Las
+preguntas de la IA vienen con hasta 3 respuestas rápidas sugeridas (más
+un botón fijo "Otro") en vez de forzar al usuario a escribir todo — pedido
+explícito de Angel para que la experiencia no se sintiera tediosa, con un
+límite duro de 5 preguntas antes de que la IA tenga que decidir con lo
+que ya tiene.
+
 ## Geocoding: por qué se cambió el orden de resolución
 
 **Problema:** al pedir una ruta de León a Los Cabos, el mapa quedaba en

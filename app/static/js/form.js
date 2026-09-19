@@ -10,6 +10,7 @@ const RutaFormularios = (() => {
       nombre: form.querySelector('[name="nombre"]'),
       presupuesto: form.querySelector('[name="presupuesto"]'),
       horasMax: form.querySelector('[name="horas_max"]'),
+      horaSalida: form.querySelector('[name="hora_salida"]'),
       chips: Array.from(form.querySelectorAll("[data-interes]")),
     };
   }
@@ -22,6 +23,7 @@ const RutaFormularios = (() => {
       nombre: campos.nombre.value,
       presupuesto: campos.presupuesto.value,
       horasMax: campos.horasMax.value,
+      horaSalida: campos.horaSalida.value,
       intereses: campos.chips.filter((c) => c.classList.contains("is-active")).map((c) => c.dataset.interes),
     };
   }

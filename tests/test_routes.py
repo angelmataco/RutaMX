@@ -2,6 +2,7 @@ import pytest
 
 from app import create_app
 from app.models import RutaGuardada, Usuario, db
+from app.services import llm_provider
 
 NOMBRE_USUARIO_PRUEBA = "Prueba"
 APELLIDO_USUARIO_PRUEBA = "Bitacora"
@@ -158,6 +159,56 @@ def test_una_cuenta_no_ve_rutas_de_otra(client):
     _registrar_y_loguear(client, apellido="Dos")
     datos = client.get("/api/rutas").get_json()
     assert not any(r["nombre"] == "Escapada de prueba" for r in datos["rutas"])
+
+
+def test_ia_disponible_refleja_configuracion(client, monkeypatch):
+    monkeypatch.setattr(llm_provider, "hay_proveedor_configurado", lambda: True)
+    assert client.get("/api/ia/disponible").get_json() == {"disponible": True}
+
+    monkeypatch.setattr(llm_provider, "hay_proveedor_configurado", lambda: False)
+    assert client.get("/api/ia/disponible").get_json() == {"disponible": False}
+
+
+def test_ia_planear_sin_proveedor_da_error(client, monkeypatch):
+    monkeypatch.setattr(llm_provider, "hay_proveedor_configurado", lambda: False)
+
+    respuesta = client.post("/api/ia/planear", json={"mensajes": [{"role": "user", "content": "hola"}]})
+    assert respuesta.status_code == 200
+    assert respuesta.get_json()["tipo"] == "error"
+
+
+def test_ia_planear_devuelve_opciones_con_proveedor_mockeado(client, monkeypatch):
+    monkeypatch.setattr(llm_provider, "hay_proveedor_configurado", lambda: True)
+    monkeypatch.setattr(
+        llm_provider,
+        "extraer_slots_viaje",
+        lambda mensajes: {
+            "listo": True,
+            "pregunta_siguiente": None,
+            "opciones_respuesta": None,
+            "origen": "Ciudad de Mexico",
+            "destino": "Oaxaca de Juarez",
+            "personas": 2,
+            "horas_max": None,
+            "hora_salida": None,
+            "intereses": None,
+        },
+    )
+    monkeypatch.setattr(
+        llm_provider,
+        "generar_opciones_objetivos",
+        lambda contexto: {
+            "opciones": [
+                {"titulo": "Directa", "objetivos": [{"proposito": "comida", "hora_objetivo": 2.0}]},
+                {"titulo": "Con más paradas", "objetivos": [{"proposito": "cultura", "hora_objetivo": 1.0}]},
+            ]
+        },
+    )
+
+    respuesta = client.post("/api/ia/planear", json={"mensajes": [{"role": "user", "content": "cdmx a oaxaca"}]})
+    datos = respuesta.get_json()
+    assert datos["tipo"] == "opciones"
+    assert len(datos["opciones"]) == 2
 
 
 def test_pdf_itinerario_ok(client):
