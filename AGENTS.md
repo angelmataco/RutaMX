@@ -34,9 +34,23 @@ el que haces el cambio. No es opcional ni hay que esperar a que te lo
 pidan explícitamente.
 
 - Cosas que ya quedaron funcionando → `01_LO_QUE_YA_ESTA_HECHO.md`
-- Pendientes nuevos, o pendientes que se resolvieron → `02_LO_QUE_FALTA.md`
+- Pendientes nuevos (todavía sin hacer) → `02_LO_QUE_FALTA.md`
 - El "por qué" de una decisión no obvia, o un bug raro que costó
   diagnosticar → `03_DECISIONES_Y_NOTAS.md`
+
+**Regla estricta sobre `02_LO_QUE_FALTA.md`: ese archivo es SOLO lo que
+todavía no está hecho.** En cuanto algo que estaba ahí se termina:
+1. Escribe la explicación completa (qué se hizo, cómo, archivos
+   involucrados) en `01_LO_QUE_YA_ESTA_HECHO.md`.
+2. Borra por completo esa entrada de `02_LO_QUE_FALTA.md` — nunca la
+   dejes ahí marcada como "✅ Ya implementado" ni nada parecido. Si algo
+   quedó "✅ hecho" pero sigue escrito en el archivo de "lo que falta", es
+   un error: bórralo de ahí, no lo dejes con una marca de completado.
+3. Si dentro de esa feature ya terminada queda algo genuinamente
+   pendiente (un caso no probado, un detalle suelto), ese pedazo específico
+   sí puede quedarse en `02_LO_QUE_FALTA.md` como su propio punto — pero
+   como un pendiente normal, no colgado debajo de un encabezado que diga
+   que ya se implementó.
 
 Escribe en español, directo y sin relleno — igual que el tono que ya
 tienen esos archivos. Actualiza la fecha de "Última actualización" al
