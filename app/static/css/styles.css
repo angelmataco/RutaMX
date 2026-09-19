@@ -404,6 +404,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .field label,
@@ -480,6 +481,7 @@ a {
 .time-wheel-picker {
   position: relative;
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 6px;
   height: 180px;
@@ -496,10 +498,25 @@ a {
   background: var(--color-verde-palido);
   border-radius: var(--radius-sm);
   pointer-events: none;
+  /* Sin z-index, un elemento posicionado (position:absolute) pinta
+     arriba de los hijos normales aunque vaya primero en el DOM — por
+     eso las columnas de abajo necesitan su propio z-index más alto
+     para que el número seleccionado se vea encima del resaltado. */
+  z-index: 0;
+}
+
+.time-wheel-picker__separador {
+  position: relative;
+  z-index: 1;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-verde-oscuro);
 }
 
 .time-wheel-picker__col {
-  flex: 1;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 64px;
   height: 100%;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
@@ -534,6 +551,69 @@ a {
 
 .time-wheel-picker__pad {
   height: 72px !important;
+}
+
+/* Selector de burbujas (presupuesto, horas máximas) */
+.bubble-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bubble-picker__scroll {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: none;
+}
+
+.bubble-picker__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.bubble {
+  flex-shrink: 0;
+  border: 1px solid var(--color-borde);
+  background: var(--color-blanco);
+  color: var(--color-texto);
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.bubble:hover {
+  border-color: var(--color-terracota);
+  transform: translateY(-1px);
+}
+
+.bubble.is-activa {
+  background: var(--color-terracota);
+  border-color: var(--color-terracota);
+  color: var(--color-blanco);
+}
+
+.bubble--otro {
+  flex-shrink: 0;
+  border-style: dashed;
+  color: var(--color-texto-gris);
+}
+
+.bubble--otro.is-activa {
+  background: var(--color-verde-oscuro);
+  border-color: var(--color-verde-oscuro);
+  border-style: solid;
+  color: var(--color-blanco);
+}
+
+.field input[data-bubble-input] {
+  margin-top: 8px;
 }
 
 .autocomplete-list {

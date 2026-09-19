@@ -66,22 +66,24 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (cae a Nominatim directo, solo que ese lugar no se guarda para
   siempre).
 
-## Campos del formulario sin teclado (selector de hora tipo rueda + montos predefinidos)
+## Campos del formulario sin teclado (selector de hora tipo rueda + burbujas)
 
 - **Hora de salida**: ya no es el `<input type="time">` nativo (en
   escritorio obliga a escribir con teclado) — ahora es un botón que abre
-  un selector tipo rueda (como el de iOS: hora, minutos de 5 en 5, AM/PM,
-  cada uno en su propia columna con scroll-snap) construido con HTML/CSS
-  nativos (`<dialog>` + `scroll-snap-type`), sin ninguna librería. Guarda
-  el valor en el mismo formato `HH:MM` de siempre, así que no hizo falta
+  un selector tipo rueda (como el de iOS) con **dos** columnas, hora
+  (00-23) y minuto (00-59), en **formato 24 horas** (sin AM/PM — pedido
+  explícito), cada una con scroll-snap. Construido con HTML/CSS nativos
+  (`<dialog>` + `scroll-snap-type`), sin ninguna librería. Guarda el
+  valor en el mismo formato `HH:MM` de siempre, así que no hizo falta
   tocar `form.js` ni `main.js`.
-- **Presupuesto** y **Horas máximas de manejo**: siguen siendo campos
-  numéricos normales, pero ahora traen un `<datalist>` con montos
-  predeterminados (presupuesto: 1,000 a 20,000 de 1,000 en 1,000; horas:
-  1 a 16) — al enfocar el campo aparecen como opciones para elegir con un
-  clic, sin necesidad de escribir, pero si alguien quiere un valor exacto
-  distinto lo puede seguir escribiendo.
-- `app/static/js/time_picker.js` (nuevo) maneja el selector de hora.
+- **Presupuesto** y **Horas máximas de manejo**: en vez de una lista
+  plana de `<datalist>` (se veía sosa), ahora son una fila de "burbujas"
+  deslizable — mismo estilo que los chips de "¿Qué buscas?" — con montos
+  predefinidos (presupuesto: $1,000 a $20,000 de $1,000 en $1,000; horas:
+  1 a 16) más una burbuja "Otro" que revela un campo normal para escribir
+  un valor exacto distinto.
+- `app/static/js/time_picker.js` y `app/static/js/bubble_picker.js`
+  (nuevos) manejan cada uno.
 
 ## "Planear con IA" — chat que arma el itinerario completo
 

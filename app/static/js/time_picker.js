@@ -74,14 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return valores;
   }
 
-  function a24Horas({ hora, minuto, periodo }) {
-    let h = parseInt(hora, 10) % 12;
-    if (periodo === "PM") h += 12;
-    return `${String(h).padStart(2, "0")}:${minuto}`;
-  }
-
-  function formatoAmigable({ hora, minuto, periodo }) {
-    return `${hora}:${minuto} ${periodo}`;
+  function a24Horas({ hora, minuto }) {
+    return `${hora}:${minuto}`;
   }
 
   trigger.addEventListener("click", () => {
@@ -91,26 +85,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // hacer scroll dentro de él — si no, scrollTop se queda en 0.
     requestAnimationFrame(() => {
       if (hidden.value) {
-        const [h24, minuto] = hidden.value.split(":");
-        const h24Num = parseInt(h24, 10);
-        const periodo = h24Num >= 12 ? "PM" : "AM";
-        const hora12 = ((h24Num + 11) % 12) + 1;
-        centrarEn(columnas.find((c) => c.nombre === "hora"), hora12);
+        const [hora, minuto] = hidden.value.split(":");
+        centrarEn(columnas.find((c) => c.nombre === "hora"), hora);
         centrarEn(columnas.find((c) => c.nombre === "minuto"), minuto);
-        centrarEn(columnas.find((c) => c.nombre === "periodo"), periodo);
       } else {
-        centrarEn(columnas.find((c) => c.nombre === "hora"), 8);
+        centrarEn(columnas.find((c) => c.nombre === "hora"), "08");
         centrarEn(columnas.find((c) => c.nombre === "minuto"), "00");
-        centrarEn(columnas.find((c) => c.nombre === "periodo"), "AM");
       }
     });
   });
 
   btnConfirmar.addEventListener("click", () => {
     const valores = valoresActuales();
-    if (valores.hora && valores.minuto && valores.periodo) {
+    if (valores.hora && valores.minuto) {
       hidden.value = a24Horas(valores);
-      display.textContent = formatoAmigable(valores);
+      display.textContent = a24Horas(valores);
     }
     dialogo.close();
   });

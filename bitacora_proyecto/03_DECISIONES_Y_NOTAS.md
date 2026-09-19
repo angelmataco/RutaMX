@@ -12,34 +12,60 @@ horas máximas) obligara a escribir con teclado. El `<input type="time">`
 nativo en iOS Safari YA se ve como una rueda, pero en escritorio
 (Chrome/Firefox/Safari de Mac) se renderiza como un campo de texto con
 flechitas — exactamente lo que no se quería. Por eso se construyó un
-selector propio con `<dialog>` + `scroll-snap-type: y mandatory` (three
-columnas: hora, minutos de 5 en 5, AM/PM) — mismo patrón de "usar HTML
-nativo antes que una librería" que ya se seguía con los otros modales.
-Guarda el valor en un input oculto con el mismo `name="hora_salida"` de
-siempre, así que ni `form.js` ni `main.js` necesitaron cambios.
+selector propio con `<dialog>` + `scroll-snap-type: y mandatory` — mismo
+patrón de "usar HTML nativo antes que una librería" que ya se seguía con
+los otros modales. Guarda el valor en un input oculto con el mismo
+`name="hora_salida"` de siempre, así que ni `form.js` ni `main.js`
+necesitaron cambios.
 
-**Nota para quien depure esto después:** al probarlo en el navegador
-automatizado de esta sesión, las capturas de pantalla (`screenshot`)
-mostraban el scroll de las ruedas "atorado" en la posición equivocada de
-forma consistente, aunque el estado real (`scrollTop`, clases
-`is-activo`, y hasta `getBoundingClientRect()` comparando la posición del
-ítem activo contra el recuadro resaltado) confirmaban que todo estaba
-perfectamente alineado. Fue una falla de la herramienta de captura de
-pantalla con este tipo de contenido con scroll-snap, no un bug real —
-quedó verificado con geometría (`getBoundingClientRect`), no solo con
-capturas visuales.
+**Formato 24 horas, sin AM/PM:** primera versión tenía 3 columnas (hora
+12h, minutos de 5 en 5, AM/PM). Angel pidió cambiarlo a 24 horas — dos
+columnas nada más (hora 00-23, minuto 00-59 de 1 en 1) — más simple y sin
+la columna extra de AM/PM.
 
-## Presupuesto y horas máximas: por qué `<datalist>` y no un `<select>`
+**Bug real encontrado y corregido:** el recuadro verde que resalta la
+hora seleccionada tapaba por completo los números en vez de quedar
+detrás. Causa: `.time-wheel-picker__highlight` tiene `position:absolute`
+mientras que las columnas de números (`.time-wheel-picker__col`) no
+tenían ninguna posición especial (`position:static`, el default) — en
+CSS, un elemento posicionado siempre se pinta ARRIBA de los elementos no
+posicionados dentro del mismo contexto de apilamiento, sin importar el
+orden en el HTML. El recuadro, aunque va primero en el markup, tapaba los
+números que iban después. Arreglo: darle a `.time-wheel-picker__col`
+también `position:relative` + `z-index:1` (y `z-index:0` explícito al
+recuadro) para que los números pinten encima. Ojo para el futuro: cuando
+se mezcla `position:absolute` con elementos normales en el mismo
+contenedor, el orden del DOM NO garantiza el orden de pintado — hay que
+fijar el `z-index` a propósito.
 
-Con un `<select>` normal solo se puede elegir de la lista, no escribir un
-valor exacto distinto — y Angel pidió explícitamente que sí se pudiera
-("si el usuario quiere poner una cifra exacta que lo pueda hacer").
-`<datalist>` da lo mejor de los dos mundos con cero JavaScript: al
-enfocar el campo aparecen las opciones predefinidas para elegir con un
-clic, pero el campo sigue siendo un `<input>` normal donde se puede
-escribir cualquier número. Presupuesto va de 1,000 a 20,000 de 1,000 en
-1,000 (pedido explícito); horas máximas de 1 a 16 (ya eran los límites
-del campo).
+(Nota histórica: durante el debugging de este bug, antes de encontrar la
+causa real, se llegó a sospechar que era solo un problema de las
+capturas de pantalla del navegador de pruebas — resultó ser ambas cosas:
+la herramienta de captura sí tiene un problema aparte con currentTarget
+de scroll-snap, pero el tapado real de los números SÍ era un bug de CSS
+genuino, confirmado porque Angel lo vio con sus propios ojos en la app.)
+
+## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
+
+La primera versión usó `<datalist>` (una lista nativa de opciones al
+enfocar el campo) — funcional, pero Angel la vio "fea, sin chiste", una
+lista plana sin ningún estilo (el navegador no permite personalizar el
+aspecto de un `<datalist>` con CSS). Se reemplazó por una fila de
+"burbujas" deslizable — el mismo componente visual que ya usan los chips
+de "¿Qué buscas?" (`.chip` → aquí `.bubble`, mismo lenguaje visual) — con
+una burbuja "Otro" al final que revela el `<input>` normal para un valor
+exacto. Presupuesto va de $1,000 a $20,000 de $1,000 en $1,000; horas
+máximas de 1 a 16.
+
+**Bug de layout al construirlo:** la fila de burbujas, al ser más ancha
+que su tarjeta, en vez de scrollear internamente empujaba TODA la página
+a desbordarse horizontalmente. Causa clásica de flexbox: un hijo flex
+(`.bubble-picker__scroll`) por default no se encoge más allá de su
+contenido (`min-width: auto`), así que aunque tenga `overflow-x: auto`,
+el contenedor completo crece para dar cabida al contenido en vez de
+recortarlo. Arreglo: `min-width: 0` en la cadena de contenedores flex
+(`.bubble-picker`, `.bubble-picker__scroll`, y `.field` en general) — con
+eso sí respetan su ancho asignado y el scroll queda contenido adentro.
 
 ## "Planear con IA": por qué la IA nunca elige el lugar, solo el propósito y la hora
 

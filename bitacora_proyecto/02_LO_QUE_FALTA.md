@@ -122,15 +122,17 @@ hora correcta — funciona sin tocar la IA.
   contra un modelo de verdad — si el modelo devuelve algo fuera de lo
   esperado en producción, revisar primero el prompt en `llm_provider.py`.
 
-## ✅ Ya implementado: campos sin teclado (hora tipo rueda + montos predefinidos)
+## ✅ Ya implementado: campos sin teclado (hora tipo rueda 24h + burbujas)
 
 Presupuesto, horas máximas de manejo, y hora de salida ya no obligan a
-escribir con teclado (pedido explícito de Angel). Ver
-`01_LO_QUE_YA_ESTA_HECHO.md` y `03_DECISIONES_Y_NOTAS.md` para el
-detalle. Sin pendientes conocidos — probado en vivo con verificación por
-geometría (`getBoundingClientRect`) porque las capturas de pantalla del
-navegador automatizado de esta sesión tenían un problema propio de la
-herramienta (no del código) con el contenido de scroll-snap.
+escribir con teclado (pedido explícito de Angel). El selector de hora es
+de 2 columnas en formato 24h (sin AM/PM); presupuesto/horas usan
+"burbujas" (mismo estilo que los chips de intereses) en vez de una lista
+plana. Ver `01_LO_QUE_YA_ESTA_HECHO.md` y `03_DECISIONES_Y_NOTAS.md` para
+el detalle, incluyendo dos bugs reales de CSS que se encontraron y
+corrigieron en el camino (el recuadro tapando los números por un problema
+de `z-index`, y la fila de burbujas desbordando la página por un
+`min-width` de flexbox). Sin pendientes conocidos.
 
 ## Cosas que valdría la pena revisar pronto (no urgentes, no pedidas aún)
 

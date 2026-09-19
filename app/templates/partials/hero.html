@@ -41,25 +41,30 @@
           <input type="text" id="hero-nombre" name="nombre" value="Escapada CDMX a Oaxaca" />
         </div>
 
-        <div class="ruta-form__row">
-          <div class="field">
-            <label for="hero-presupuesto">Presupuesto (MXN)</label>
-            <input type="number" id="hero-presupuesto" name="presupuesto" value="6500" min="0" step="100" list="presupuesto-opciones" />
-            <datalist id="presupuesto-opciones">
+        <div class="field">
+          <p class="field__label">Presupuesto (MXN)</p>
+          <div class="bubble-picker" data-bubble-picker>
+            <div class="bubble-picker__scroll" data-bubble-lista>
               {% for monto in range(1000, 20001, 1000) %}
-              <option value="{{ monto }}"></option>
+              <button type="button" class="bubble" data-bubble-valor="{{ monto }}">${{ '{:,}'.format(monto) }}</button>
               {% endfor %}
-            </datalist>
+            </div>
+            <button type="button" class="bubble bubble--otro" data-bubble-otro>Otro monto</button>
           </div>
-          <div class="field">
-            <label for="hero-horas-max">Horas máximas de manejo seguido</label>
-            <input type="number" id="hero-horas-max" name="horas_max" placeholder="8" min="1" max="16" step="0.5" list="horas-max-opciones" />
-            <datalist id="horas-max-opciones">
+          <input type="number" id="hero-presupuesto" name="presupuesto" value="6500" min="0" step="100" data-bubble-input hidden />
+        </div>
+
+        <div class="field">
+          <p class="field__label">Horas máximas de manejo seguido</p>
+          <div class="bubble-picker" data-bubble-picker>
+            <div class="bubble-picker__scroll" data-bubble-lista>
               {% for hora in range(1, 17) %}
-              <option value="{{ hora }}"></option>
+              <button type="button" class="bubble" data-bubble-valor="{{ hora }}">{{ hora }} h</button>
               {% endfor %}
-            </datalist>
+            </div>
+            <button type="button" class="bubble bubble--otro" data-bubble-otro>Otro</button>
           </div>
+          <input type="number" id="hero-horas-max" name="horas_max" min="1" max="16" step="0.5" data-bubble-input hidden />
         </div>
 
         <div class="field">
@@ -97,26 +102,19 @@
     <div class="time-wheel-picker__col" data-wheel="hora">
       <ul data-wheel-list>
         <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-        {% for h in range(1, 13) %}
-        <li data-value="{{ h }}">{{ h }}</li>
+        {% for h in range(0, 24) %}
+        <li data-value="{{ '%02d' % h }}">{{ '%02d' % h }}</li>
         {% endfor %}
         <li class="time-wheel-picker__pad" aria-hidden="true"></li>
       </ul>
     </div>
+    <div class="time-wheel-picker__separador" aria-hidden="true">:</div>
     <div class="time-wheel-picker__col" data-wheel="minuto">
       <ul data-wheel-list>
         <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-        {% for m in range(0, 60, 5) %}
+        {% for m in range(0, 60) %}
         <li data-value="{{ '%02d' % m }}">{{ '%02d' % m }}</li>
         {% endfor %}
-        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-      </ul>
-    </div>
-    <div class="time-wheel-picker__col" data-wheel="periodo">
-      <ul data-wheel-list>
-        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-        <li data-value="AM">AM</li>
-        <li data-value="PM">PM</li>
         <li class="time-wheel-picker__pad" aria-hidden="true"></li>
       </ul>
     </div>
