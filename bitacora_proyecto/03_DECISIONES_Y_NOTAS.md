@@ -1,9 +1,45 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-09-18
+Última actualización: 2026-09-19
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
+
+## Selector de hora tipo rueda: por qué construirlo a mano en vez de usar `<input type="time">`
+
+Angel pidió explícitamente que ningún campo (hora de salida, presupuesto,
+horas máximas) obligara a escribir con teclado. El `<input type="time">`
+nativo en iOS Safari YA se ve como una rueda, pero en escritorio
+(Chrome/Firefox/Safari de Mac) se renderiza como un campo de texto con
+flechitas — exactamente lo que no se quería. Por eso se construyó un
+selector propio con `<dialog>` + `scroll-snap-type: y mandatory` (three
+columnas: hora, minutos de 5 en 5, AM/PM) — mismo patrón de "usar HTML
+nativo antes que una librería" que ya se seguía con los otros modales.
+Guarda el valor en un input oculto con el mismo `name="hora_salida"` de
+siempre, así que ni `form.js` ni `main.js` necesitaron cambios.
+
+**Nota para quien depure esto después:** al probarlo en el navegador
+automatizado de esta sesión, las capturas de pantalla (`screenshot`)
+mostraban el scroll de las ruedas "atorado" en la posición equivocada de
+forma consistente, aunque el estado real (`scrollTop`, clases
+`is-activo`, y hasta `getBoundingClientRect()` comparando la posición del
+ítem activo contra el recuadro resaltado) confirmaban que todo estaba
+perfectamente alineado. Fue una falla de la herramienta de captura de
+pantalla con este tipo de contenido con scroll-snap, no un bug real —
+quedó verificado con geometría (`getBoundingClientRect`), no solo con
+capturas visuales.
+
+## Presupuesto y horas máximas: por qué `<datalist>` y no un `<select>`
+
+Con un `<select>` normal solo se puede elegir de la lista, no escribir un
+valor exacto distinto — y Angel pidió explícitamente que sí se pudiera
+("si el usuario quiere poner una cifra exacta que lo pueda hacer").
+`<datalist>` da lo mejor de los dos mundos con cero JavaScript: al
+enfocar el campo aparecen las opciones predefinidas para elegir con un
+clic, pero el campo sigue siendo un `<input>` normal donde se puede
+escribir cualquier número. Presupuesto va de 1,000 a 20,000 de 1,000 en
+1,000 (pedido explícito); horas máximas de 1 a 16 (ya eran los límites
+del campo).
 
 ## "Planear con IA": por qué la IA nunca elige el lugar, solo el propósito y la hora
 

@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-09-18
+Última actualización: 2026-09-19
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -65,6 +65,23 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   Sin ninguna key configurada, la app sigue funcionando igual que antes
   (cae a Nominatim directo, solo que ese lugar no se guarda para
   siempre).
+
+## Campos del formulario sin teclado (selector de hora tipo rueda + montos predefinidos)
+
+- **Hora de salida**: ya no es el `<input type="time">` nativo (en
+  escritorio obliga a escribir con teclado) — ahora es un botón que abre
+  un selector tipo rueda (como el de iOS: hora, minutos de 5 en 5, AM/PM,
+  cada uno en su propia columna con scroll-snap) construido con HTML/CSS
+  nativos (`<dialog>` + `scroll-snap-type`), sin ninguna librería. Guarda
+  el valor en el mismo formato `HH:MM` de siempre, así que no hizo falta
+  tocar `form.js` ni `main.js`.
+- **Presupuesto** y **Horas máximas de manejo**: siguen siendo campos
+  numéricos normales, pero ahora traen un `<datalist>` con montos
+  predeterminados (presupuesto: 1,000 a 20,000 de 1,000 en 1,000; horas:
+  1 a 16) — al enfocar el campo aparecen como opciones para elegir con un
+  clic, sin necesidad de escribir, pero si alguien quiere un valor exacto
+  distinto lo puede seguir escribiendo.
+- `app/static/js/time_picker.js` (nuevo) maneja el selector de hora.
 
 ## "Planear con IA" — chat que arma el itinerario completo
 
@@ -157,15 +174,17 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Grafo de conocimiento del proyecto generado con graphify
   (`graphify-out/`), se actualiza con `/graphify update`.
 
-## Commits recientes (los últimos 6, de la sesión más reciente)
+## Commits recientes (los últimos 7, de la sesión más reciente)
 
-1. "Planear con IA" — chat que arma el itinerario, con reparto
+1. Selector de hora tipo rueda + montos predefinidos en presupuesto/horas
+   máximas — ver sección de arriba.
+2. "Planear con IA" — chat que arma el itinerario, con reparto
    inteligente de paradas reutilizable sin IA — ver sección de arriba.
-2. Cuentas de usuario (nombre + apellido + PIN de 4 dígitos, sin correo) —
+3. Cuentas de usuario (nombre + apellido + PIN de 4 dígitos, sin correo) —
    ver sección de arriba.
-3. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
+4. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
    cuando el lugar no está en la base — ver sección de arriba.
-4. Autocompletado propio con Tab/Enter y sin distinguir acentos.
-5. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
-6. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
+5. Autocompletado propio con Tab/Enter y sin distinguir acentos.
+6. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
+7. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
    de 16 + colores de origen/destino + reubicación de "Guarda tu plan".

@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-09-18
+Última actualización: 2026-09-19
 
 ## Pendiente marcado en el código (TODOs reales)
 
@@ -121,6 +121,16 @@ hora correcta — funciona sin tocar la IA.
   tokens en cada `pytest`), pero por lo mismo no prueban el prompt real
   contra un modelo de verdad — si el modelo devuelve algo fuera de lo
   esperado en producción, revisar primero el prompt en `llm_provider.py`.
+
+## ✅ Ya implementado: campos sin teclado (hora tipo rueda + montos predefinidos)
+
+Presupuesto, horas máximas de manejo, y hora de salida ya no obligan a
+escribir con teclado (pedido explícito de Angel). Ver
+`01_LO_QUE_YA_ESTA_HECHO.md` y `03_DECISIONES_Y_NOTAS.md` para el
+detalle. Sin pendientes conocidos — probado en vivo con verificación por
+geometría (`getBoundingClientRect`) porque las capturas de pantalla del
+navegador automatizado de esta sesión tenían un problema propio de la
+herramienta (no del código) con el contenido de scroll-snap.
 
 ## Cosas que valdría la pena revisar pronto (no urgentes, no pedidas aún)
 

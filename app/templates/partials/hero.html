@@ -44,17 +44,31 @@
         <div class="ruta-form__row">
           <div class="field">
             <label for="hero-presupuesto">Presupuesto (MXN)</label>
-            <input type="number" id="hero-presupuesto" name="presupuesto" value="6500" min="0" step="100" />
+            <input type="number" id="hero-presupuesto" name="presupuesto" value="6500" min="0" step="100" list="presupuesto-opciones" />
+            <datalist id="presupuesto-opciones">
+              {% for monto in range(1000, 20001, 1000) %}
+              <option value="{{ monto }}"></option>
+              {% endfor %}
+            </datalist>
           </div>
           <div class="field">
             <label for="hero-horas-max">Horas máximas de manejo seguido</label>
-            <input type="number" id="hero-horas-max" name="horas_max" placeholder="8" min="1" max="16" step="0.5" />
+            <input type="number" id="hero-horas-max" name="horas_max" placeholder="8" min="1" max="16" step="0.5" list="horas-max-opciones" />
+            <datalist id="horas-max-opciones">
+              {% for hora in range(1, 17) %}
+              <option value="{{ hora }}"></option>
+              {% endfor %}
+            </datalist>
           </div>
         </div>
 
         <div class="field">
-          <label for="hero-hora-salida">Hora de salida (opcional)</label>
-          <input type="time" id="hero-hora-salida" name="hora_salida" />
+          <label id="hero-hora-salida-label">Hora de salida (opcional)</label>
+          <button type="button" class="time-picker-trigger" data-time-trigger aria-labelledby="hero-hora-salida-label">
+            <span data-time-display>Elegir hora</span>
+            <span aria-hidden="true">🕐</span>
+          </button>
+          <input type="hidden" name="hora_salida" data-time-hidden />
         </div>
 
         <div class="field">
@@ -75,3 +89,38 @@
     </div>
   </div>
 </section>
+
+<dialog class="modal-time-picker" data-modal-time>
+  <p class="field__label time-wheel-picker__titulo">Hora de salida</p>
+  <div class="time-wheel-picker">
+    <div class="time-wheel-picker__highlight" aria-hidden="true"></div>
+    <div class="time-wheel-picker__col" data-wheel="hora">
+      <ul data-wheel-list>
+        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
+        {% for h in range(1, 13) %}
+        <li data-value="{{ h }}">{{ h }}</li>
+        {% endfor %}
+        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
+      </ul>
+    </div>
+    <div class="time-wheel-picker__col" data-wheel="minuto">
+      <ul data-wheel-list>
+        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
+        {% for m in range(0, 60, 5) %}
+        <li data-value="{{ '%02d' % m }}">{{ '%02d' % m }}</li>
+        {% endfor %}
+        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
+      </ul>
+    </div>
+    <div class="time-wheel-picker__col" data-wheel="periodo">
+      <ul data-wheel-list>
+        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
+        <li data-value="AM">AM</li>
+        <li data-value="PM">PM</li>
+        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
+      </ul>
+    </div>
+  </div>
+  <button type="button" class="btn btn--primary btn--block" data-time-confirmar>Listo</button>
+  <button type="button" class="btn btn--ghost btn--block" data-time-limpiar>Sin hora definida</button>
+</dialog>
