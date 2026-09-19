@@ -2,6 +2,22 @@
 
 Última actualización: 2026-09-19
 
+## Pendiente para la próxima sesión (pedido explícito de Angel)
+
+- **Origen/Destino: quitar el valor precargado, dejar solo placeholder**
+  (`app/templates/partials/hero.html`). Hoy los campos `hero-origen` /
+  `hero-destino` tienen `value="Ciudad de México"` / `value="Oaxaca de
+  Juárez"` — texto real que hay que borrar a mano. Angel quiere que sea
+  `placeholder` (ejemplo en gris que desaparece solo al escribir/dar
+  clic), no un valor que haya que seleccionar y sobreescribir. Al
+  quitarle el `value`, revisar: (a) `form.js` → `leerValores()` leerá
+  `origen`/`destino` vacíos si el usuario no escribe nada — el atributo
+  `required` que ya tienen ambos inputs debería bastar para impedir el
+  submit vacío, pero confirmarlo en vivo; (b) el campo "Nombre de la
+  ruta" trae de default "Escapada CDMX a Oaxaca", que hace referencia a
+  esas mismas dos ciudades — decidir si también cambia o se deja como
+  ejemplo aparte.
+
 ## Pendiente marcado en el código (TODOs reales)
 
 - **Navegación en vivo** (`app/static/js/map.js`): comentario dejado para
