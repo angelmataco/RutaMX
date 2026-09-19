@@ -45,6 +45,28 @@ la herramienta de captura sí tiene un problema aparte con currentTarget
 de scroll-snap, pero el tapado real de los números SÍ era un bug de CSS
 genuino, confirmado porque Angel lo vio con sus propios ojos en la app.)
 
+## Gasto máximo recomendado: por qué automático y por qué estas fórmulas
+
+Angel no quería que el usuario respondiera muchas cosas: por eso comidas
+y noches se **deducen solas** (paradas con interés "comida"; noches
+simulando el viaje con la hora de salida) y los ajustes manuales quedan
+en un desplegable opcional, con "vacío = automático". Nada de marcar
+cada parada como "comer/dormir".
+
+Las casetas no se pueden calcular exactas sin datos reales de cada
+caseta (cada una cuesta distinto, incluso en la misma carretera). Se
+evaluó la API SAKBÉ de INEGI (devuelve el costo de cada caseta de la
+ruta; token gratis por correo), pero Angel prefirió no registrarse en
+nada por ser proyecto escolar. Por eso: IA con búsqueda web si hay una
+conectada, y si no un promedio por km. Ese promedio ($1.1/km) sale de
+~$1.5/km en tramos de cuota (fuente: guía de casetas.com.mx, rango
+$1–2/km) por ~70% del trayecto por cuota (suposición). La gasolina usa
+el precio real de la Magna (Infobae, 18 sep 2026, $23.8/l) y un punto
+medio de $25.5/l porque la Premium cuesta ~$5-6 más.
+
+Los imprevistos ($500–$2,000) llegan al tope a las 20 h y no a las 40 h
+porque casi nadie hace viajes tan largos (pedido de Angel).
+
 ## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al

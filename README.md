@@ -11,7 +11,9 @@ sugerencias → itinerario → guardar):
 - **Mapa**: Leaflet + OpenStreetMap para la base, y Leaflet Routing Machine +
   OSRM (servidor demo público, gratis y sin API key) para trazar la ruta
   real por carretera pasando por origen, paradas del itinerario y destino.
-- **Cálculo de distancia/tiempo/costo**: `app/services/route_service.py`
+- **Gasto máximo recomendado**: `app/services/gasto_service.py` (gasolina,
+  casetas, imprevistos y, si aplican, comidas y hospedaje).
+- **Cálculo de distancia/tiempo**: `app/services/route_service.py`
   usa la ruta real de OSRM (distancia y tiempo reales de carretera, no
   línea recta); si OSRM no responde, cae a una estimación en línea recta
   para que el flujo no se rompa.

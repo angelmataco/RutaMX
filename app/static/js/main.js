@@ -16,11 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const MOSTRAR_SUGERENCIAS = 4;
 
-  // Mismos valores que app/services/route_service.py — si cambian ahí,
-  // cambian aquí también.
-  const COSTO_POR_KM = 4.5;
-  const COSTO_BASE_HOSPEDAJE = 600;
-
   const elementos = {
     resultados: document.querySelector("[data-resultados]"),
     mapa: document.querySelector("[data-map]"),
@@ -30,14 +25,19 @@ document.addEventListener("DOMContentLoaded", () => {
       costo: document.querySelector('[data-stat="costo"]'),
       paradas: document.querySelector('[data-stat="paradas"]'),
     },
-    presupuestoNota: document.querySelector("[data-presupuesto-note]"),
+    gastoDesglose: document.querySelector("[data-gasto-desglose]"),
+    gastoIncluye: document.querySelector("[data-gasto-incluye]"),
     sugerenciasContenedor: document.querySelector("[data-sugerencias]"),
     guardarRutaBtn: document.querySelector("[data-guardar-ruta]"),
-    rutasGuardadasSelect: document.querySelector("[data-rutas-guardadas]"),
+    verRutasBtn: document.querySelector("[data-ver-rutas-guardadas]"),
+    modalRutas: document.querySelector("[data-modal-rutas]"),
+    rutasContenido: document.querySelector("[data-rutas-contenido]"),
     itinerarioLista: document.querySelector("[data-itinerario-lista]"),
     itinerarioVacio: document.querySelector("[data-itinerario-vacio]"),
     itemOrigen: document.querySelector("[data-item-origen]"),
     itemDestino: document.querySelector("[data-item-destino]"),
+    abrirGoogleMapsBtn: document.querySelector("[data-abrir-google-maps]"),
+    enlacesTramos: document.querySelector("[data-enlaces-tramos]"),
     guardarItinerarioBtn: document.querySelector("[data-guardar-itinerario]"),
     verMasBtn: document.querySelector("[data-ver-mas]"),
     aventuraParadas: document.querySelector("[data-aventura-paradas]"),
@@ -53,25 +53,38 @@ document.addEventListener("DOMContentLoaded", () => {
     RutaMapa.alEncontrarRuta(actualizarStatsPorRutaReal);
   }
 
-  function actualizarStatsPorRutaReal(resumenRuta) {
+  async function actualizarStatsPorRutaReal(resumenRuta) {
     if (!estado.resumen || !resumenRuta) return;
 
     const distanciaKm = Math.round((resumenRuta.totalDistance / 1000) * 10) / 10;
     const tiempoH = Math.round((resumenRuta.totalTime / 3600) * 100) / 100;
-    const costoEstimado = Math.round(
-      distanciaKm * COSTO_POR_KM + estado.resumen.paradas_estimadas * COSTO_BASE_HOSPEDAJE
-    );
-    const presupuestoSuficiente = Boolean(estado.resumen.presupuesto) && estado.resumen.presupuesto >= costoEstimado;
 
     // La ruta real (con las paradas) reemplaza la estimación inicial
     // origen->destino, así "Guardar ruta actual" guarda el dato correcto.
-    estado.resumen = {
-      ...estado.resumen,
-      distancia_km: distanciaKm,
-      tiempo_h: tiempoH,
-      costo_estimado: costoEstimado,
-      presupuesto_suficiente: presupuestoSuficiente,
-    };
+    estado.resumen = { ...estado.resumen, distancia_km: distanciaKm, tiempo_h: tiempoH };
+
+    // El gasto se recalcula en el servidor (una sola fuente de la fórmula):
+    // cambia con la distancia real y con las paradas elegidas.
+    try {
+      const respuesta = await fetch("/api/gasto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          distancia_km: distanciaKm,
+          tiempo_h: tiempoH,
+          ajustes: RutaFormularios.obtenerAjustes(),
+          paradas: estado.itinerario,
+          casetas_por_km: estado.resumen.casetas_por_km,
+          casetas_fuente: estado.resumen.gasto && estado.resumen.gasto.casetas_fuente,
+        }),
+      });
+      if (respuesta.ok) {
+        const gasto = await respuesta.json();
+        estado.resumen = { ...estado.resumen, gasto, costo_estimado: gasto.total };
+      }
+    } catch (err) {
+      console.error("Error recalculando el gasto:", err);
+    }
 
     renderResumen(estado.resumen);
     renderResumenAventura();
@@ -89,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           origen: valores.origen,
           destino: valores.destino,
-          presupuesto: valores.presupuesto,
+          ajustes: RutaFormularios.obtenerAjustes(),
         }),
       });
 
@@ -100,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const resumen = await respuesta.json();
+      resumen.ajustes = RutaFormularios.obtenerAjustes(); // se guardan con la ruta
 
       const esMismoViaje =
         estado.ultimoOrigenDestino &&
@@ -131,18 +145,49 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderResumen(resumen) {
+    const gasto = resumen.gasto;
     elementos.stats.distancia.textContent = `${resumen.distancia_km} km`;
-    elementos.stats.tiempo.textContent = `${resumen.tiempo_h} h`;
-    elementos.stats.costo.textContent = formatoMoneda(resumen.costo_estimado);
+    elementos.stats.tiempo.textContent = formatoDuracion(resumen.tiempo_h);
+    elementos.stats.costo.textContent = formatoMoneda(gasto ? gasto.total : resumen.costo_estimado);
     elementos.stats.paradas.textContent = resumen.paradas_estimadas;
 
-    if (resumen.presupuesto) {
-      elementos.presupuestoNota.textContent = resumen.presupuesto_suficiente
-        ? "Tu presupuesto cubre esta estimación y deja margen para experiencias en ruta."
-        : "Tu presupuesto es un poco menor al estimado; considera ajustar paradas o gastos.";
-    } else {
-      elementos.presupuestoNota.textContent = "Agrega un presupuesto para comparar contra el costo estimado.";
+    if (!gasto) {
+      elementos.gastoDesglose.hidden = true;
+      return;
     }
+
+    const filas = [
+      ["⛽ Gasolina", gasto.gasolina],
+      [gasto.casetas_fuente === "ia" ? "🛣️ Casetas (estimado IA)" : "🛣️ Casetas (promedio)", gasto.casetas],
+    ];
+    if (gasto.num_comidas) filas.push([`🍽️ Comidas (${gasto.num_comidas})`, gasto.comidas]);
+    if (gasto.num_noches) {
+      filas.push([`🛏️ Hospedaje (${gasto.num_noches} ${gasto.num_noches === 1 ? "noche" : "noches"})`, gasto.hospedaje]);
+    }
+    filas.push(["🎒 Imprevistos y snacks", gasto.imprevistos]);
+
+    elementos.gastoDesglose.innerHTML = "";
+    filas.forEach(([texto, monto]) => {
+      const li = document.createElement("li");
+      const nombre = document.createElement("span");
+      nombre.textContent = texto;
+      const valor = document.createElement("strong");
+      valor.textContent = formatoMoneda(monto);
+      li.append(nombre, valor);
+      elementos.gastoDesglose.appendChild(li);
+    });
+    elementos.gastoDesglose.hidden = false;
+
+    const incluye = [];
+    if (gasto.num_comidas) {
+      incluye.push(`${gasto.num_comidas} ${gasto.num_comidas === 1 ? "comida" : "comidas"} para ${gasto.personas} ${gasto.personas === 1 ? "persona" : "personas"}`);
+    }
+    if (gasto.num_noches) {
+      incluye.push(`${gasto.num_noches} ${gasto.num_noches === 1 ? "noche" : "noches"} de hospedaje`);
+    }
+    elementos.gastoIncluye.textContent = incluye.length
+      ? `Incluye ${incluye.join(" y ")}. Puedes cambiarlo en «Ajusta tu gasto».`
+      : "Sin paradas para comer ni noches en el camino: solo gasolina, casetas e imprevistos. Puedes agregarlas en «Ajusta tu gasto».";
   }
 
   function renderItinerarioBase(resumen) {
@@ -224,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (typeof lugar.horas_estimadas === "number") {
       const horasEl = nodo.querySelector("[data-lugar-horas]");
-      horasEl.textContent = `≈${lugar.horas_estimadas} h de camino`;
+      horasEl.textContent = `≈${formatoDuracion(lugar.horas_estimadas)} de camino`;
       horasEl.hidden = false;
     }
 
@@ -269,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function agregarParada(lugar) {
     if (!estado.resumen || !lugar) return;
-    estado.itinerario.push({ id: lugar.id, nombre: lugar.nombre, lat: lugar.lat, lon: lugar.lon });
+    estado.itinerario.push({ id: lugar.id, nombre: lugar.nombre, lat: lugar.lat, lon: lugar.lon, intereses: lugar.intereses || [] });
     renderParadasItinerario();
   }
 
@@ -355,7 +400,6 @@ document.addEventListener("DOMContentLoaded", () => {
           nombre: valores.nombre || `${valores.origen} a ${valores.destino}`,
           origen: valores.origen,
           destino: valores.destino,
-          presupuesto: valores.presupuesto,
           intereses: valores.intereses,
           resumen: estado.resumen,
           paradas: estado.itinerario,
@@ -368,7 +412,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (!respuesta.ok) throw new Error("No se pudo guardar la ruta");
 
-      await cargarRutasGuardadas();
       alert("Ruta guardada.");
       return true;
     } catch (err) {
@@ -386,6 +429,50 @@ document.addEventListener("DOMContentLoaded", () => {
     const guardado = await guardarRuta();
     if (!guardado) return;
     await descargarPdfItinerario();
+  }
+
+  async function abrirEnGoogleMaps() {
+    if (!estado.resumen) {
+      alert("Primero calcula una ruta para abrirla en Google Maps.");
+      return;
+    }
+    const valores = RutaFormularios.obtenerValores();
+
+    try {
+      const respuesta = await fetch("/api/itinerario/enlaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origen: valores.origen,
+          destino: valores.destino,
+          resumen: estado.resumen,
+          paradas: estado.itinerario,
+        }),
+      });
+      if (!respuesta.ok) throw new Error("No se pudo armar el enlace");
+      const { enlaces } = await respuesta.json();
+
+      // Un solo tramo: se abre directo. Varios (más de 9 paradas): se
+      // listan para abrirlos en orden.
+      elementos.enlacesTramos.innerHTML = "";
+      if (enlaces.length === 1) {
+        elementos.enlacesTramos.hidden = true;
+        window.open(enlaces[0], "_blank", "noopener");
+        return;
+      }
+      enlaces.forEach((enlace, i) => {
+        const a = document.createElement("a");
+        a.href = enlace;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = `Tramo ${i + 1} de ${enlaces.length} →`;
+        elementos.enlacesTramos.appendChild(a);
+      });
+      elementos.enlacesTramos.hidden = false;
+    } catch (err) {
+      console.error("Error armando el enlace de Google Maps:", err);
+      alert("No se pudo armar el enlace de Google Maps.");
+    }
   }
 
   async function descargarPdfItinerario() {
@@ -421,29 +508,139 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function cargarRutasGuardadas() {
-    if (!elementos.rutasGuardadasSelect) return;
-    if (typeof RutaAuth !== "undefined" && !RutaAuth.obtenerUsuarioActual()) {
-      elementos.rutasGuardadasSelect.innerHTML = '<option value="">Elige una ruta guardada</option>';
+  // ---- "Mis rutas guardadas" (ventana flotante con burbujas) ----
+
+  let reabrirRutasTrasLogin = false;
+
+  function mensajeRutas(titulo, texto, botones = []) {
+    const caja = document.createElement("div");
+    caja.className = "rutas-vacio";
+    caja.innerHTML = `<p class="rutas-vacio__titulo"></p><p class="card__note"></p>`;
+    caja.querySelector(".rutas-vacio__titulo").textContent = titulo;
+    caja.querySelector(".card__note").textContent = texto;
+    if (botones.length) {
+      const fila = document.createElement("div");
+      fila.className = "rutas-vacio__botones";
+      botones.forEach(({ texto: t, clase, alClic }) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `btn ${clase}`;
+        btn.textContent = t;
+        btn.addEventListener("click", alClic);
+        fila.appendChild(btn);
+      });
+      caja.appendChild(fila);
+    }
+    return caja;
+  }
+
+  function pedirSesion() {
+    reabrirRutasTrasLogin = true;
+    elementos.modalRutas.close();
+  }
+
+  function crearBurbujaRuta(ruta) {
+    const resumen = ruta.resumen || {};
+    const datos = [];
+    if (resumen.distancia_km != null) datos.push(`${resumen.distancia_km} km`);
+    if (resumen.tiempo_h != null) datos.push(formatoDuracion(resumen.tiempo_h));
+    const numParadas = (ruta.paradas || []).length;
+    datos.push(`${numParadas} ${numParadas === 1 ? "parada" : "paradas"}`);
+
+    const burbuja = document.createElement("button");
+    burbuja.type = "button";
+    burbuja.className = "ruta-burbuja";
+    burbuja.innerHTML = `
+      <span class="ruta-burbuja__nombre"></span>
+      <span class="ruta-burbuja__trayecto"></span>
+      <span class="ruta-burbuja__datos"></span>`;
+    burbuja.querySelector(".ruta-burbuja__nombre").textContent = ruta.nombre;
+    burbuja.querySelector(".ruta-burbuja__trayecto").textContent = `${ruta.origen} → ${ruta.destino}`;
+    burbuja.querySelector(".ruta-burbuja__datos").textContent = datos.join(" · ");
+    burbuja.addEventListener("click", () => {
+      elementos.modalRutas.close();
+      abrirRutaGuardada(ruta);
+    });
+    return burbuja;
+  }
+
+  async function abrirRutasGuardadas() {
+    if (!elementos.modalRutas) return;
+    const cont = elementos.rutasContenido;
+    cont.innerHTML = "";
+
+    const haySesion = typeof RutaAuth === "undefined" || Boolean(RutaAuth.obtenerUsuarioActual());
+    if (!haySesion) {
+      cont.appendChild(
+        mensajeRutas("Aún no has iniciado sesión", "Inicia sesión para ver las rutas que planeaste antes.", [
+          { texto: "Iniciar sesión", clase: "btn--primary", alClic: () => { pedirSesion(); RutaAuth.abrirModalLogin(); } },
+          { texto: "Crear cuenta", clase: "btn--ghost", alClic: () => { pedirSesion(); RutaAuth.abrirModalRegistro(); } },
+        ])
+      );
+      elementos.modalRutas.showModal();
       return;
     }
 
+    cont.appendChild(mensajeRutas("Cargando tus rutas…", ""));
+    elementos.modalRutas.showModal();
+
     try {
       const respuesta = await fetch("/api/rutas");
-      if (respuesta.status === 401) return;
-      const datos = await respuesta.json();
-      const rutas = datos.rutas || [];
-
-      elementos.rutasGuardadasSelect.innerHTML = '<option value="">Elige una ruta guardada</option>';
-      rutas.forEach((ruta) => {
-        const opcion = document.createElement("option");
-        opcion.value = ruta.id;
-        opcion.textContent = ruta.nombre;
-        elementos.rutasGuardadasSelect.appendChild(opcion);
-      });
+      cont.innerHTML = "";
+      if (respuesta.status === 401) {
+        cont.appendChild(mensajeRutas("Tu sesión expiró", "Vuelve a iniciar sesión para ver tus rutas.", [
+          { texto: "Iniciar sesión", clase: "btn--primary", alClic: () => { pedirSesion(); RutaAuth.abrirModalLogin(); } },
+        ]));
+        return;
+      }
+      const { rutas = [] } = await respuesta.json();
+      if (!rutas.length) {
+        cont.appendChild(mensajeRutas("Aún no tienes rutas guardadas", "Planea un viaje y toca «Guardar ruta actual» para verlo aquí."));
+        return;
+      }
+      const rejilla = document.createElement("div");
+      rejilla.className = "rutas-burbujas";
+      rutas.forEach((ruta) => rejilla.appendChild(crearBurbujaRuta(ruta)));
+      cont.appendChild(rejilla);
     } catch (err) {
       console.error("Error cargando rutas guardadas:", err);
+      cont.innerHTML = "";
+      cont.appendChild(mensajeRutas("No se pudieron cargar tus rutas", "Intenta de nuevo en un momento."));
     }
+  }
+
+  // Devuelve al formulario las preferencias de gasto con las que se guardó la ruta.
+  function restaurarAjustes(form, ajustes) {
+    const poner = (nombre, valor) => {
+      const campo = form.querySelector(`[name="${nombre}"]`);
+      campo.value = valor ?? "";
+      campo.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    poner("personas", ajustes.personas);
+    poner("comidas", ajustes.comidas);
+    poner("noches", ajustes.noches);
+    form.querySelectorAll("[data-ajuste]").forEach((chip) => {
+      chip.classList.toggle("is-active", ajustes[chip.dataset.ajuste] === chip.dataset.valor);
+    });
+    const hora = ajustes.hora_salida || "";
+    form.querySelector("[data-time-hidden]").value = hora;
+    form.querySelector("[data-time-display]").textContent = hora || "Elegir hora";
+  }
+
+  // Restaura una ruta guardada: rellena el formulario y muestra mapa,
+  // resumen e itinerario tal como se guardaron.
+  function abrirRutaGuardada(ruta) {
+    const form = document.getElementById("hero-form");
+    form.querySelector('[name="origen"]').value = ruta.origen || "";
+    form.querySelector('[name="destino"]').value = ruta.destino || "";
+    form.querySelector('[name="nombre"]').value = ruta.nombre || "";
+    restaurarAjustes(form, (ruta.resumen && ruta.resumen.ajustes) || {});
+    form.querySelectorAll("[data-interes]").forEach((chip) => {
+      chip.classList.toggle("is-active", (ruta.intereses || []).includes(chip.dataset.interes));
+    });
+
+    window.RutaApp.aplicarPlanIA({ resumen: ruta.resumen, paradas: ruta.paradas || [] });
+    cargarSugerencias(RutaFormularios.obtenerValores());
   }
 
   function normalizarAcentos(texto) {
@@ -555,6 +752,10 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.guardarRutaBtn.addEventListener("click", guardarRuta);
   }
 
+  if (elementos.abrirGoogleMapsBtn) {
+    elementos.abrirGoogleMapsBtn.addEventListener("click", abrirEnGoogleMaps);
+  }
+
   if (elementos.guardarItinerarioBtn) {
     elementos.guardarItinerarioBtn.addEventListener("click", guardarItinerario);
   }
@@ -563,11 +764,19 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.verMasBtn.addEventListener("click", verMasSugerencias);
   }
 
+  if (elementos.verRutasBtn) {
+    elementos.verRutasBtn.addEventListener("click", abrirRutasGuardadas);
+  }
+
+  // Si el usuario inició sesión desde la ventana de rutas, se las muestra
+  // en cuanto entra.
   if (typeof RutaAuth !== "undefined") {
-    RutaAuth.listo().then(cargarRutasGuardadas);
-    RutaAuth.alIniciarSesion(cargarRutasGuardadas);
-  } else {
-    cargarRutasGuardadas();
+    RutaAuth.alIniciarSesion(() => {
+      if (reabrirRutasTrasLogin) {
+        reabrirRutasTrasLogin = false;
+        abrirRutasGuardadas();
+      }
+    });
   }
   cargarDatalistDestinos();
 
@@ -577,7 +786,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.RutaApp = {
     aplicarPlanIA(opcion) {
       estado.resumen = opcion.resumen;
-      estado.itinerario = opcion.paradas.map((p) => ({ id: p.id, nombre: p.nombre, lat: p.lat, lon: p.lon }));
+      estado.itinerario = opcion.paradas.map((p) => ({ id: p.id, nombre: p.nombre, lat: p.lat, lon: p.lon, intereses: p.intereses || [] }));
       estado.ultimoOrigenDestino = { origen: opcion.resumen.origen.nombre, destino: opcion.resumen.destino.nombre };
 
       elementos.resultados.hidden = false;

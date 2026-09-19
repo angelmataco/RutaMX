@@ -44,16 +44,14 @@
             Calcula una ruta y agrega paradas para ver el resumen de tu aventura.
           </p>
           <button type="button" class="btn btn--primary btn--block" data-guardar-itinerario>Guardar itinerario</button>
+          <button type="button" class="btn btn--ghost btn--block" data-abrir-google-maps>📍 Abrir en Google Maps</button>
+          <div class="enlaces-tramos" data-enlaces-tramos hidden></div>
         </div>
 
         <div class="card card--save">
           <h3 class="card__title">Guarda tu plan</h3>
-          <p class="card__subtitle">Conserva tus preferencias y recupera esta ruta para seguir ajustándola después.</p>
+          <p class="card__subtitle">Conserva tus preferencias y esta ruta. Podrás reabrirla después desde "Mis rutas guardadas", al inicio de la página.</p>
           <button type="button" class="btn btn--primary btn--block" data-guardar-ruta>Guardar ruta actual</button>
-          <label for="rutas-guardadas" class="field__label field__label--spaced">Rutas guardadas</label>
-          <select id="rutas-guardadas" data-rutas-guardadas>
-            <option value="">Elige una ruta guardada</option>
-          </select>
         </div>
       </div>
     </div>

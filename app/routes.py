@@ -4,7 +4,7 @@ import re
 from flask import Blueprint, jsonify, render_template, request, send_file, session
 
 from app.models import Destino, RutaGuardada, Usuario, guardar_ruta, listar_rutas
-from app.services import ai_service, auth_service, llm_provider, pdf_service, planificador_ia_service, route_service
+from app.services import ai_service, auth_service, gasto_service, llm_provider, navegacion_service, pdf_service, planificador_ia_service, route_service
 
 main_bp = Blueprint("main", __name__)
 
@@ -19,17 +19,11 @@ def api_calcular_ruta():
     datos = request.get_json(silent=True) or {}
     origen = (datos.get("origen") or "").strip()
     destino = (datos.get("destino") or "").strip()
-    presupuesto = datos.get("presupuesto") or 0
 
     if not origen or not destino:
         return jsonify({"error": "Origen y destino son obligatorios."}), 400
 
-    try:
-        presupuesto = float(presupuesto)
-    except (TypeError, ValueError):
-        presupuesto = 0
-
-    resumen = route_service.calcular_ruta(origen, destino, presupuesto)
+    resumen = route_service.calcular_ruta(origen, destino, datos.get("ajustes"))
     # La geometría completa es para cálculos internos (ver /api/sugerencias);
     # no hace falta mandarla al navegador, que ya traza su propia ruta.
     resumen_publico = {clave: valor for clave, valor in resumen.items() if clave != "geometria"}
@@ -156,7 +150,6 @@ def api_guardar_ruta():
     nombre = (datos.get("nombre") or "Ruta sin nombre").strip()
     origen = (datos.get("origen") or "").strip()
     destino = (datos.get("destino") or "").strip()
-    presupuesto = datos.get("presupuesto") or 0
     intereses = datos.get("intereses") or []
     resumen = datos.get("resumen") or {}
     paradas = datos.get("paradas") or []
@@ -164,16 +157,10 @@ def api_guardar_ruta():
     if not origen or not destino:
         return jsonify({"error": "Origen y destino son obligatorios."}), 400
 
-    try:
-        presupuesto = float(presupuesto)
-    except (TypeError, ValueError):
-        presupuesto = 0
-
     ruta = RutaGuardada(
         nombre=nombre,
         origen=origen,
         destino=destino,
-        presupuesto=presupuesto,
         intereses=intereses,
         resumen=resumen,
         paradas=paradas,
@@ -204,3 +191,36 @@ def api_pdf_itinerario():
         as_attachment=True,
         download_name=f"{nombre_archivo}.pdf",
     )
+
+
+@main_bp.route("/api/itinerario/enlaces", methods=["POST"])
+def api_enlaces_navegacion():
+    datos = request.get_json(silent=True) or {}
+
+    if not (datos.get("origen") or "").strip() or not (datos.get("destino") or "").strip():
+        return jsonify({"error": "Origen y destino son obligatorios."}), 400
+
+    return jsonify({"enlaces": navegacion_service.enlaces_google_maps(datos)})
+
+
+@main_bp.route("/api/gasto", methods=["POST"])
+def api_gasto():
+    """Recalcula el gasto recomendado cuando cambian la distancia real
+    (por las paradas) o las paradas mismas."""
+    datos = request.get_json(silent=True) or {}
+    try:
+        distancia_km = float(datos.get("distancia_km"))
+        tiempo_h = float(datos.get("tiempo_h"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "distancia_km y tiempo_h son obligatorios."}), 400
+
+    casetas_por_km = datos.get("casetas_por_km")
+    gasto = gasto_service.calcular_gasto(
+        distancia_km,
+        tiempo_h,
+        datos.get("ajustes"),
+        datos.get("paradas"),
+        casetas_por_km if isinstance(casetas_por_km, (int, float)) else None,
+    )
+    gasto["casetas_fuente"] = datos.get("casetas_fuente") or "estimado"
+    return jsonify(gasto)

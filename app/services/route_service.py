@@ -1,4 +1,4 @@
-"""Cálculo de distancia, tiempo y costo de una ruta.
+"""Cálculo de distancia, tiempo y gasto recomendado de una ruta.
 
 Usa la ruta real por carretera (OSRM) para distancia/tiempo y para la
 geometría del camino, que es la que permite luego filtrar sugerencias por
@@ -10,12 +10,9 @@ import math
 
 import requests
 
-from app.services import maps_service
+from app.services import gasto_service, maps_service
 
 VELOCIDAD_PROMEDIO_KMH = 80
-COSTO_POR_KM = 4.5  # gasolina + casetas, estimado
-COSTO_BASE_HOSPEDAJE = 600  # por cada parada intermedia estimada
-
 OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving"
 
 
@@ -120,8 +117,12 @@ def distancia_a_corredor(corredor, punto):
     return mejor_distancia, mejor_acumulada
 
 
-def calcular_ruta(origen: str, destino: str, presupuesto: float = 0):
-    """Calcula el resumen de un viaje entre origen y destino."""
+def calcular_ruta(origen: str, destino: str, ajustes: dict | None = None):
+    """Calcula el resumen de un viaje entre origen y destino.
+
+    `ajustes` (opcional) son las preferencias de gasto: personas,
+    hora_salida, tipo_coche, gasolina, comidas, noches.
+    """
     coord_origen = maps_service.obtener_coordenadas(origen)
     coord_destino = maps_service.obtener_coordenadas(destino)
 
@@ -138,16 +139,19 @@ def calcular_ruta(origen: str, destino: str, presupuesto: float = 0):
         geometria = None
 
     paradas_estimadas = max(1, min(4, round(distancia_km / 250)))
-    costo_estimado = round(distancia_km * COSTO_POR_KM + paradas_estimadas * COSTO_BASE_HOSPEDAJE)
+    casetas_mxn, casetas_fuente = gasto_service.estimar_casetas(origen, destino, distancia_km)
+    casetas_por_km = casetas_mxn / distancia_km if distancia_km else 0
+    gasto = gasto_service.calcular_gasto(distancia_km, tiempo_h, ajustes, casetas_por_km=casetas_por_km)
+    gasto["casetas_fuente"] = casetas_fuente
 
     return {
         "origen": {"nombre": origen, "lat": coord_origen[0], "lon": coord_origen[1]},
         "destino": {"nombre": destino, "lat": coord_destino[0], "lon": coord_destino[1]},
         "distancia_km": distancia_km,
         "tiempo_h": tiempo_h,
-        "costo_estimado": costo_estimado,
+        "costo_estimado": gasto["total"],  # gasto máximo recomendado
+        "gasto": gasto,
+        "casetas_por_km": round(casetas_por_km, 3),
         "paradas_estimadas": paradas_estimadas,
-        "presupuesto": presupuesto,
-        "presupuesto_suficiente": bool(presupuesto) and presupuesto >= costo_estimado,
         "geometria": geometria,
     }

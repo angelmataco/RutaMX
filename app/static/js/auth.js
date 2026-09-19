@@ -5,6 +5,7 @@ const RutaAuth = (() => {
   let usuarioActual = null;
   let promesaListo = null;
   const listenersLogin = [];
+  const listenersLogout = [];
 
   const elementos = {};
 
@@ -108,6 +109,7 @@ const RutaAuth = (() => {
     }
     usuarioActual = null;
     renderNavbar();
+    listenersLogout.forEach((callback) => callback());
   }
 
   function init() {
@@ -149,9 +151,11 @@ const RutaAuth = (() => {
   return {
     init,
     abrirModalLogin: () => abrirModal("login"),
+    abrirModalRegistro: () => abrirModal("registro"),
     obtenerUsuarioActual: () => usuarioActual,
     listo: () => promesaListo,
     alIniciarSesion: (callback) => listenersLogin.push(callback),
+    alCerrarSesion: (callback) => listenersLogout.push(callback),
   };
 })();
 

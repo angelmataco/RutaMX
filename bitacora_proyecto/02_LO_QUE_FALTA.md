@@ -7,30 +7,43 @@ termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
 se borra de aquí — nunca queda un "✅ Ya implementado" aquí adentro. Ver
 la regla completa en `AGENTS.md`.
 
-## Pendiente para la próxima sesión (pedido explícito de Angel)
+## Por planear / decidir con Angel (pedido explícito)
 
-- **Origen/Destino: quitar el valor precargado, dejar solo placeholder**
-  (`app/templates/partials/hero.html`). Hoy los campos `hero-origen` /
-  `hero-destino` tienen `value="Ciudad de México"` / `value="Oaxaca de
-  Juárez"` — texto real que hay que borrar a mano. Angel quiere que sea
-  `placeholder` (ejemplo en gris que desaparece solo al escribir/dar
-  clic), no un valor que haya que seleccionar y sobreescribir. Al
-  quitarle el `value`, revisar: (a) `form.js` → `leerValores()` leerá
-  `origen`/`destino` vacíos si el usuario no escribe nada — el atributo
-  `required` que ya tienen ambos inputs debería bastar para impedir el
-  submit vacío, pero confirmarlo en vivo; (b) el campo "Nombre de la
-  ruta" trae de default "Escapada CDMX a Oaxaca", que hace referencia a
-  esas mismas dos ciudades — decidir si también cambia o se deja como
-  ejemplo aparte.
+- **Tiempo de la app vs Google Maps.** León → Cabo San Lucas: la app dice
+  ~50 h y Google Maps ~44 h. Causa probable: OSRM (servidor demo) usa
+  velocidades genéricas por tipo de vía, más lentas que las autopistas de
+  cuota de México. No se pudo verificar contra Google desde el código.
+  Opciones: (1) calibrar con un factor de corrección usando el tiempo de
+  Google en ~5 rutas reales (gratis, queda a ~3–5%); (2) usar la API de
+  Google Routes (exacto, pero pide cuenta con tarjeta y key); (3) otro
+  servicio gratuito (mismo problema de velocidades genéricas). Se
+  recomienda la 1; falta que Angel pase los tiempos de Google.
 
 ## Pendiente marcado en el código (TODOs reales)
 
-- **Navegación en vivo** (`app/static/js/map.js`): comentario dejado para
-  cuando se quiera agregar algo tipo Waze/Google Maps (seguimiento en
-  tiempo real). No es prioridad para el proyecto escolar, pero quedó
-  anotado.
+_(nada marcado en el código por ahora — la navegación en vivo se delegó a
+Google Maps con el enlace/QR, ver bitácora 01.)_
 
 ## Pendientes sueltos de funcionalidad ya implementada
+
+**Del gasto máximo recomendado:**
+- Los valores son estimados con supuestos que conviene afinar con viajes
+  reales: casetas $1.1/km (promedio: ~$1.5/km en cuota × ~70% del
+  trayecto; la fuente da un rango de $1–2/km), rendimiento 13 km/l y
+  precio del litro ($25.5 promedio; Magna $23.8 verificada en sep 2026;
+  Premium $29 es aproximada, sin verificar). Los precios de gasolina
+  cambian: actualizar `PRECIOS_LITRO` en `gasto_service.py`.
+- La estimación de casetas con IA nunca se ha probado con una key real
+  (solo con el proveedor mockeado). Falta ver que la respuesta sea
+  razonable para rutas conocidas.
+- Alternativa descartada por ahora: casetas reales con la API SAKBÉ de
+  INEGI (pide registrar un token; Angel prefiere no registrarse en nada
+  mientras sea proyecto escolar).
+- Personas vacío cuenta como 1. Las paradas de comida solo se detectan
+  por el interés "comida" del destino; las noches son por trayecto, no
+  por parada.
+- Los resultados de "Planear con IA" traen el gasto con valores por
+  defecto; no usan los ajustes del formulario.
 
 Estos NO son features sin hacer — son detalles/riesgos que quedaron
 abiertos dentro de features que ya están terminadas y documentadas en

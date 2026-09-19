@@ -26,32 +26,32 @@
         <div class="ruta-form__row">
           <div class="field field--autocomplete">
             <label for="hero-origen">Origen</label>
-            <input type="text" id="hero-origen" name="origen" value="Ciudad de México" autocomplete="off" data-autocomplete-destino required />
+            <input type="text" id="hero-origen" name="origen" placeholder="Ciudad de México" autocomplete="off" data-autocomplete-destino required />
             <ul class="autocomplete-list" data-autocomplete-lista hidden></ul>
           </div>
           <div class="field field--autocomplete">
             <label for="hero-destino">Destino</label>
-            <input type="text" id="hero-destino" name="destino" value="Oaxaca de Juárez" autocomplete="off" data-autocomplete-destino required />
+            <input type="text" id="hero-destino" name="destino" placeholder="Oaxaca de Juárez" autocomplete="off" data-autocomplete-destino required />
             <ul class="autocomplete-list" data-autocomplete-lista hidden></ul>
           </div>
         </div>
 
         <div class="field">
           <label for="hero-nombre">Nombre de la ruta</label>
-          <input type="text" id="hero-nombre" name="nombre" value="Escapada CDMX a Oaxaca" />
+          <input type="text" id="hero-nombre" name="nombre" placeholder="Escapada CDMX a Oaxaca" />
         </div>
 
         <div class="field">
-          <p class="field__label">Presupuesto (MXN)</p>
+          <p class="field__label">¿Cuántas personas van?</p>
           <div class="bubble-picker" data-bubble-picker>
             <div class="bubble-picker__scroll" data-bubble-lista>
-              {% for monto in range(1000, 10001, 2000) %}
-              <button type="button" class="bubble" data-bubble-valor="{{ monto }}">${{ '{:,}'.format(monto) }}</button>
+              {% for n in range(1, 9) %}
+              <button type="button" class="bubble" data-bubble-valor="{{ n }}">{{ n }}</button>
               {% endfor %}
             </div>
-            <button type="button" class="bubble bubble--otro" data-bubble-otro>Otro monto</button>
+            <button type="button" class="bubble bubble--otro" data-bubble-otro>Otro</button>
           </div>
-          <input type="number" id="hero-presupuesto" name="presupuesto" value="6500" min="0" step="100" data-bubble-input hidden />
+          <input type="number" id="hero-personas" name="personas" min="1" max="30" step="1" data-bubble-input hidden />
         </div>
 
         <div class="field">
@@ -76,6 +76,41 @@
           <input type="hidden" name="hora_salida" data-time-hidden />
         </div>
 
+        <details class="ajustes-gasto">
+          <summary>⚙️ Ajusta tu gasto <span>(opcional)</span></summary>
+          <p class="ajustes-gasto__ayuda">
+            Calculamos el gasto máximo recomendado con valores típicos. Si quieres, afínalo.
+          </p>
+
+          <div class="field">
+            <p class="field__label">Tu coche</p>
+            <div class="chips" data-chips-unico>
+              <button type="button" class="chip" data-ajuste="tipo_coche" data-valor="compacto">Compacto · 15 km/l</button>
+              <button type="button" class="chip" data-ajuste="tipo_coche" data-valor="mediano">Mediano · 13 km/l</button>
+              <button type="button" class="chip" data-ajuste="tipo_coche" data-valor="suv">SUV · 11 km/l</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <p class="field__label">Gasolina</p>
+            <div class="chips" data-chips-unico>
+              <button type="button" class="chip" data-ajuste="gasolina" data-valor="magna">Magna</button>
+              <button type="button" class="chip" data-ajuste="gasolina" data-valor="premium">Premium</button>
+            </div>
+          </div>
+
+          <div class="ruta-form__row">
+            <div class="field">
+              <label for="hero-comidas">Paradas para comer</label>
+              <input type="number" id="hero-comidas" name="comidas" min="0" max="20" step="1" placeholder="Automático" />
+            </div>
+            <div class="field">
+              <label for="hero-noches">Noches de hospedaje</label>
+              <input type="number" id="hero-noches" name="noches" min="0" max="20" step="1" placeholder="Automático" />
+            </div>
+          </div>
+        </details>
+
         <div class="field">
           <p class="field__label">¿Qué buscas?</p>
           <div class="chips" data-chips>
@@ -89,7 +124,10 @@
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">🗺️ Planea mi ruta</button>
-        <button type="button" class="btn btn--ghost btn--block" data-abrir-planificador-ia>🤖 Planear con IA</button>
+        <div class="hero-acciones-extra">
+          <button type="button" class="btn btn--ghost" data-abrir-planificador-ia>🤖 Planear con IA</button>
+          <button type="button" class="btn btn--ghost" data-ver-rutas-guardadas>🗂️ Mis rutas guardadas</button>
+        </div>
       </form>
     </div>
   </div>
@@ -121,4 +159,13 @@
   </div>
   <button type="button" class="btn btn--primary btn--block" data-time-confirmar>Listo</button>
   <button type="button" class="btn btn--ghost btn--block" data-time-limpiar>Sin hora definida</button>
+</dialog>
+
+<dialog class="modal-rutas" data-modal-rutas>
+  <form method="dialog" class="modal-auth__cerrar">
+    <button type="submit" class="icon-btn" aria-label="Cerrar">✕</button>
+  </form>
+  <p class="kicker">TUS VIAJES</p>
+  <h3 class="card__title">Mis rutas guardadas</h3>
+  <div class="rutas-guardadas__contenido" data-rutas-contenido></div>
 </dialog>

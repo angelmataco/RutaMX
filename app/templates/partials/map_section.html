@@ -17,7 +17,7 @@
         <p class="stat-tile__value" data-stat="tiempo">—</p>
       </div>
       <div class="stat-tile stat-tile--accent">
-        <p class="stat-tile__label">Estimado</p>
+        <p class="stat-tile__label">Gasto máx. recomendado</p>
         <p class="stat-tile__value" data-stat="costo">—</p>
       </div>
       <div class="stat-tile">
@@ -25,9 +25,12 @@
         <p class="stat-tile__value" data-stat="paradas">—</p>
       </div>
     </div>
-    <p class="card__note" data-presupuesto-note>
+    <ul class="gasto-desglose" data-gasto-desglose hidden></ul>
+    <p class="card__note" data-gasto-incluye>
       Llena el formulario para ver el resumen de tu viaje.
     </p>
-    <p class="card__note card__note--formula">Estimado = distancia × $4.5/km (gasolina y casetas) + $600 por cada parada sugerida (hospedaje).</p>
+    <p class="card__note card__note--formula" data-gasto-formula>
+      Estimado para un auto particular, por el viaje completo. Las casetas son un promedio: cada caseta cuesta distinto.
+    </p>
   </div>
 </div>

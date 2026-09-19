@@ -272,6 +272,29 @@ def generar_opciones_objetivos(contexto: dict) -> dict | None:
     )
 
 
+JSON_SCHEMA_CASETAS = {
+    "type": "object",
+    "properties": {"casetas_mxn": {"type": ["number", "null"]}},
+    "required": ["casetas_mxn"],
+    "additionalProperties": False,
+}
+
+
+def estimar_casetas(origen: str, destino: str, distancia_km: float) -> float | None:
+    """Pide a la IA el costo total aproximado de casetas (MXN, auto
+    particular) del trayecto. Devuelve `None` si no hay proveedor o falla;
+    quien llama valida el número y cae al promedio por km."""
+    prompt = (
+        f"Estima el costo TOTAL en pesos mexicanos de las casetas de peaje para un automóvil "
+        f"particular (sin remolque) en el viaje por carretera de {origen} a {destino} "
+        f"(unos {round(distancia_km)} km), por la ruta más común y con las tarifas vigentes. "
+        f"Suma todas las casetas del trayecto. Si el trayecto casi no tiene casetas, responde un "
+        f"monto bajo. Responde solo con el JSON pedido; usa null si no puedes estimarlo."
+    )
+    datos = _llamar_proveedor(prompt, JSON_SCHEMA_CASETAS, usar_busqueda_web=True)
+    return (datos or {}).get("casetas_mxn")
+
+
 def _completar_con_anthropic(prompt: str, modelo: str, schema: dict, usar_busqueda_web: bool) -> dict | None:
     import anthropic
 

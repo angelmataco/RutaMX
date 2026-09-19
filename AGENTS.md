@@ -64,6 +64,10 @@ inicio del archivo que edites.
 - No inventes datos: coordenadas, población, o cualquier dato geográfico
   siempre se verifica contra una fuente real (Nominatim/OpenStreetMap para
   coordenadas), nunca se aproxima a mano.
+- Toda ventana flotante nueva debe ser un `<dialog>` nativo abierto con
+  `showModal()`: `styles.css` ya congela la página de atrás mientras haya
+  un `<dialog open>` (solo se mueve la ventana). No uses divs con overlay
+  propio ni pongas `overflow` en `body` a mano — se rompería esa regla.
 - Explica el "por qué" de un bug antes o junto con el arreglo, no solo
   apliques el fix sin decir la causa.
 - Para cambios grandes o con varios pasos, plantea el plan y espera

@@ -35,11 +35,13 @@ def test_obtener_coordenadas_ciudad_desconocida_usa_respaldo():
 
 
 def test_calcular_ruta_devuelve_campos_esperados():
-    resumen = route_service.calcular_ruta("Ciudad de Mexico", "Oaxaca de Juarez", 6500)
+    resumen = route_service.calcular_ruta("Ciudad de Mexico", "Oaxaca de Juarez")
     assert resumen["distancia_km"] > 0
     assert resumen["tiempo_h"] > 0
     assert resumen["paradas_estimadas"] >= 1
     assert resumen["costo_estimado"] > 0
+    assert resumen["costo_estimado"] == resumen["gasto"]["total"]
+    assert "presupuesto" not in resumen
 
 
 def test_sugerir_paradas_sin_intereses_devuelve_lista(app_context):
@@ -182,3 +184,37 @@ def test_sugerir_paradas_con_hora_salida_reparte_por_proposito(app_context):
     assert con_proposito  # al menos una parada vino del reparto por objetivos
     ids = [s["id"] for s in con_proposito]
     assert len(ids) == len(set(ids))  # nunca el mismo destino en dos objetivos
+
+
+def test_enlaces_google_maps_un_tramo():
+    from app.services import navegacion_service
+
+    enlaces = navegacion_service.enlaces_google_maps(
+        {
+            "origen": "CDMX",
+            "destino": "Oaxaca",
+            "resumen": {"origen": {"lat": 19.4, "lon": -99.1}, "destino": {"lat": 17.06, "lon": -96.7}},
+            "paradas": [{"nombre": "Puebla", "lat": 19.04, "lon": -98.2}],
+        }
+    )
+    assert len(enlaces) == 1
+    assert "origin=19.4%2C-99.1" in enlaces[0]
+    assert "waypoints=19.04%2C-98.2" in enlaces[0]
+    assert "destination=17.06%2C-96.7" in enlaces[0]
+
+
+def test_enlaces_google_maps_divide_en_tramos():
+    from app.services import navegacion_service
+
+    paradas = [{"nombre": f"P{i}"} for i in range(12)]
+    enlaces = navegacion_service.enlaces_google_maps({"origen": "A", "destino": "B", "paradas": paradas})
+    assert len(enlaces) == 2
+    assert "origin=P9" in enlaces[1]  # el segundo tramo arranca donde terminó el primero
+
+
+def test_formato_duracion():
+    from app.services.pdf_service import formato_duracion
+
+    assert formato_duracion(9.5) == "9 h 30 min"
+    assert formato_duracion(9) == "9 h"
+    assert formato_duracion(0.75) == "45 min"

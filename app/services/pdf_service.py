@@ -4,6 +4,8 @@ ruta, con los mismos colores de marca que el resto de la app.
 
 import io
 
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import letter
@@ -18,6 +20,8 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import ParagraphStyle
 
+from app.services import navegacion_service
+
 TERRACOTA = colors.HexColor("#c76a4c")
 VERDE_OSCURO = colors.HexColor("#1f3327")
 VERDE_PALIDO = colors.HexColor("#eaf1e7")
@@ -26,19 +30,33 @@ MOSTAZA = colors.HexColor("#e0a63e")
 BLANCO = colors.white
 GRIS_TEXTO = colors.HexColor("#6b6b62")
 
-COSTO_POR_KM = 4.5
-COSTO_BASE_HOSPEDAJE = 600
+
+def formato_duracion(horas):
+    """9.5 -> '9 h 30 min'. Igual que formatoDuracion() en static/js/formato.js."""
+    total_min = round(float(horas) * 60)
+    h, m = divmod(total_min, 60)
+    if h and m:
+        return f"{h} h {m} min"
+    return f"{h} h" if h else f"{m} min"
 
 
 def _formato_moneda(valor):
     return f"${valor:,.0f} MXN"
 
 
+def _qr(enlace, tamano):
+    widget = QrCodeWidget(enlace)
+    x0, y0, x1, y1 = widget.getBounds()
+    dibujo = Drawing(tamano, tamano, transform=[tamano / (x1 - x0), 0, 0, tamano / (y1 - y0), 0, 0])
+    dibujo.add(widget)
+    return dibujo
+
+
 def generar_pdf_itinerario(datos):
     """Genera el PDF y devuelve los bytes listos para descargar.
 
     `datos` es un dict con: nombre, origen, destino, resumen (dict con
-    distancia_km/tiempo_h/costo_estimado/presupuesto), paradas (lista de
+    distancia_km/tiempo_h/costo_estimado/gasto), paradas (lista de
     {nombre}, en orden).
     """
     buffer = io.BytesIO()
@@ -99,14 +117,14 @@ def generar_pdf_itinerario(datos):
 
     distancia_km = resumen.get("distancia_km")
     tiempo_h = resumen.get("tiempo_h")
-    costo_estimado = resumen.get("costo_estimado")
-    presupuesto = resumen.get("presupuesto")
+    gasto = resumen.get("gasto") or {}
+    costo_estimado = gasto.get("total", resumen.get("costo_estimado"))
 
     filas_resumen = [
-        ["DISTANCIA", "TIEMPO ESTIMADO", "COSTO ESTIMADO"],
+        ["DISTANCIA", "TIEMPO ESTIMADO", "GASTO MÁX. RECOMENDADO"],
         [
             f"{distancia_km} km" if distancia_km is not None else "—",
-            f"{tiempo_h} h" if tiempo_h is not None else "—",
+            formato_duracion(tiempo_h) if tiempo_h is not None else "—",
             _formato_moneda(costo_estimado) if costo_estimado is not None else "—",
         ],
     ]
@@ -135,20 +153,25 @@ def generar_pdf_itinerario(datos):
     elementos.append(tabla_resumen)
     elementos.append(Spacer(1, 6))
 
-    if presupuesto:
-        nota = (
-            "Tu presupuesto cubre esta estimación."
-            if resumen.get("presupuesto_suficiente")
-            else "Tu presupuesto es un poco menor al estimado."
+    if gasto:
+        partes = [
+            f"Gasolina {_formato_moneda(gasto['gasolina'])}",
+            f"casetas ≈ {_formato_moneda(gasto['casetas'])}",
+        ]
+        if gasto.get("num_comidas"):
+            partes.append(f"{gasto['num_comidas']} comida(s) {_formato_moneda(gasto['comidas'])}")
+        if gasto.get("num_noches"):
+            partes.append(f"{gasto['num_noches']} noche(s) de hospedaje {_formato_moneda(gasto['hospedaje'])}")
+        partes.append(f"imprevistos {_formato_moneda(gasto['imprevistos'])}")
+        elementos.append(Paragraph("Incluye: " + ", ".join(partes) + ".", estilo_nota))
+        elementos.append(
+            Paragraph(
+                f"Gasolina calculada con {gasto.get('rendimiento_kml')} km/l a ${gasto.get('precio_litro')}/litro. "
+                "Las casetas son un promedio: cada caseta cuesta distinto. Estimación para un auto particular, "
+                "por el viaje completo.",
+                estilo_nota,
+            )
         )
-        elementos.append(Paragraph(f"Presupuesto: {_formato_moneda(presupuesto)} — {nota}", estilo_nota))
-
-    elementos.append(
-        Paragraph(
-            f"Estimado = distancia × ${COSTO_POR_KM}/km (gasolina y casetas) + ${COSTO_BASE_HOSPEDAJE} por parada (hospedaje).",
-            estilo_nota,
-        )
-    )
 
     # --- Itinerario ---
     elementos.append(Paragraph("Tu itinerario", estilo_seccion))
@@ -194,6 +217,32 @@ def generar_pdf_itinerario(datos):
         )
     )
     elementos.append(tabla_itinerario)
+
+    # --- Navegación: QR + enlace a Google Maps (un QR por tramo) ---
+    enlaces = navegacion_service.enlaces_google_maps(datos)
+    elementos.append(Paragraph("Empieza tu viaje", estilo_seccion))
+    elementos.append(
+        Paragraph(
+            "Escanea el código con la cámara de tu teléfono para abrir la ruta completa en Google Maps "
+            "y tocar «Iniciar». También puedes tocar el enlace si abres este PDF en el celular.",
+            estilo_texto,
+        )
+    )
+    elementos.append(Spacer(1, 8))
+    for numero, enlace in enumerate(enlaces, start=1):
+        titulo = f"Tramo {numero} de {len(enlaces)}" if len(enlaces) > 1 else "Ruta completa"
+        texto = Paragraph(
+            f"<b>{titulo}</b><br/><link href=\"{enlace.replace('&', '&amp;')}\" color=\"#c76a4c\">"
+            "Abrir en Google Maps</link>",
+            estilo_texto,
+        )
+        fila = Table([[_qr(enlace, 3.2 * cm), texto]], colWidths=[3.8 * cm, 13 * cm])
+        fila.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
+        elementos.append(fila)
+    if len(enlaces) > 1:
+        elementos.append(
+            Paragraph("Google Maps admite máximo 9 paradas por enlace, por eso el viaje se divide en tramos.", estilo_nota)
+        )
 
     elementos.append(Spacer(1, 20))
     elementos.append(

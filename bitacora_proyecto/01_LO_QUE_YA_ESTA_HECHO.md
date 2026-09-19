@@ -11,7 +11,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Mapa con Leaflet + OpenStreetMap.
 - Ruta real por carretera (no línea recta) con Leaflet Routing Machine +
   OSRM (servidor demo gratuito, sin API key).
-- Distancia, tiempo y costo estimado calculados con la ruta real de OSRM;
+- Distancia, tiempo y gasto máximo recomendado calculados con la ruta real de OSRM;
   si OSRM no responde, cae a una estimación en línea recta para que no se
   rompa el flujo.
 - **Geocoding real arreglado**: antes el cálculo de ruta solo reconocía 18
@@ -76,7 +76,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (`<dialog>` + `scroll-snap-type`), sin ninguna librería. Guarda el
   valor en el mismo formato `HH:MM` de siempre, así que no hizo falta
   tocar `form.js` ni `main.js`.
-- **Presupuesto** y **Horas máximas de manejo**: en vez de una lista
+- **Presupuesto** (hoy ya no existe, ver "Gasto máximo recomendado") y **Horas máximas de manejo**: en vez de una lista
   plana de `<datalist>` (se veía sosa), ahora son una fila de "burbujas"
   deslizable — mismo estilo que los chips de "¿Qué buscas?" — con montos
   predefinidos (presupuesto: $1,000, $3,000, $5,000, $7,000, $9,000; horas:
@@ -165,9 +165,108 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Descarga de itinerario en PDF con el branding de la app (ReportLab,
   backend).
 
+## Formulario sin valores precargados
+
+- Origen, Destino y Nombre de la ruta no traen texto real
+  precargado: los tres primeros usan `placeholder` (ejemplo en gris que
+  desaparece al escribir) y el presupuesto arranca sin burbuja elegida
+  (antes traía 6500). Origen/Destino siguen con `required`; nombre vacío
+  cae a "origen a destino" y presupuesto vacío se trata como 0.
+  Archivo: `app/templates/partials/hero.html`.
+
+## Navegación con Google Maps (enlace + QR)
+
+- Botón "📍 Abrir en Google Maps" en la tarjeta de resumen del itinerario,
+  y sección "Empieza tu viaje" en el PDF con un QR y un enlace tocable.
+  Escanear el QR (o tocar el botón en el celular) abre la ruta completa en
+  la app de Google Maps lista para "Iniciar". No usa la API de Google: es
+  solo una URL (`google.com/maps/dir/?api=1&origin=…&waypoints=…`), sin
+  key ni costo. El mapa de la web sigue siendo Leaflet/OSRM.
+- Usa coordenadas cuando las hay (más exacto) y el nombre si no.
+- Google admite máx. 9 paradas por enlace: si hay más, se divide en tramos
+  (cada uno arranca donde terminó el anterior) y el PDF pone un QR por
+  tramo. Google puede recalcular el camino entre paradas.
+- Archivos: `app/services/navegacion_service.py`, endpoint
+  `POST /api/itinerario/enlaces`, `pdf_service.py`, `main.js`. El QR usa
+  reportlab (sin dependencias nuevas). 4 tests nuevos (53 en total).
+
+## Ajustes de diseño del resumen del viaje
+
+- La tarjeta "Resumen del viaje" ya llena su recuadro (las 4 cifras se
+  estiran a la altura del mapa; antes quedaba todo arriba y vacío abajo).
+- Las duraciones se muestran como "9 h 30 min" / "45 min" en vez de
+  "9.5 h": resumen, tarjetas de paradas, chat de IA y PDF. Función
+  compartida `formatoDuracion()` en `static/js/formato.js` (y su gemela
+  `formato_duracion()` en `pdf_service.py`, deben dar lo mismo).
+
+- **"🗂️ Mis rutas guardadas"**: botón junto a "Planear con IA" en la tarjeta
+  del inicio. Abre una ventana flotante con las rutas del usuario como
+  burbujas (nombre, origen → destino, km · duración · paradas). Sin sesión
+  muestra "Aún no has iniciado sesión" con botones Iniciar sesión / Crear
+  cuenta, y al entrar se abre la ventana de rutas sola. Con sesión y sin
+  rutas, un aviso. Tocar una burbuja restaura la ruta (formulario, mapa,
+  resumen, itinerario y sugerencias). Antes el selector de "rutas
+  guardadas" no cargaba nada al elegir una; ahora sí funciona. "Guardar
+  ruta actual" se queda abajo en "Guarda tu plan". Código en `main.js`.
+- Las 4 cifras del resumen del viaje van centradas en su recuadro.
+
+## Ventanas flotantes: la página de atrás se congela
+
+- Mientras haya cualquier `<dialog>` abierto (Planear con IA, Mis rutas
+  guardadas, login/registro, selector de hora) la página principal no se
+  mueve al hacer scroll; solo se desplaza la ventana. Es una regla general
+  en `styles.css` (`html:has(dialog[open]) { overflow: hidden }`), así que
+  las ventanas futuras la heredan solas. Ver regla en `AGENTS.md`.
+
+## Chat "Planear con IA": efecto de escritura
+
+- El saludo inicial se escribe letra por letra la primera vez que se abre
+  el chat (las siguientes veces la conversación se conserva sin
+  re-animar). Cada respuesta de la IA también se escribe poco a poco
+  (~20 ms por letra, máx. ~2.5 s por mensaje) con cursor parpadeante, y
+  mientras el servidor responde salen tres puntitos "pensando". Las
+  respuestas rápidas y las opciones aparecen al terminar de escribir. Se
+  respeta `prefers-reduced-motion` (sin animación). Código en
+  `planificador_ia.js`.
+
+## Gasto máximo recomendado (reemplaza al campo "Presupuesto")
+
+- Se quitó el campo de presupuesto: ahora la app calcula cuánto conviene
+  gastar como máximo, por el viaje completo. Código en
+  `app/services/gasto_service.py` (constantes arriba, fáciles de afinar).
+- **Siempre incluye:** gasolina (km ÷ rendimiento × precio del litro;
+  default 13 km/l y $25.5/l), casetas (ver abajo) e imprevistos ($500 en
+  viajes de ≤4 h, subiendo linealmente hasta $2,000 a las 20 h o más).
+- **Solo si aplica:** comidas ($150 × personas por cada parada del
+  itinerario cuyo lugar tenga el interés "comida") y hospedaje ($600 por
+  noche). Las noches se **deducen solas** simulando el viaje día por día
+  con la hora de salida (default 08:00): no se maneja pasadas las 21:00 y
+  se retoma a las 07:00. Ej.: 8 h saliendo a las 08:00 = 0 noches; 10 h
+  saliendo a las 17:00 = 1 noche; León → Cabo San Lucas = 3 noches.
+- **Casetas:** si hay una IA conectada se le pide el estimado del
+  trayecto (con búsqueda web, resultado en caché, validado: se descarta
+  si es negativo o > $5/km); si no, o si falla, promedio de $1.1/km.
+  Cada caseta cuesta distinto, así que es un promedio, y el resumen lo
+  dice ("Casetas (promedio)" / "(estimado IA)").
+- **Formulario:** nuevo selector de "¿Cuántas personas van?" (burbujas
+  1–8, vacío = 1) y un desplegable opcional "⚙️ Ajusta tu gasto": coche
+  (Compacto 15 / Mediano 13 / SUV 11 km/l), gasolina (Magna $23.8 /
+  Premium $29), y paradas para comer / noches de hospedaje manuales (vacío
+  = automático). Si nadie toca nada, todo funciona con los valores típicos.
+- El resumen muestra el total y un desglose (gasolina, casetas, comidas,
+  hospedaje, imprevistos) con una línea de "Incluye…". El desglose y los
+  ajustes se guardan dentro de `resumen` de cada ruta guardada y se
+  restauran al abrirla; el PDF trae el mismo desglose. El gasto se
+  recalcula en el servidor (`POST /api/gasto`) cada vez que cambian la
+  distancia real o las paradas. La columna `presupuesto` de la base ya no
+  se usa (queda sin borrar para no romper rutas viejas).
+- 15 tests nuevos (`tests/test_gasto_service.py` y `/api/gasto`); las
+  pruebas apagan la estimación de casetas por IA (`tests/conftest.py`)
+  para no gastar tokens.
+
 ## Calidad / pruebas
 
-- 49 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 69 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el

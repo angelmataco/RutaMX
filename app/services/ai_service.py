@@ -105,6 +105,7 @@ def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
         "descripcion": destino.descripcion,
         "lat": destino.lat,
         "lon": destino.lon,
+        "intereses": destino.intereses or [],
     }
     if horas_estimadas is not None:
         lugar["horas_estimadas"] = round(horas_estimadas, 1)

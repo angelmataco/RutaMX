@@ -230,3 +230,33 @@ def test_pdf_itinerario_ok(client):
 def test_pdf_itinerario_sin_datos(client):
     respuesta = client.post("/api/itinerario/pdf", json={})
     assert respuesta.status_code == 400
+
+
+def test_enlaces_navegacion_ok(client):
+    respuesta = client.post("/api/itinerario/enlaces", json={"origen": "CDMX", "destino": "Oaxaca"})
+    assert respuesta.status_code == 200
+    assert respuesta.get_json()["enlaces"][0].startswith("https://www.google.com/maps/dir/?api=1&origin=")
+
+
+def test_enlaces_navegacion_sin_datos(client):
+    assert client.post("/api/itinerario/enlaces", json={}).status_code == 400
+
+
+def test_api_gasto_ok(client):
+    respuesta = client.post(
+        "/api/gasto",
+        json={
+            "distancia_km": 600,
+            "tiempo_h": 10,
+            "ajustes": {"hora_salida": "17:00", "personas": 2},
+            "paradas": [{"intereses": ["comida"]}],
+        },
+    )
+    assert respuesta.status_code == 200
+    datos = respuesta.get_json()
+    assert datos["num_noches"] == 1 and datos["num_comidas"] == 1
+    assert datos["total"] > 0
+
+
+def test_api_gasto_sin_datos(client):
+    assert client.post("/api/gasto", json={}).status_code == 400
