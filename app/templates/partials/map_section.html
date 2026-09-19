@@ -26,6 +26,7 @@
       </div>
     </div>
     <ul class="gasto-desglose" data-gasto-desglose hidden></ul>
+    <button type="button" class="btn-pildora" data-abrir-ajustes-gasto>⚙️ Ajustes de gasto</button>
     <p class="card__note" data-gasto-incluye>
       Llena el formulario para ver el resumen de tu viaje.
     </p>
@@ -34,3 +35,46 @@
     </p>
   </div>
 </div>
+
+<dialog class="modal-ajustes" data-modal-ajustes>
+  <form method="dialog" class="modal-auth__cerrar">
+    <button type="submit" value="cancelar" class="icon-btn" aria-label="Cerrar">✕</button>
+  </form>
+  <p class="kicker">OPCIONAL</p>
+  <h3 class="card__title">Ajustes de gasto</h3>
+  <p class="ajustes-gasto__ayuda">
+    Calculamos el gasto con valores típicos. Las comidas y noches se detectan solas según tus paradas y la hora; cámbialas aquí solo si quieres fijarlas tú.
+  </p>
+
+  <div class="field">
+    <p class="field__label">Tu coche</p>
+    <div class="chips" data-chips-unico>
+      <button type="button" class="chip" data-ajuste="tipo_coche" data-valor="compacto">Compacto · 15 km/l</button>
+      <button type="button" class="chip" data-ajuste="tipo_coche" data-valor="mediano">Mediano · 13 km/l</button>
+      <button type="button" class="chip" data-ajuste="tipo_coche" data-valor="suv">SUV · 11 km/l</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <p class="field__label">Gasolina</p>
+    <div class="chips" data-chips-unico>
+      <button type="button" class="chip" data-ajuste="gasolina" data-valor="magna">Magna</button>
+      <button type="button" class="chip" data-ajuste="gasolina" data-valor="premium">Premium</button>
+    </div>
+  </div>
+
+  <div class="ruta-form__row">
+    <div class="field">
+      <label for="hero-comidas">Paradas para comer</label>
+      <input type="number" id="hero-comidas" name="comidas" min="0" max="20" step="1" placeholder="Automático" />
+    </div>
+    <div class="field">
+      <label for="hero-noches">Noches de hospedaje</label>
+      <input type="number" id="hero-noches" name="noches" min="0" max="20" step="1" placeholder="Automático" />
+    </div>
+  </div>
+
+  <form method="dialog">
+    <button type="submit" value="aplicar" class="btn btn--primary btn--block">Aplicar cambios</button>
+  </form>
+</dialog>

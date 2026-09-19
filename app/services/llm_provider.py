@@ -62,13 +62,12 @@ JSON_SCHEMA_SLOTS_VIAJE = {
         "origen": {"type": ["string", "null"]},
         "destino": {"type": ["string", "null"]},
         "personas": {"type": ["integer", "null"]},
-        "horas_max": {"type": ["number", "null"]},
         "hora_salida": {"type": ["string", "null"]},
         "intereses": {"type": ["array", "null"], "items": {"type": "string", "enum": INTERESES_VALIDOS}},
     },
     "required": [
         "listo", "pregunta_siguiente", "opciones_respuesta", "origen", "destino",
-        "personas", "horas_max", "hora_salida", "intereses",
+        "personas", "hora_salida", "intereses",
     ],
     "additionalProperties": False,
 }
@@ -199,10 +198,19 @@ def _prompt_slots_viaje(mensajes: list[dict]) -> str:
     return (
         "Eres el asistente de planeación de road trips de RutaMX. Lee esta "
         f"conversación con el usuario y extrae lo que ya sabes del viaje:\n\n{transcript}\n\n"
-        "Campos a extraer: origen, destino, personas (cuántas van), "
-        "horas_max (cuántas horas máximo quieren manejar seguido antes de "
-        "parar), hora_salida (formato HH:MM, hora aproximada en que saldrían), "
+        "Campos a extraer: origen, destino, personas (cuántas van; sirve para "
+        "calcular el gasto en comidas), hora_salida (formato HH:MM, hora "
+        "aproximada en que saldrían), "
         f"intereses (subconjunto de {INTERESES_VALIDOS}).\n\n"
+        "Cómo funciona RutaMX (tenlo en cuenta al preguntar): la app calcula sola "
+        "el gasto máximo recomendado (gasolina, casetas, imprevistos y, si hay "
+        "paradas para comer o dormir, comida y hospedaje), así que NO preguntes "
+        "por presupuesto ni por cuántas horas quieren manejar seguido. La hora "
+        "de salida es el dato más útil después del origen y el destino: con ella "
+        "la app sabe cuándo toca comer y si el viaje llega a la noche (solo se "
+        "recomienda dormir si el viaje pasa de las 8 pm). Si falta algo, "
+        "pregunta en este orden de prioridad: hora de salida, personas, "
+        "intereses.\n\n"
         f"Ya le has hecho {preguntas_ia_hechas} pregunta(s) de seguimiento en "
         f"esta conversación. El máximo permitido es {MAX_PREGUNTAS_CHAT} — si "
         f"ya llegaste a {MAX_PREGUNTAS_CHAT} o más, NO preguntes otra vez: "
@@ -242,9 +250,25 @@ def _prompt_opciones_objetivos(contexto: dict) -> str:
         f"- Destino: {contexto.get('destino')}\n"
         f"- Personas: {contexto.get('personas') or 'no especificado'}\n"
         f"- Duración total estimada: {contexto.get('tiempo_h')} horas ({contexto.get('distancia_km')} km)\n"
-        f"- Horas máximas de manejo seguido antes de parar: {contexto.get('horas_max') or 'no especificado'}\n"
-        f"- Hora de salida: {contexto.get('hora_salida') or 'no especificada'}\n"
+        f"- Hora de salida: {contexto.get('hora_salida') or 'no especificada (se supone 08:00)'}\n"
         f"- Intereses mencionados: {contexto.get('intereses') or 'ninguno en particular'}\n\n"
+        "Tramos del viaje según la hora del reloj (la app ya los calculó):\n"
+        f"{contexto.get('tramos_texto') or '(viaje muy corto: como máximo una parada)'}\n\n"
+        "REGLAS de RutaMX que tus objetivos deben respetar:\n"
+        "1. Solo se puede parar desde 30 minutos después de salir hasta 20 "
+        "minutos antes de llegar: hora_objetivo debe estar entre 0.5 y "
+        f"{round((contexto.get('tiempo_h') or 0) - 20 / 60, 2)}.\n"
+        '2. El propósito "descanso" significa DORMIR: úsalo SOLO si en ese punto '
+        "del viaje ya pasan las 8 pm o se cruza la noche (no se maneja pasadas "
+        "las 21:00 y se retoma a las 7:00). De día, nunca uses \"descanso\"; usa "
+        "un interés de turismo.\n"
+        '3. El propósito "comida" solo tiene sentido cerca de las horas de comer '
+        "(aprox. 13:00-16:00 y 19:00-21:30); se recomendarán únicamente lugares "
+        "donde se puede comer. Ponlo si el usuario pidió comer o si el viaje "
+        "cruza esas horas.\n"
+        "4. El resto de las paradas son de turismo según los intereses del "
+        "usuario (naturaleza, playas, pueblos_magicos, cultura).\n"
+        "5. Nunca dos paradas a menos de ~1.5 horas de camino entre sí.\n\n"
         "Propón EXACTAMENTE 2 opciones de itinerario, genuinamente "
         "distintas entre sí (no una plantilla fija — la cantidad, el "
         "propósito y el horario de cada parada los decides tú según ESTE "

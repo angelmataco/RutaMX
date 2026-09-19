@@ -9,6 +9,12 @@ la regla completa en `AGENTS.md`.
 
 ## Por planear / decidir con Angel (pedido explícito)
 
+- **Tramos: pendientes menores.** La base solo tiene ciudades, pueblos y
+  sitios turísticos (no restaurantes ni hoteles): "comida" y "hospedaje" son
+  lugares con esa etiqueta o una ciudad grande donde dormir. Si se quiere
+  recomendar restaurantes/hoteles concretos hace falta otra fuente de datos.
+  El desayuno no se sugiere (se supone que se desayuna antes de salir).
+
 - **Tiempo de la app vs Google Maps.** León → Cabo San Lucas: la app dice
   ~50 h y Google Maps ~44 h. Causa probable: OSRM (servidor demo) usa
   velocidades genéricas por tipo de vía, más lentas que las autopistas de
@@ -74,6 +80,13 @@ real por hacer, no porque la feature esté incompleta.
   exacta contra la documentación vigente de cada proveedor.
 
 **De "Planear con IA":**
+- Los prompts nuevos (reglas de tramos, dormir después de las 8 pm, ventana
+  de 30/20 min, sin preguntar por presupuesto ni horas máximas) solo se han
+  probado con el proveedor mockeado. Falta probarlos con una key real y ver
+  que el modelo los siga bien (el servidor ya corrige lo que se salga de las
+  reglas).
+- "Planear con IA" no permite elegir el propósito de cada tramo (eso es solo
+  del flujo manual).
 - **El chat en sí no se ha podido probar de punta a punta con una IA
   real todavía.** Se probó con una key presente en el entorno de
   desarrollo, pero resultó inválida para uso directo del SDK (error 401

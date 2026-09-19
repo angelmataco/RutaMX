@@ -100,6 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (valores.hora && valores.minuto) {
       hidden.value = a24Horas(valores);
       display.textContent = a24Horas(valores);
+      hidden.dispatchEvent(new Event("change", { bubbles: true }));
     }
     dialogo.close();
   });
@@ -108,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnLimpiar.addEventListener("click", () => {
       hidden.value = "";
       display.textContent = "Elegir hora";
+      hidden.dispatchEvent(new Event("change", { bubbles: true }));
       dialogo.close();
     });
   }

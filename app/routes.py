@@ -37,11 +37,22 @@ def api_sugerencias():
     intereses = request.args.get("intereses", "")
     lista_intereses = [i for i in intereses.split(",") if i]
 
-    horas_max = None
     try:
-        horas_max = float(request.args.get("horas_max", "")) or None
+        lapso = int(request.args["lapso"]) if "lapso" in request.args else None
     except ValueError:
-        horas_max = None
+        lapso = None
+
+    try:
+        tramos = int(request.args["tramos"]) if "tramos" in request.args else None
+    except ValueError:
+        tramos = None
+
+    # "0:comida,2:descanso" -> {0: "comida", 2: "descanso"} (tramos personalizados)
+    propositos = {}
+    for par in request.args.get("propositos", "").split(","):
+        indice, _, valor = par.partition(":")
+        if indice.isdigit() and valor in ("comida", "turismo", "descanso"):
+            propositos[int(indice)] = valor
 
     try:
         limite = int(request.args.get("limite", 4))
@@ -59,11 +70,22 @@ def api_sugerencias():
         lista_intereses,
         limite=limite,
         ruta=ruta,
-        horas_max=horas_max,
         excluir_ids=ids_excluidos,
         hora_salida=hora_salida,
+        lapso=lapso,
+        tramos=tramos,
+        propositos=propositos,
     )
-    return jsonify({"sugerencias": sugerencias})
+    lapsos = ai_service.lapsos_de_la_ruta(ruta.get("tiempo_h"), tramos, hora_salida, propositos) if ruta else []
+    lapsos = [{k: v for k, v in l.items() if not k.startswith("_")} for l in lapsos]
+    return jsonify(
+        {
+            "sugerencias": sugerencias,
+            "lapsos": lapsos,
+            # Sin hora de salida, los horarios de los tramos suponen 08:00.
+            "hora_salida_asumida": not hora_salida,
+        }
+    )
 
 
 @main_bp.route("/api/ia/disponible")

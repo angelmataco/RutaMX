@@ -4,9 +4,9 @@ usuario.
 Las sugerencias salen de la tabla `destinos` (Supabase), filtradas por
 cercanía real a la carretera entre origen y destino —no en línea recta—
 usando la geometría que ya calcula `route_service` con OSRM. Si además
-el usuario indicó cuántas horas máximo quiere manejar seguido, se
-prioriza a los destinos que caen cerca de ese punto del camino, como
-sugerencia de dónde parar a descansar.
+hay geometría de ruta, las sugerencias se reparten solas por "lapsos" de
+tiempo a lo largo del camino (ver `lapsos_de_la_ruta`), sin que el
+usuario tenga que decir cada cuántas horas quiere parar.
 
 LUGARES_DEMO se queda solo como respaldo por si la base de datos no
 responde (ej. sin conexión), para que el flujo no se rompa.
@@ -20,7 +20,7 @@ consulta `destinos` como siempre.
 import random
 
 from app.models import Destino
-from app.services import maps_service, route_service
+from app.services import gasto_service, maps_service, route_service
 
 ETIQUETAS_TIPO = {
     "ciudad_principal": "Ciudad",
@@ -41,11 +41,26 @@ RADIOS_CORREDOR_KM = [20, 60, 150]
 # caso "sugerirlo" como parada en el camino.
 RADIO_EXCLUSION_EXTREMOS_KM = 5
 
-# Un destino a menos de esto (en horas de manejo real) del origen está
-# prácticamente dentro de la ciudad de la que sales: no tiene caso
-# "sugerirlo" como parada en el camino. Cerca del destino sí se permite
-# sugerir (cuando ya llegaste, también quieres recomendaciones).
-HORAS_MINIMAS_DESDE_ORIGEN = 1.0
+# Ventana en la que se recomienda: desde 30 min después de salir (antes
+# de eso sigues básicamente en la ciudad de la que sales) hasta 20 min
+# antes de llegar (después ya casi estás en el destino).
+HORAS_MINIMAS_DESDE_ORIGEN = 0.5
+HORAS_MINIMAS_ANTES_DE_LLEGAR = 20 / 60
+
+# El tramo de la ventana se divide en lapsos de más o menos esta duración
+# (un viaje de 6 h -> 2 lapsos; uno de 12 h -> 4). Sustituye a la vieja
+# pregunta "horas máximas de manejo seguido": la app lo decide sola.
+LAPSO_OBJETIVO_H = 3.0
+
+# Un tramo no puede ser más corto que esto (limita cuántos tramos se pueden pedir).
+LAPSO_MINIMO_H = 0.5
+
+# Horarios en los que un tramo pide "lugar para comer". El desayuno no se
+# sugiere: se supone que se desayuna antes de salir.
+VENTANAS_DE_COMIDA_SUGERIDA = [(13.0, 16.0), (19.0, 21.5)]
+# Un tramo que termina a partir de esta hora (o que cruza la noche) pide un
+# lugar para pasar la noche.
+HORA_TRAMO_DE_DESCANSO = 20.0
 
 # Qué tan cerca (en horas) del punto objetivo de descanso debe caer un
 # destino para marcarlo como "buena parada para descansar".
@@ -95,6 +110,111 @@ LUGARES_DEMO = [
         "intereses": ["pueblos_magicos", "comida"],
     },
 ]
+
+
+def lapsos_de_la_ruta(tiempo_h, tramos=None, hora_salida=None, propositos=None):
+    """Divide el viaje en lapsos de tiempo, de 30 min después de salir a
+    20 min antes de llegar. Por defecto salen de ~3 h cada uno; si el
+    usuario pide `tramos` (ej. 3), la ventana se divide en esa cantidad de
+    partes iguales.
+
+    Cada lapso trae sus horas de camino (`desde_h`, `hasta_h`), la hora del
+    reloj (`reloj_desde`, `reloj_hasta`, `dia`, `cruza_noche`) según
+    `hora_salida` (08:00 si no se conoce), y su propósito:
+    - `proposito`: "comida", "turismo" o "descanso" (dormir);
+    - `personalizado`: True si lo eligió el usuario en `propositos`
+      ({indice: proposito}); si no, lo decide solo según la hora;
+    - `permite_dormir`: dormir solo aplica si el tramo termina después de
+      las 20:00 o cruza la noche.
+    Devuelve una lista vacía si el viaje es demasiado corto (o no se conoce
+    su duración) para tener una ventana.
+    """
+    if not tiempo_h:
+        return []
+    inicio = HORAS_MINIMAS_DESDE_ORIGEN
+    fin = tiempo_h - HORAS_MINIMAS_ANTES_DE_LLEGAR
+    if fin <= inicio:
+        return []
+
+    maximo = max(1, int((fin - inicio) / LAPSO_MINIMO_H))
+    if tramos:
+        cuantos = max(1, min(int(tramos), maximo))
+    else:
+        cuantos = max(1, min(round((fin - inicio) / LAPSO_OBJETIVO_H), maximo))
+    ancho = (fin - inicio) / cuantos
+    propositos = propositos or {}
+
+    lapsos = []
+    for i in range(cuantos):
+        desde, hasta = inicio + i * ancho, inicio + (i + 1) * ancho
+        hora_desde, dia_desde = gasto_service.momento_de_llegada(desde, hora_salida)
+        hora_hasta, dia_hasta = gasto_service.momento_de_llegada(hasta, hora_salida)
+        lapso = {
+            "indice": i,
+            "desde_h": round(desde, 2),
+            "hasta_h": round(hasta, 2),
+            "reloj_desde": gasto_service.formato_hora(hora_desde),
+            "reloj_hasta": gasto_service.formato_hora(hora_hasta),
+            "dia": dia_desde,
+            "cruza_noche": dia_hasta > dia_desde,
+            "_hora_desde": hora_desde,
+            "_hora_hasta": hora_hasta,
+        }
+        lapso["permite_dormir"] = lapso["cruza_noche"] or hora_hasta >= HORA_TRAMO_DE_DESCANSO
+        pedido = propositos.get(i)
+        if pedido in ("comida", "turismo") or (pedido == "descanso" and lapso["permite_dormir"]):
+            lapso["proposito"], lapso["personalizado"] = pedido, True
+        else:
+            lapso["proposito"], lapso["personalizado"] = _proposito_automatico(lapso), False
+        lapsos.append(lapso)
+    return lapsos
+
+
+def _proposito_automatico(lapso):
+    """Qué conviene recomendar en un tramo según la hora del reloj:
+    "descanso" (dónde pasar la noche) solo si el tramo termina después de
+    las 20:00 o cruza la noche; "comida" si cae en horario de comer; y si
+    no, "turismo"."""
+    if lapso["permite_dormir"]:
+        return "descanso"
+    for ini, fin in VENTANAS_DE_COMIDA_SUGERIDA:
+        traslape = min(lapso["_hora_hasta"], fin) - max(lapso["_hora_desde"], ini)
+        if traslape >= 1.0:
+            return "comida"
+    return "turismo"
+
+
+def _intereses_de_turismo(intereses_usuario):
+    """Los intereses del usuario que son de "turismo" (sin comida ni descanso)."""
+    return [i for i in (intereses_usuario or []) if i not in ("comida", "descanso")]
+
+
+def _coincide_proposito(intereses_destino, tipo_destino, proposito):
+    """¿Este lugar sirve para ese propósito? Comer: lugares de comida.
+    Descansar: lugares de descanso o ciudades grandes (donde hay dónde
+    dormir). Otro (un interés, ej. "playas"): el lugar tiene ese interés."""
+    if proposito == "descanso":
+        return "descanso" in intereses_destino or tipo_destino == "ciudad_principal"
+    return proposito in intereses_destino
+
+
+def _encaja_con_lo_pedido(destino, proposito, intereses_usuario):
+    """Filtro estricto para un tramo que el usuario personalizó: si pidió
+    comer, solo lugares donde se puede comer; si pidió dormir, solo dónde
+    dormir; si pidió turismo, lugares con sus intereses (o cualquiera, si
+    no marcó ninguno)."""
+    intereses = destino.intereses or []
+    if proposito in ("comida", "descanso"):
+        return _coincide_proposito(intereses, destino.tipo, proposito)
+    turismo = _intereses_de_turismo(intereses_usuario)
+    return not turismo or bool(set(turismo) & set(intereses))
+
+
+def _indice_de_lapso(lapsos, horas_estimadas):
+    for lapso in lapsos:
+        if lapso["desde_h"] <= horas_estimadas <= lapso["hasta_h"]:
+            return lapso["indice"]
+    return None
 
 
 def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
@@ -200,6 +320,83 @@ def generar_objetivos_automaticos(tiempo_h, horas_max, hora_salida=None, interes
     return filtrar_objetivos_por_hora_del_dia(objetivos, hora_salida, intereses_usuario)
 
 
+def generar_objetivos_por_lapsos(lapsos, intereses_usuario=None):
+    """Un objetivo de parada por lapso, en la mitad del lapso, con el
+    propósito de ese tramo. Los tramos que el usuario personalizó son
+    estrictos (`estricto`): solo se acepta un lugar que encaje con lo pedido."""
+    objetivos = []
+    for lapso in lapsos:
+        turismo = _intereses_de_turismo(intereses_usuario)
+        proposito = lapso["proposito"]
+        if proposito == "turismo":
+            proposito = turismo[0] if turismo else "cultura"
+        objetivos.append(
+            {
+                "proposito": proposito,
+                "hora_objetivo": round((lapso["desde_h"] + lapso["hasta_h"]) / 2, 2),
+                "ventana": (lapso["desde_h"], lapso["hasta_h"]),
+                "estricto": lapso["personalizado"],
+                "indice": lapso["indice"],
+                "tipo_pedido": lapso["proposito"],
+            }
+        )
+    return objetivos
+
+
+HORAS_TOLERANCIA_OBJETIVO_IA = 1.5
+
+
+def preparar_objetivos_ia(objetivos, tiempo_h, hora_salida=None, intereses_usuario=None):
+    """Aplica las reglas de la app a los objetivos que propuso la IA (no se
+    confía en que el modelo las respete):
+    - solo entre 30 min después de salir y 20 min antes de llegar;
+    - "descanso" (dormir) solo si de verdad hay noche en ese punto del viaje
+      (se llega después de las 20:00 o se cruza la noche); si no, se cambia
+      por un interés de turismo;
+    - "comida" y "descanso" son estrictos: solo lugares donde se puede comer
+      o dormir, dentro de ±1.5 h del punto pedido.
+    Sin hora de salida se supone 08:00.
+    """
+    salida = hora_salida or "08:00"
+    turismo = _intereses_de_turismo(intereses_usuario)
+    interes_de_dia = turismo[0] if turismo else "cultura"
+    minimo = HORAS_MINIMAS_DESDE_ORIGEN
+    maximo = (tiempo_h - HORAS_MINIMAS_ANTES_DE_LLEGAR) if tiempo_h else None
+
+    listos = []
+    for objetivo in objetivos:
+        try:
+            hora = float(objetivo["hora_objetivo"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if hora < minimo or (maximo is not None and hora > maximo):
+            continue
+
+        proposito = objetivo.get("proposito")
+        if proposito == "descanso":
+            reloj, _ = gasto_service.momento_de_llegada(hora, salida)
+            _, dia_antes = gasto_service.momento_de_llegada(hora - HORAS_TOLERANCIA_OBJETIVO_IA, salida)
+            _, dia_despues = gasto_service.momento_de_llegada(hora + HORAS_TOLERANCIA_OBJETIVO_IA, salida)
+            hay_noche = reloj >= HORA_TRAMO_DE_DESCANSO or dia_despues > dia_antes
+            if not hay_noche:
+                proposito = interes_de_dia
+
+        estricto = proposito in ("comida", "descanso")
+        listos.append(
+            {
+                "proposito": proposito,
+                "hora_objetivo": round(hora, 2),
+                "ventana": (
+                    max(minimo, hora - HORAS_TOLERANCIA_OBJETIVO_IA),
+                    min(maximo, hora + HORAS_TOLERANCIA_OBJETIVO_IA) if maximo is not None else hora + HORAS_TOLERANCIA_OBJETIVO_IA,
+                ),
+                "estricto": estricto,
+                "encaja": lambda destino, p=proposito: _coincide_proposito(destino.intereses or [], destino.tipo, p),
+            }
+        )
+    return listos
+
+
 def asignar_paradas_a_objetivos(candidatos, objetivos):
     """Por cada objetivo (propósito + hora), elige el mejor candidato aún
     no usado: prioriza que su propósito esté entre los intereses del
@@ -220,10 +417,17 @@ def asignar_paradas_a_objetivos(candidatos, objetivos):
     for objetivo in sorted(objetivos, key=lambda o: o["hora_objetivo"]):
         mejor = None
         mejor_puntaje = None
+        ventana = objetivo.get("ventana")
         for destino, horas_estimadas in candidatos:
             if destino.id in usados or horas_estimadas is None:
                 continue
-            coincide_proposito = 0 if objetivo["proposito"] in (destino.intereses or []) else 1
+            # Un objetivo con ventana (tramo) solo acepta lugares dentro de ese tramo.
+            if ventana and not (ventana[0] <= horas_estimadas <= ventana[1]):
+                continue
+            # Un tramo personalizado por el usuario es estricto.
+            if objetivo.get("estricto") and not objetivo["encaja"](destino):
+                continue
+            coincide_proposito = 0 if _coincide_proposito(destino.intereses or [], destino.tipo, objetivo["proposito"]) else 1
             distancia_hora = abs(horas_estimadas - objetivo["hora_objetivo"])
             puntaje = (coincide_proposito, distancia_hora)
             if mejor_puntaje is None or puntaje < mejor_puntaje:
@@ -266,6 +470,91 @@ def _sugerir_con_objetivos_automaticos(intereses, limite, ruta, horas_max, hora_
     ids_usados = {lugar["id"] for lugar in asignadas}
     restantes = _ordenar_candidatos([(d, h) for d, h in pool if d.id not in ids_usados], intereses, None)
     relleno = [_lugar_desde_destino(d, h) for d, h in restantes[: max(0, limite - len(asignadas))]]
+    return (asignadas + relleno)[:limite]
+
+
+def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso=None, tramos=None, propositos=None):
+    """Sugerencias repartidas por lapsos de tiempo a lo largo de la ruta.
+
+    Cada tramo tiene un propósito: el que eligió el usuario, o si lo dejó
+    en automático el que toca según la hora del reloj (comida en horario
+    de comer, dormir solo si el tramo termina después de las 20:00 o cruza
+    la noche, turismo el resto).
+
+    - Tramo personalizado: SOLO lugares que encajan con lo pedido (si pidió
+      comer, solo donde se puede comer).
+    - Tramo automático: de todo, con prioridad al propósito de la hora
+      (y nunca se propone dormir donde no aplica).
+    - `lapso=None` ("todo el camino"): primero la mejor parada de cada
+      tramo y después se rellena turnando entre tramos.
+    - `lapso=N`: solo lugares de ese tramo.
+    - `tramos=N`: en cuántos tramos dividir el viaje (por defecto, solo).
+    Cada lugar trae `lapso`, `hora_llegada` y, si encaja con lo que pide su
+    tramo, `proposito`. Devuelve `None` si no se puede (sin geometría, viaje
+    muy corto...) para caer al comportamiento de siempre.
+    """
+    lapsos = lapsos_de_la_ruta(ruta.get("tiempo_h"), tramos, hora_salida, propositos)
+    if not lapsos:
+        return None
+    pool = obtener_pool_con_horas(ruta, excluir_ids, limite=max(limite, 40))
+    if not pool:
+        return None
+
+    intereses_lista = list(intereses)
+    objetivos = generar_objetivos_por_lapsos(lapsos, intereses_lista)
+    por_indice = {o["indice"]: o for o in objetivos}
+    for o in objetivos:
+        o["encaja"] = lambda destino, tipo=o["tipo_pedido"]: _encaja_con_lo_pedido(destino, tipo, intereses_lista)
+
+    def acepta(destino, indice):
+        """En un tramo personalizado solo entran lugares que encajan."""
+        o = por_indice.get(indice)
+        return not (o and o["estricto"]) or o["encaja"](destino)
+
+    def armar(destino, horas):
+        lugar = _lugar_desde_destino(destino, horas)
+        indice = _indice_de_lapso(lapsos, horas)
+        lugar["lapso"] = indice
+        lugar["hora_llegada"] = gasto_service.formato_hora(gasto_service.hora_de_llegada(horas, hora_salida))
+        objetivo = por_indice.get(indice)
+        if objetivo and objetivo["tipo_pedido"] != "turismo":
+            if _coincide_proposito(destino.intereses or [], destino.tipo, objetivo["proposito"]):
+                lugar["proposito"] = objetivo["proposito"]
+        return lugar
+
+    if lapso is not None:
+        objetivo = por_indice.get(lapso)
+        if not objetivo:
+            return None
+        elegido = next(l for l in lapsos if l["indice"] == lapso)
+        dentro = [(d, h) for d, h in pool if elegido["desde_h"] <= h <= elegido["hasta_h"] and acepta(d, lapso)]
+        random.shuffle(dentro)
+        dentro.sort(
+            key=lambda item: (
+                0 if _coincide_proposito(item[0].intereses or [], item[0].tipo, objetivo["proposito"]) else 1,
+                0 if (intereses and intereses & set(item[0].intereses or [])) else 1,
+                -(item[0].poblacion or 0) if objetivo["proposito"] == "descanso" else 0,
+            )
+        )
+        return [armar(d, h) for d, h in dentro[:limite]]
+
+    asignadas = []
+    for lugar in asignar_paradas_a_objetivos(pool, objetivos):
+        destino = next(d for d, _ in pool if d.id == lugar["id"])
+        asignadas.append(armar(destino, lugar["horas_estimadas"]))
+
+    ids_usados = {lugar["id"] for lugar in asignadas}
+    por_lapso = {l["indice"]: [] for l in lapsos}
+    for d, h in _ordenar_candidatos([(d, h) for d, h in pool if d.id not in ids_usados], intereses, None):
+        indice = _indice_de_lapso(lapsos, h)
+        if indice is not None and acepta(d, indice):
+            por_lapso[indice].append(armar(d, h))
+
+    relleno = []
+    while any(por_lapso.values()):
+        for indice in por_lapso:  # una por lapso en cada vuelta
+            if por_lapso[indice]:
+                relleno.append(por_lapso[indice].pop(0))
     return (asignadas + relleno)[:limite]
 
 
@@ -312,9 +601,11 @@ def _candidatos_en_el_corredor(ruta, limite, excluir_ids):
         distancia_perp, avance_km = route_service.distancia_a_corredor(corredor, punto_destino_candidato)
         horas_estimadas = (avance_km / distancia_total) * tiempo_total if distancia_total else 0
 
-        # Descarta lo que está a menos de 1h de manejo real del origen
-        # (básicamente dentro de la ciudad de la que sales).
+        # Solo se recomienda dentro de la ventana: desde 30 min después de
+        # salir hasta 20 min antes de llegar.
         if horas_estimadas < HORAS_MINIMAS_DESDE_ORIGEN:
+            continue
+        if tiempo_total and horas_estimadas > tiempo_total - HORAS_MINIMAS_ANTES_DE_LLEGAR:
             continue
 
         calculados.append((destino, horas_estimadas, distancia_perp))
@@ -384,19 +675,23 @@ def _sugerir_desde_demo(intereses, limite):
     return resultado
 
 
-def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir_ids=None, hora_salida=None):
+def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir_ids=None, hora_salida=None, lapso=None, tramos=None, propositos=None):
     """Devuelve destinos sugeridos para la ruta actual.
 
     - `ruta`: resumen devuelto por route_service.calcular_ruta (usa su
       geometría real para sugerir solo lugares cerca del camino).
-    - `horas_max`: horas máximas que el usuario quiere manejar seguido;
-      si se da, se prioriza a los destinos cercanos al punto del viaje
-      donde convendría parar a descansar.
-    - `hora_salida`: hora aproximada de salida ("HH:MM"), opcional. Con
-      `horas_max` + `hora_salida` se reparten paradas por propósito y
-      hora del día (comida/descanso, evitando proponer dormir de día) en
-      vez de solo marcar un punto de descanso — mismo mecanismo que usa
-      el chat de IA, sin necesitar ningún proveedor.
+    - `horas_max`: ya no lo pide el formulario (la app reparte sola las
+      sugerencias por lapsos de tiempo); solo se conserva por si alguien
+      lo manda, y se usa en el respaldo sin geometría de ruta.
+    - `hora_salida`: hora aproximada de salida ("HH:MM"), opcional. Ajusta
+      el propósito de cada parada a la hora real del día (comida/descanso,
+      evitando proponer dormir de día) — mismo mecanismo que usa el chat
+      de IA, sin necesitar ningún proveedor.
+    - `lapso`: índice de un lapso (ver `lapsos_de_la_ruta`) para ver solo
+      las sugerencias de ese tramo del viaje.
+    - `tramos`: en cuántos tramos dividir el viaje (por defecto, automático).
+    - `propositos`: {indice de tramo: "comida"|"turismo"|"descanso"} para los
+      tramos que el usuario personalizó; los demás quedan en automático.
     - `excluir_ids`: ids de destinos que ya se mostraron/agregaron y no
       deben repetirse (para "ver más recomendaciones").
     """
@@ -404,6 +699,11 @@ def sugerir_paradas(intereses=None, limite=4, ruta=None, horas_max=None, excluir
     excluir_ids = set(excluir_ids or [])
 
     try:
+        if ruta and ruta.get("geometria"):
+            resultado = _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso, tramos, propositos)
+            if resultado is not None:
+                return resultado
+
         if ruta and horas_max and hora_salida:
             resultado = _sugerir_con_objetivos_automaticos(intereses, limite, ruta, horas_max, hora_salida, excluir_ids)
             if resultado:

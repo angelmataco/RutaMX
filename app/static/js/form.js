@@ -11,7 +11,6 @@ const RutaFormularios = (() => {
       personas: form.querySelector('[name="personas"]'),
       comidas: document.querySelector('[data-modal-ajustes] [name="comidas"]'),
       noches: document.querySelector('[data-modal-ajustes] [name="noches"]'),
-      horasMax: form.querySelector('[name="horas_max"]'),
       horaSalida: form.querySelector('[name="hora_salida"]'),
       chips: Array.from(form.querySelectorAll("[data-interes]")),
     };
@@ -45,7 +44,6 @@ const RutaFormularios = (() => {
       noches: campos.noches.value,
       tipoCoche: valorDeAjuste("tipo_coche"),
       gasolina: valorDeAjuste("gasolina"),
-      horasMax: campos.horasMax.value,
       horaSalida: campos.horaSalida.value,
       intereses: campos.chips.filter((c) => c.classList.contains("is-active")).map((c) => c.dataset.interes),
     };
@@ -88,8 +86,37 @@ const RutaFormularios = (() => {
     const dialogoAjustes = document.querySelector("[data-modal-ajustes]");
     const botonAjustes = document.querySelector("[data-abrir-ajustes-gasto]");
     if (dialogoAjustes && botonAjustes) {
-      botonAjustes.addEventListener("click", () => dialogoAjustes.showModal());
-      dialogoAjustes.addEventListener("close", actualizarBotonAjustes);
+      let copia = null; // estado al abrir, para deshacer si se cierra sin aplicar
+      let pendiente = false;
+
+      // Aplicar: se queda con lo elegido y avisa a main.js para recalcular el
+      // gasto. Cancelar (✕ o Esc): devuelve todo a como estaba al abrir.
+      function terminar(aplicado) {
+        if (!pendiente) return;
+        pendiente = false;
+        if (!aplicado && copia) {
+          const c = camposDe();
+          document.querySelectorAll("[data-ajuste]").forEach((chip, i) => chip.classList.toggle("is-active", copia.chips[i]));
+          c.comidas.value = copia.comidas;
+          c.noches.value = copia.noches;
+        }
+        actualizarBotonAjustes();
+        if (aplicado) document.dispatchEvent(new CustomEvent("ajustes-gasto-aplicados"));
+      }
+
+      botonAjustes.addEventListener("click", () => {
+        const c = camposDe();
+        copia = {
+          chips: Array.from(document.querySelectorAll("[data-ajuste]")).map((chip) => chip.classList.contains("is-active")),
+          comidas: c.comidas.value,
+          noches: c.noches.value,
+        };
+        pendiente = true;
+        dialogoAjustes.showModal();
+      });
+      dialogoAjustes.querySelector('[value="aplicar"]').addEventListener("click", () => terminar(true));
+      dialogoAjustes.querySelector('[value="cancelar"]').addEventListener("click", () => terminar(false));
+      dialogoAjustes.addEventListener("close", () => terminar(false)); // Esc u otra forma de cerrar
     }
 
     form.addEventListener("submit", (evento) => {

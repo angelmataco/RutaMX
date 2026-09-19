@@ -402,8 +402,9 @@ a {
 }
 
 .card--form-hero {
-  max-width: 620px;
+  max-width: 980px;
   margin: 0 auto;
+  padding: 36px 44px;
 }
 
 .card__header {
@@ -625,7 +626,7 @@ a {
   height: 72px !important;
 }
 
-/* Selector de burbujas (presupuesto, horas máximas) */
+/* Selector de burbujas (personas) */
 .bubble-picker {
   display: flex;
   align-items: center;
@@ -1337,4 +1338,169 @@ a {
 
 .modal-ajustes .ruta-form__row {
   margin-top: 14px;
+}
+
+/* Formulario del inicio en dos columnas (rectángulo ancho y simétrico).
+   Origen/Destino, Nombre/Hora de salida y Personas/Horas máximas van en
+   pares; "¿Qué buscas?" y los botones ocupan todo el ancho. */
+.card--form-hero .ruta-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 32px;
+  align-items: start;
+}
+
+.card--form-hero .ruta-form__row {
+  display: contents; /* sus dos campos pasan a ser celdas de la cuadrícula */
+}
+
+.card--form-hero .campo-completo {
+  grid-column: 1 / -1;
+}
+
+.card--form-hero .hero-acciones-extra {
+  max-width: 560px;
+  width: 100%;
+  justify-self: center;
+}
+
+.card--form-hero .ruta-form > .btn--block.campo-completo {
+  max-width: 560px;
+  justify-self: center;
+}
+
+@media (max-width: 900px) {
+  .card--form-hero {
+    padding: 28px 24px;
+  }
+
+  .card--form-hero .ruta-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Forma compartida: personas y "¿Qué buscas?" ----
+   Todas las opciones son rectángulos redondeados de la misma altura, y
+   cada pregunta ocupa su propia fila a lo ancho para que no se vean
+   pegadas unas con otras. */
+.card--form-hero .bubble,
+.card--form-hero .chip {
+  border-radius: 12px;
+  min-height: 46px;
+}
+
+.card--form-hero .bubble-picker--llena .bubble-picker__scroll {
+  gap: 10px;
+}
+
+.card--form-hero .bubble-picker--llena .bubble {
+  padding: 0;
+  font-size: 0.95rem;
+}
+
+/* ¿Qué buscas?: las 6 opciones reparten todo el ancho */
+.card--form-hero .chips {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.card--form-hero .chip {
+  width: 100%;
+  padding: 0 8px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .card--form-hero .chips {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* En teléfono, "personas" pasa a 2 filas de 4 para que cada casilla sea cómoda de tocar */
+@media (max-width: 600px) {
+  .card--form-hero .bubble-picker--llena .bubble-picker__scroll {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Fila de tramos (lapsos) en "Descubre en el camino" */
+.lapsos {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding-bottom: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.lapsos .chip {
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+/* Etiqueta de lo que el sistema dedujo de cada parada (comer / dormir) */
+.itinerary-item__tipo {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-verde-palido);
+  color: var(--color-verde-oscuro);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Selector de cuántos tramos (Automático, 2…6) */
+.tramos-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: 0 0 14px;
+}
+
+.tramos-control__titulo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-verde-oscuro);
+}
+
+.tramos-control__opciones {
+  display: flex;
+  gap: 8px;
+}
+
+.tramos-control__opciones .chip {
+  min-height: 38px;
+  min-width: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+.tramos-control__nota {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-texto-gris);
+}
+
+/* Fila "¿Qué buscas en el tramo N?" y tramos personalizados */
+.tramos-control--tramo {
+  margin: -8px 0 18px;
+  padding: 12px 16px;
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radius-md);
+  background: var(--color-blanco);
+}
+
+.tramos-control__opciones--largas .chip {
+  padding: 0 16px;
+}
+
+.lapsos .chip.is-personalizado:not(.is-active) {
+  border-color: var(--color-terracota);
+  color: var(--color-terracota);
 }

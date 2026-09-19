@@ -9,6 +9,19 @@
       <span class="badge">DATOS DE DEMOSTRACIÓN</span>
     </div>
 
+    <div class="tramos-control" data-tramos-control hidden>
+      <span class="tramos-control__titulo">Dividir el viaje en</span>
+      <div class="tramos-control__opciones" data-tramos-opciones></div>
+      <p class="tramos-control__nota" data-tramos-nota hidden></p>
+    </div>
+
+    <div class="lapsos" data-lapsos hidden></div>
+
+    <div class="tramos-control tramos-control--tramo" data-tramo-proposito hidden>
+      <span class="tramos-control__titulo" data-tramo-proposito-titulo></span>
+      <div class="tramos-control__opciones tramos-control__opciones--largas" data-tramo-proposito-opciones></div>
+    </div>
+
     <div class="cards-grid" data-sugerencias>
       <p class="empty-state">Llena el formulario y calcula tu ruta para ver sugerencias de paradas.</p>
     </div>
@@ -25,7 +38,7 @@
     </div>
     <h3 class="card__title" data-lugar-nombre></h3>
     <p class="card__subtitle" data-lugar-descripcion></p>
-    <p class="card__nota-descanso" data-lugar-descanso hidden>😴 Buen punto para parar a descansar</p>
+    <p class="card__nota-descanso" data-lugar-descanso hidden></p>
     <div class="card__acciones">
       <button type="button" class="btn btn--secondary btn--block" data-agregar-parada>Agregar parada</button>
       <button type="button" class="btn btn--ghost btn--block" data-descartar>Descartar</button>

@@ -31,7 +31,6 @@ def test_cuando_faltan_datos_devuelve_pregunta(app_context, monkeypatch):
             "origen": "Ciudad de Mexico",
             "destino": "Oaxaca de Juarez",
             "personas": None,
-            "horas_max": None,
             "hora_salida": None,
             "intereses": None,
         },
@@ -56,7 +55,6 @@ def test_cuando_esta_listo_devuelve_dos_opciones_con_ruta_real(app_context, monk
             "origen": "Ciudad de Mexico",
             "destino": "Oaxaca de Juarez",
             "personas": 4,
-            "horas_max": 4,
             "hora_salida": "08:00",
             "intereses": ["comida"],
         },
@@ -83,6 +81,11 @@ def test_cuando_esta_listo_devuelve_dos_opciones_con_ruta_real(app_context, monk
         assert opcion["resumen"]["distancia_km"] > 0
         assert "geometria" not in opcion["resumen"]
         assert len(opcion["paradas"]) >= 1
+        # el gasto de cada opción usa las preferencias de la conversación
+        assert opcion["ajustes"] == {"hora_salida": "08:00", "personas": 4}
+        assert opcion["resumen"]["gasto"]["personas"] == 4
+        assert opcion["resumen"]["costo_estimado"] == opcion["resumen"]["gasto"]["total"]
+        assert opcion["intereses"] == ["comida"]
 
 
 def test_ia_no_encuentra_origen_destino_devuelve_error(app_context, monkeypatch):
@@ -97,7 +100,6 @@ def test_ia_no_encuentra_origen_destino_devuelve_error(app_context, monkeypatch)
             "origen": None,
             "destino": None,
             "personas": None,
-            "horas_max": None,
             "hora_salida": None,
             "intereses": None,
         },
@@ -106,3 +108,17 @@ def test_ia_no_encuentra_origen_destino_devuelve_error(app_context, monkeypatch)
     resultado = planificador_ia_service.procesar_turno([{"role": "user", "content": "no sé a dónde ir"}])
 
     assert resultado["tipo"] == "error"
+
+
+def test_el_prompt_de_la_ia_conoce_las_reglas_de_la_app():
+    from app.services import llm_provider as lp
+
+    slots = lp._prompt_slots_viaje([{"role": "user", "content": "hola"}])
+    assert "presupuesto" in slots and "hora de salida" in slots
+    assert "horas_max" not in slots
+
+    objetivos = lp._prompt_opciones_objetivos(
+        {"origen": "A", "destino": "B", "tiempo_h": 6, "distancia_km": 400, "tramos_texto": "- Tramo 1: 08:30–13:40"}
+    )
+    assert "8 pm" in objetivos and "descanso" in objetivos and "30 minutos" in objetivos
+    assert "Tramo 1" in objetivos

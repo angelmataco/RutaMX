@@ -83,3 +83,59 @@ def test_casetas_con_ia_descarta_respuestas_absurdas(monkeypatch):
     monkeypatch.setattr(llm_provider, "estimar_casetas", lambda *a, **k: 999999)
     assert g.estimar_casetas("Tres", "Cuatro", 1000) == (1100, "estimado")
     g._cache_casetas_ia.clear()
+
+
+def test_parada_en_horario_de_comida_cuenta_como_comida():
+    # sale a las 08:00; a 5.5 h de camino llega a las 13:30 (hora de comer)
+    d = g.clasificar_parada({"nombre": "Pueblo", "horas_estimadas": 5.5, "intereses": ["pueblos_magicos"]}, "08:00")
+    assert d["comida"] is True and d["hospedaje"] is False
+    assert d["hora_llegada"] == "13:30"
+
+
+def test_parada_fuera_de_horario_no_es_comida():
+    d = g.clasificar_parada({"nombre": "Mirador", "horas_estimadas": 3, "intereses": ["naturaleza"]}, "08:00")
+    assert d["comida"] is False  # llega a las 11:00
+
+
+def test_parada_con_interes_comida_siempre_es_comida():
+    d = g.clasificar_parada({"nombre": "Fonda", "horas_estimadas": 3, "intereses": ["comida"]}, "08:00")
+    assert d["comida"] is True
+
+
+def test_parada_que_llega_de_noche_es_hospedaje():
+    d = g.clasificar_parada({"nombre": "Ciudad", "horas_estimadas": 4, "intereses": []}, "17:00")  # llega a las 21:00
+    assert d["hospedaje"] is True
+
+
+def test_parada_sin_horas_solo_se_clasifica_por_tipo():
+    d = g.clasificar_parada({"nombre": "X", "intereses": ["naturaleza"]}, "08:00")
+    assert d["comida"] is False and d["hospedaje"] is False and d["hora_llegada"] is None
+
+
+def test_gasto_suma_comidas_de_paradas_deducidas_solas():
+    paradas = [
+        {"nombre": "A", "horas_estimadas": 2, "intereses": []},  # 10:00 -> desayuno
+        {"nombre": "B", "horas_estimadas": 5.5, "intereses": []},  # 13:30 -> comida
+        {"nombre": "C", "horas_estimadas": 3.5, "intereses": []},  # 11:30 -> nada
+    ]
+    r = g.calcular_gasto(600, 7, {"hora_salida": "08:00", "personas": 2}, paradas)
+    assert r["num_comidas"] == 2 and r["comidas_automatico"] is True
+    assert r["comidas"] == 2 * 150 * 2
+    assert [d["comida"] for d in r["paradas_detalle"]] == [True, True, False]
+
+
+def test_parada_de_noche_agrega_hospedaje_aunque_el_viaje_parezca_corto():
+    r = g.calcular_gasto(300, 4, {"hora_salida": "17:00"}, [{"nombre": "N", "horas_estimadas": 3.5}])
+    assert r["num_noches"] == 1
+
+
+def test_paradas_de_comida_muy_juntas_cuentan_una_sola_vez():
+    paradas = [
+        {"nombre": "A", "horas_estimadas": 1.8, "intereses": ["comida"]},
+        {"nombre": "B", "horas_estimadas": 2.6, "intereses": ["comida"]},
+        {"nombre": "C", "horas_estimadas": 3.1, "intereses": ["comida"]},
+        {"nombre": "D", "horas_estimadas": 6.0, "intereses": ["comida"]},
+    ]
+    r = g.calcular_gasto(700, 8, {"hora_salida": "08:00"}, paradas)
+    assert [d["comida"] for d in r["paradas_detalle"]] == [True, False, False, True]
+    assert r["num_comidas"] == 2

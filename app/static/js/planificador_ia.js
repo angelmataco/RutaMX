@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!botonAbrir || !dialogo || !transcript || !form || !input) return;
 
   const SALUDO =
-    "¡Hola! Cuéntame cómo te imaginas tu road trip — de dónde a dónde, con quién vas, qué te gustaría hacer en el camino — y te propongo un itinerario.";
+    "¡Hola! Cuéntame cómo te imaginas tu road trip — de dónde a dónde, a qué hora sales, cuántos van y qué te gustaría hacer en el camino — y te propongo un itinerario.";
   // Velocidad de "escritura": ~20 ms por letra, pero ningún mensaje tarda
   // más de ~2.5 s en salir completo, aunque sea largo.
   const MS_POR_LETRA = 20;
@@ -101,6 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
     transcript.scrollTop = transcript.scrollHeight;
   }
 
+  // "descanso" en el sistema significa dormir; se muestra tal cual se entiende.
+  function nombreDeProposito(proposito) {
+    return { comida: "comer", descanso: "dormir" }[proposito] || proposito;
+  }
+
   function renderOpciones(opciones) {
     contenedorOpciones.innerHTML = "";
     contenedorOpciones.hidden = false;
@@ -112,13 +117,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const paradasHtml = opcion.paradas
         .map(
           (parada) =>
-            `<li><span class="tag tag--horas">≈${parada.horas_estimadas != null ? formatoDuracion(parada.horas_estimadas) : "?"}</span> <strong>${parada.nombre}</strong> <span class="opcion-ia-card__proposito">(${parada.proposito})</span></li>`
+            `<li><span class="tag tag--horas">≈${parada.horas_estimadas != null ? formatoDuracion(parada.horas_estimadas) : "?"}${parada.hora_llegada ? ` · ${parada.hora_llegada}` : ""}</span> <strong>${parada.nombre}</strong> <span class="opcion-ia-card__proposito">(${nombreDeProposito(parada.proposito)})</span></li>`
         )
         .join("");
 
       tarjeta.innerHTML = `
         <h4 class="card__title">${opcion.titulo}</h4>
-        <p class="card__subtitle">${opcion.resumen.distancia_km} km · ${formatoDuracion(opcion.resumen.tiempo_h)}</p>
+        <p class="card__subtitle">${opcion.resumen.distancia_km} km · ${formatoDuracion(opcion.resumen.tiempo_h)}${
+          opcion.resumen.gasto
+            ? ` · gasto máx. ≈ ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(opcion.resumen.gasto.total)}`
+            : ""
+        }</p>
         <ul class="opcion-ia-card__paradas">${paradasHtml}</ul>
         <button type="button" class="btn btn--primary btn--block" data-usar-opcion>Usar esta opción</button>
       `;

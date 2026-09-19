@@ -237,9 +237,16 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - **Siempre incluye:** gasolina (km ÷ rendimiento × precio del litro;
   default 13 km/l y $25.5/l), casetas (ver abajo) e imprevistos ($500 en
   viajes de ≤4 h, subiendo linealmente hasta $2,000 a las 20 h o más).
-- **Solo si aplica:** comidas ($150 × personas por cada parada del
-  itinerario cuyo lugar tenga el interés "comida") y hospedaje ($600 por
-  noche). Las noches se **deducen solas** simulando el viaje día por día
+- **Solo si aplica:** comidas ($150 × personas) y hospedaje ($600 por
+  noche). De cada parada del itinerario el sistema **deduce solo** si es
+  para comer o dormir (`clasificar_parada`): comida si el lugar es de
+  comida, nació como "comida" o se llega en horario de desayuno (7:30–10),
+  comida (13–16) o cena (19–21:30); hospedaje si se llega a las 20:00 o
+  después. Para no contar de más, solo cuenta una comida por cada 3 h de
+  camino y una noche por cada 8 h. Cada parada del itinerario muestra la
+  etiqueta "🍽️ Comer · 13:10" / "🛏️ Dormir · 21:00". Las paradas guardan su
+  `horas_estimadas` (hora de camino) para poder calcular la hora de
+  llegada. Las noches se **deducen solas** simulando el viaje día por día
   con la hora de salida (default 08:00): no se maneja pasadas las 21:00 y
   se retoma a las 07:00. Ej.: 8 h saliendo a las 08:00 = 0 noches; 10 h
   saliendo a las 17:00 = 1 noche; León → Cabo San Lucas = 3 noches.
@@ -248,8 +255,10 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   si es negativo o > $5/km); si no, o si falla, promedio de $1.1/km.
   Cada caseta cuesta distinto, así que es un promedio, y el resumen lo
   dice ("Casetas (promedio)" / "(estimado IA)").
-- **Formulario:** nuevo selector de "¿Cuántas personas van?" (burbujas
-  1–8, vacío = 1) y un desplegable opcional "⚙️ Ajusta tu gasto": coche
+- **Formulario:** selector de "¿Cuántas personas van?" (burbujas 1–8,
+  vacío = 1). El botón pequeño "⚙️ Ajustes de gasto" vive en el
+  **Resumen del viaje**, debajo del desglose, y abre una ventana con
+  "Aplicar cambios" (recalcula el gasto) y ✕ (deshace): coche
   (Compacto 15 / Mediano 13 / SUV 11 km/l), gasolina (Magna $23.8 /
   Premium $29), y paradas para comer / noches de hospedaje manuales (vacío
   = automático). Si nadie toca nada, todo funciona con los valores típicos.
@@ -276,19 +285,120 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (ciudad principal → pueblo mágico → sitio turístico, y por población);
   un nombre exacto sube al primer lugar. Sin acentos ni mayúsculas.
   Código: `initAutocompletado` y `contienePalabraCompleta` en `main.js`.
-- **Orden del formulario:** Origen/Destino → Nombre → ¿Qué buscas? →
-  ¿Cuántas personas van? → Horas máximas → Hora de salida → botones.
-- **Personas:** 8 casillas grandes que llenan todo el ancho (sin "Otro";
-  máximo 8). `bubble_picker.js` ya acepta selectores sin botón "Otro".
+- **Tarjeta ancha** (máx. 980 px, antes 620). Origen | Destino y Nombre de
+  la ruta | Hora de salida van en pares; "¿Qué buscas?" y "¿Cuántas
+  personas van?" ocupan cada uno **su propia fila a todo el ancho** (así no se ven pegadas unas con otras). Abajo, centrados:
+  "Planea mi ruta", los dos botones y el botón pequeño de ajustes. Con
+  menos de 900 px pasa a una sola columna. La Hora de salida subió junto
+  al nombre para que los pares queden simétricos.
+- **Una sola forma para todas las opciones:** las casillas de personas y los chips de "¿Qué buscas?" son rectángulos redondeados de la
+  misma altura (antes unas eran círculos y otras rectángulos). Los 6 chips
+  reparten todo el ancho. En teléfono: chips en 3 columnas y personas en
+  2 filas de 4. Estilos al final de `styles.css`.
+- **Personas:** 8 casillas que llenan todo el ancho (sin "Otro"; máximo 8). `bubble_picker.js` acepta selectores sin botón "Otro".
 - **Ajustes de gasto:** dejó de ser un desplegable dentro del formulario.
   Ahora es un botón pequeño y discreto ("⚙️ Ajustes de gasto") centrado
   bajo los botones principales, que abre una ventana flotante (`<dialog>`)
   con coche, gasolina, comidas y noches. Muestra "· N" cuando hay ajustes
   activos.
 
+## Sugerencias por lapsos de tiempo (reemplaza "Horas máximas de manejo")
+
+- Se quitó la pregunta "Horas máximas de manejo seguido": la app lo decide
+  sola. `ai_service.lapsos_de_la_ruta(tiempo_h)` divide el viaje en
+  **lapsos de ~3 h**, desde **30 min después de salir hasta 20 min antes
+  de llegar** (6 h → 2 lapsos, 12 h → 4, 50 h → 16). Solo se recomiendan
+  lugares dentro de esa ventana (antes: a más de 1 h del origen y sin
+  límite cerca del destino).
+- "Descubre en el camino" tiene una fila de botones: **Todo el camino** y
+  **Tramo N · desde – hasta** (ej. "Tramo 2 · 2 h 59 min – 5 h 28 min").
+  En "Todo el camino" sale primero la mejor parada de cada lapso (comida en
+  el primero, descanso en los demás, ajustado a la hora del día si hay hora
+  de salida) y luego se rellena turnando entre lapsos; en un tramo solo
+  salen lugares de ese tramo. Las tarjetas dicen "🍽️ Buen lugar para
+  comer" o "😴 Buen punto para parar a descansar" cuando aplica.
+- Backend: `_sugerir_por_lapsos`, `generar_objetivos_por_lapsos`;
+  `/api/sugerencias` acepta `lapso` y devuelve `lapsos`. El chat de "Planear
+  con IA" no cambia (sigue conversando sus propias horas). Si la ruta no
+  tiene geometría (OSRM caído) cae al comportamiento de antes.
+- 5 tests nuevos (75 en total).
+
+## Todo fluye: el gasto se recalcula al cambiar cualquier variable
+
+- El gasto se recalcula solo al: agregar/quitar/mover paradas, cambiar
+  personas, cambiar la hora de salida, o aplicar "Ajustes de gasto"
+  (`recalcularGasto` en `main.js`; evento `ajustes-gasto-aplicados`). Los
+  ajustes vigentes se guardan con la ruta. Cambiar la hora de salida
+  también refresca las sugerencias.
+- Arreglo: antes una parada solo contaba como comida si el lugar tenía la
+  etiqueta "comida" en la base (los pueblos mágicos no), y no se miraba la
+  hora de llegada.
+
+## Tramos: elegir cuántos, hora del reloj y recomendaciones según la hora
+
+- **Cuántos tramos:** en "Descubre en el camino" hay un selector
+  "Dividir el viaje en: Automático · 2 · 3 · 4 · 5 · 6". Automático = ~3 h
+  por tramo; si se elige un número, la ventana (30 min después de salir a
+  20 min antes de llegar) se divide en esa cantidad de partes iguales (nunca
+  tramos de menos de 30 min). Parámetro `tramos` de `/api/sugerencias`.
+- **Hora del reloj:** cada tramo se muestra con su horario ("Tramo 2 ·
+  19:09 – 20:48"), con "Día N" si el viaje dura varios días y 🌙 si el
+  tramo cruza la noche. Usa la hora de salida; sin ella supone 08:00 y lo
+  avisa. Las tarjetas dicen "llegas 19:34". Cambiar la hora de salida
+  refresca todo.
+- **Qué se recomienda según la hora** (`_proposito_del_lapso` en
+  `ai_service.py`): tramo que termina de noche (≥20:00) o cruza la noche →
+  🛏️ lugar para pasar la noche (ciudades grandes o con interés "descanso");
+  tramo que cae en horario de comer (13–16 o 19–21:30, al menos 1 h de
+  traslape) → 🍽️ lugar de comida; el resto → turismo según los intereses.
+  El botón del tramo lleva el icono 🍽️/🛏️. En un tramo se muestran primero
+  los lugares que encajan con su propósito. Consistente con el gasto: ahí
+  las paradas también se clasifican solas por hora de llegada.
+- 5 tests nuevos (83 → 87 aprox.; ver `pytest -q`).
+
+## Elegir para qué es cada tramo (y reglas de qué se recomienda)
+
+- Al tocar un tramo aparece la fila "¿Qué buscas en el tramo N?":
+  **Automático · 🍽️ Comer · 🏞️ Turismo · 🛏️ Dormir**. Todo arranca en
+  Automático (la app decide por la hora del reloj); elegir algo es un solo
+  toque. El botón del tramo muestra el icono y cambia de color si se
+  personalizó. Cambiar el número de tramos o empezar otro viaje reinicia lo
+  elegido. Parámetro `propositos=0:comida,2:descanso` en `/api/sugerencias`.
+- **Tramo personalizado = estricto:** si se pide comer, SOLO lugares donde
+  se puede comer (los que tienen el interés "comida"); dormir, solo ciudades
+  o lugares de descanso; turismo, los intereses de "¿Qué buscas?" (o
+  cualquiera si no marcó). Si no hay ninguno, lo dice ("No encontramos
+  lugares para comer en este tramo…").
+- **Tramo automático:** de todo, con prioridad al propósito de la hora
+  (comida en horario de comer). **Dormir solo aplica si el tramo termina
+  después de las 20:00 o cruza la noche** (`permite_dormir`); si no, la
+  opción "Dormir" ni se ofrece ni se propone.
+- Código: `lapsos_de_la_ruta`, `_proposito_automatico`,
+  `_encaja_con_lo_pedido`, `_sugerir_por_lapsos` en `ai_service.py`.
+
+## "Planear con IA" al día con todas las reglas nuevas
+
+- **Preguntas:** ya no pregunta por horas máximas de manejo ni presupuesto
+  (la app lo calcula sola). Prioriza preguntar hora de salida (decide cuándo
+  comer y si hay noche), luego personas e intereses. El saludo lo menciona.
+- **Prompt de objetivos:** la IA recibe los tramos con su hora del reloj y
+  las reglas: paradas solo entre 30 min después de salir y 20 min antes de
+  llegar; "descanso" = dormir, solo si se pasa de las 8 pm o se cruza la
+  noche; "comida" cerca de horarios de comer; sin dos paradas a menos de
+  ~1.5 h.
+- **Las reglas se hacen cumplir en el servidor** (`preparar_objetivos_ia`),
+  no se confía en el modelo: descarta objetivos fuera de la ventana, cambia
+  "dormir" de día por turismo, y hace estrictos comida y dormir (solo
+  lugares que encajan, dentro de ±1.5 h del punto pedido).
+- **Gasto y formulario:** cada opción calcula su propio gasto (con las
+  personas y la hora de salida de la conversación) y muestra "gasto máx. ≈
+  $X". Al elegir una opción, el formulario se llena (origen, destino,
+  nombre, personas, hora de salida, intereses) y se recargan tramos y
+  sugerencias con esos datos.
+
 ## Calidad / pruebas
 
-- 70 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 100 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el

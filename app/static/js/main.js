@@ -2,6 +2,11 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const estado = {
+    lapsoActual: null, // null = todo el camino; si no, índice del lapso elegido
+    tramosElegidos: null, // null = automático; si no, en cuántos tramos dividir el viaje
+    propositos: {}, // { indiceDeTramo: "comida" | "turismo" | "descanso" } de los tramos personalizados
+    horaSalidaAsumida: true,
+    lapsos: [],
     resumen: null,
     itinerario: [], // lista de { id, nombre }
     ultimoOrigenDestino: null, // { origen, destino } del último viaje calculado
@@ -28,6 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
     gastoDesglose: document.querySelector("[data-gasto-desglose]"),
     gastoIncluye: document.querySelector("[data-gasto-incluye]"),
     sugerenciasContenedor: document.querySelector("[data-sugerencias]"),
+    lapsos: document.querySelector("[data-lapsos]"),
+    tramosControl: document.querySelector("[data-tramos-control]"),
+    tramosOpciones: document.querySelector("[data-tramos-opciones]"),
+    tramosNota: document.querySelector("[data-tramos-nota]"),
+    tramoProposito: document.querySelector("[data-tramo-proposito]"),
+    tramoPropositoTitulo: document.querySelector("[data-tramo-proposito-titulo]"),
+    tramoPropositoOpciones: document.querySelector("[data-tramo-proposito-opciones]"),
     guardarRutaBtn: document.querySelector("[data-guardar-ruta]"),
     verRutasBtn: document.querySelector("[data-ver-rutas-guardadas]"),
     modalRutas: document.querySelector("[data-modal-rutas]"),
@@ -63,16 +75,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // origen->destino, así "Guardar ruta actual" guarda el dato correcto.
     estado.resumen = { ...estado.resumen, distancia_km: distanciaKm, tiempo_h: tiempoH };
 
-    // El gasto se recalcula en el servidor (una sola fuente de la fórmula):
-    // cambia con la distancia real y con las paradas elegidas.
+    await recalcularGasto();
+    renderResumenAventura();
+  }
+
+  // El gasto se recalcula en el servidor (una sola fuente de la fórmula)
+  // cada vez que cambia algo que lo afecta: distancia real, paradas,
+  // personas, hora de salida o los ajustes. De cada parada se deduce sola
+  // si es para comer o para dormir.
+  async function recalcularGasto() {
+    if (!estado.resumen || estado.resumen.distancia_km == null) return;
+
+    const ajustes = RutaFormularios.obtenerAjustes();
     try {
       const respuesta = await fetch("/api/gasto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          distancia_km: distanciaKm,
-          tiempo_h: tiempoH,
-          ajustes: RutaFormularios.obtenerAjustes(),
+          distancia_km: estado.resumen.distancia_km,
+          tiempo_h: estado.resumen.tiempo_h,
+          ajustes,
           paradas: estado.itinerario,
           casetas_por_km: estado.resumen.casetas_por_km,
           casetas_fuente: estado.resumen.gasto && estado.resumen.gasto.casetas_fuente,
@@ -80,14 +102,39 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (respuesta.ok) {
         const gasto = await respuesta.json();
-        estado.resumen = { ...estado.resumen, gasto, costo_estimado: gasto.total };
+        estado.resumen = { ...estado.resumen, gasto, costo_estimado: gasto.total, ajustes };
       }
     } catch (err) {
       console.error("Error recalculando el gasto:", err);
     }
 
     renderResumen(estado.resumen);
-    renderResumenAventura();
+    marcarTiposDeParadas(estado.resumen.gasto && estado.resumen.gasto.paradas_detalle);
+  }
+
+  // Etiqueta cada parada del itinerario con lo que el sistema dedujo
+  // ("🍽️ Comer · 13:10", "🛏️ Dormir · 21:00").
+  function marcarTiposDeParadas(detalle) {
+    const items = elementos.itinerarioLista.querySelectorAll("[data-item-parada]");
+    items.forEach((item, i) => {
+      const etiqueta = item.querySelector("[data-item-tipo]");
+      const d = detalle && detalle[i];
+      const partes = [];
+      if (d && d.comida) partes.push("🍽️ Comer");
+      if (d && d.hospedaje) partes.push("🛏️ Dormir");
+      if (partes.length) {
+        etiqueta.textContent = partes.join(" + ") + (d.hora_llegada ? ` · ${d.hora_llegada}` : "");
+        etiqueta.hidden = false;
+      } else {
+        etiqueta.hidden = true;
+      }
+    });
+  }
+
+  let temporizadorRecalculo = null;
+  function programarRecalculoDeGasto() {
+    clearTimeout(temporizadorRecalculo);
+    temporizadorRecalculo = setTimeout(recalcularGasto, 250);
   }
 
   function formatoMoneda(valor) {
@@ -137,6 +184,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       elementos.resultados.scrollIntoView({ behavior: "smooth" });
 
+      estado.lapsoActual = null; // un viaje nuevo empieza viendo todo el camino
+      estado.tramosElegidos = null;
+      estado.propositos = {};
       await cargarSugerencias(valores);
     } catch (err) {
       console.error("Error calculando la ruta:", err);
@@ -186,8 +236,8 @@ document.addEventListener("DOMContentLoaded", () => {
       incluye.push(`${gasto.num_noches} ${gasto.num_noches === 1 ? "noche" : "noches"} de hospedaje`);
     }
     elementos.gastoIncluye.textContent = incluye.length
-      ? `Incluye ${incluye.join(" y ")}. Puedes cambiarlo en «Ajusta tu gasto».`
-      : "Sin paradas para comer ni noches en el camino: solo gasolina, casetas e imprevistos. Puedes agregarlas en «Ajusta tu gasto».";
+      ? `Incluye ${incluye.join(" y ")}. Puedes cambiarlo en «Ajustes de gasto».`
+      : "Sin paradas para comer ni noches en el camino: solo gasolina, casetas e imprevistos. Puedes agregarlas en «Ajustes de gasto».";
   }
 
   function renderItinerarioBase(resumen) {
@@ -206,12 +256,19 @@ document.addEventListener("DOMContentLoaded", () => {
         destino: valores.destino || "",
         limite: String(limite),
       });
-      if (valores.horasMax) query.set("horas_max", valores.horasMax);
+      if (estado.lapsoActual !== null) query.set("lapso", String(estado.lapsoActual));
+      if (estado.tramosElegidos !== null) query.set("tramos", String(estado.tramosElegidos));
+      const personalizados = Object.entries(estado.propositos).map(([i, p]) => `${i}:${p}`);
+      if (personalizados.length) query.set("propositos", personalizados.join(","));
       if (valores.horaSalida) query.set("hora_salida", valores.horaSalida);
       if (excluirIds.length) query.set("excluir", excluirIds.join(","));
 
       const respuesta = await fetch(`/api/sugerencias?${query.toString()}`);
       const datos = await respuesta.json();
+      // Los lapsos (tramos de tiempo del viaje) los decide el servidor; solo
+      // se actualizan cuando se pide "todo el camino".
+      estado.lapsos = datos.lapsos || [];
+      estado.horaSalidaAsumida = Boolean(datos.hora_salida_asumida);
       return datos.sugerencias || [];
     } catch (err) {
       console.error("Error cargando sugerencias:", err);
@@ -231,7 +288,124 @@ document.addEventListener("DOMContentLoaded", () => {
     // Se pide un lote grande una sola vez; la grilla solo muestra 4 a la
     // vez y va tomando del resto, así siempre hay con qué reponer.
     estado.sugerenciasPool = await pedirSugerencias(valores, 16, Array.from(estado.sugerenciasVistosIds));
+    renderLapsos();
     mostrarSugerencias(tomarDelPool(MOSTRAR_SUGERENCIAS));
+  }
+
+  // Controles de los tramos del viaje: cuántos tramos (Automático, 2…6) y
+  // una fila de botones, uno por tramo, con su hora del reloj. Los lapsos
+  // salen solos de la duración de la ruta (desde 30 min después de salir
+  // hasta 20 min antes de llegar) o del número de tramos que pida el usuario.
+  function renderLapsos() {
+    const contenedor = elementos.lapsos;
+    if (!contenedor) return;
+
+    const hayLapsos = estado.lapsos.length > 0;
+    elementos.tramosControl.hidden = !hayLapsos;
+    if (hayLapsos) renderControlDeTramos();
+
+    if (estado.lapsos.length < 2) {
+      contenedor.hidden = true;
+      contenedor.innerHTML = "";
+      elementos.tramoProposito.hidden = true;
+      return;
+    }
+
+    const variosDias = estado.lapsos.some((l) => l.dia > 1 || l.cruza_noche);
+    const opciones = [{ indice: null, texto: "Todo el camino", titulo: "" }].concat(
+      estado.lapsos.map((l) => {
+        const icono = iconoDeProposito(l.proposito, l.personalizado);
+        const dia = variosDias ? `Día ${l.dia} · ` : "";
+        const noche = l.cruza_noche ? " 🌙" : "";
+        return {
+          indice: l.indice,
+          texto: `${icono}${dia}Tramo ${l.indice + 1} · ${l.reloj_desde} – ${l.reloj_hasta}${noche}`,
+          titulo: `${formatoDuracion(l.desde_h)} a ${formatoDuracion(l.hasta_h)} de camino`,
+          personalizado: l.personalizado,
+        };
+      })
+    );
+
+    contenedor.innerHTML = "";
+    opciones.forEach(({ indice, texto, titulo, personalizado }) => {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className =
+        "chip" + (indice === estado.lapsoActual ? " is-active" : "") + (personalizado ? " is-personalizado" : "");
+      boton.textContent = texto;
+      if (titulo) boton.title = titulo;
+      boton.addEventListener("click", () => {
+        if (indice === estado.lapsoActual) return;
+        estado.lapsoActual = indice;
+        cargarSugerencias(estado.sugerenciasValores);
+      });
+      contenedor.appendChild(boton);
+    });
+    contenedor.hidden = false;
+    renderPropositoDelTramo();
+  }
+
+  // 🍽️ comer, 🛏️ dormir; el turismo solo lleva icono si el usuario lo eligió.
+  function iconoDeProposito(proposito, personalizado) {
+    if (proposito === "comida") return "🍽️ ";
+    if (proposito === "descanso") return "🛏️ ";
+    return personalizado && proposito === "turismo" ? "🏞️ " : "";
+  }
+
+  // Al tocar un tramo aparece esta fila: Automático · Comer · Turismo · Dormir.
+  // "Dormir" solo se ofrece si el tramo termina después de las 20:00 o cruza la noche.
+  function renderPropositoDelTramo() {
+    const lapso = estado.lapsos.find((l) => l.indice === estado.lapsoActual);
+    if (!lapso) {
+      elementos.tramoProposito.hidden = true;
+      return;
+    }
+
+    elementos.tramoPropositoTitulo.textContent = `¿Qué buscas en el tramo ${lapso.indice + 1}?`;
+    const opciones = [
+      { valor: null, texto: "Automático" },
+      { valor: "comida", texto: "🍽️ Comer" },
+      { valor: "turismo", texto: "🏞️ Turismo" },
+    ];
+    if (lapso.permite_dormir) opciones.push({ valor: "descanso", texto: "🛏️ Dormir" });
+
+    elementos.tramoPropositoOpciones.innerHTML = "";
+    opciones.forEach(({ valor, texto }) => {
+      const activo = valor === null ? !lapso.personalizado : lapso.personalizado && lapso.proposito === valor;
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "chip" + (activo ? " is-active" : "");
+      boton.textContent = texto;
+      boton.addEventListener("click", () => {
+        if (activo) return;
+        if (valor === null) delete estado.propositos[lapso.indice];
+        else estado.propositos[lapso.indice] = valor;
+        cargarSugerencias(estado.sugerenciasValores);
+      });
+      elementos.tramoPropositoOpciones.appendChild(boton);
+    });
+    elementos.tramoProposito.hidden = false;
+  }
+
+  function renderControlDeTramos() {
+    elementos.tramosOpciones.innerHTML = "";
+    [null, 2, 3, 4, 5, 6].forEach((cuantos) => {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "chip" + (cuantos === estado.tramosElegidos ? " is-active" : "");
+      boton.textContent = cuantos === null ? "Automático" : String(cuantos);
+      boton.addEventListener("click", () => {
+        if (cuantos === estado.tramosElegidos) return;
+        estado.tramosElegidos = cuantos;
+        estado.lapsoActual = null;
+        estado.propositos = {}; // los tramos cambian: se reinician las elecciones
+        cargarSugerencias(estado.sugerenciasValores);
+      });
+      elementos.tramosOpciones.appendChild(boton);
+    });
+
+    elementos.tramosNota.hidden = !estado.horaSalidaAsumida;
+    elementos.tramosNota.textContent = "Sin hora de salida, los horarios suponen que sales a las 08:00.";
   }
 
   function tomarDelPool(cantidad) {
@@ -250,13 +424,24 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.sugerenciasContenedor.innerHTML = "";
 
     if (!lugares.length) {
-      elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">No encontramos sugerencias para estos intereses todavía.</p>';
+      elementos.sugerenciasContenedor.innerHTML =
+        estado.lapsoActual === null
+          ? '<p class="empty-state">No encontramos sugerencias para estos intereses todavía.</p>'
+          : `<p class="empty-state">${mensajeSinLugaresEnTramo()}</p>`;
       elementos.verMasBtn.hidden = true;
       return;
     }
 
     lugares.forEach((lugar) => agregarCardSugerencia(lugar));
     elementos.verMasBtn.hidden = estado.sugerenciasPool.length === 0;
+  }
+
+  function mensajeSinLugaresEnTramo() {
+    const pedido = estado.propositos[estado.lapsoActual];
+    const que = { comida: "lugares para comer", descanso: "lugares para pasar la noche", turismo: "lugares de turismo" }[pedido];
+    return que
+      ? `No encontramos ${que} en este tramo. Prueba con otro tramo o déjalo en Automático.`
+      : "No encontramos sugerencias en este tramo todavía. Prueba con otro tramo.";
   }
 
   function agregarCardSugerencia(lugar) {
@@ -269,12 +454,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (typeof lugar.horas_estimadas === "number") {
       const horasEl = nodo.querySelector("[data-lugar-horas]");
-      horasEl.textContent = `≈${formatoDuracion(lugar.horas_estimadas)} de camino`;
+      horasEl.textContent =
+        `≈${formatoDuracion(lugar.horas_estimadas)} de camino` + (lugar.hora_llegada ? ` · llegas ${lugar.hora_llegada}` : "");
       horasEl.hidden = false;
     }
 
-    if (lugar.buena_para_descanso) {
-      nodo.querySelector("[data-lugar-descanso]").hidden = false;
+    const nota = nodo.querySelector("[data-lugar-descanso]");
+    if (lugar.proposito === "comida") {
+      nota.textContent = "🍽️ Buen lugar para comer";
+      nota.hidden = false;
+    } else if (lugar.proposito === "descanso") {
+      nota.textContent = "🛏️ Buen lugar para pasar la noche";
+      nota.hidden = false;
     }
 
     nodo.querySelector("[data-agregar-parada]").addEventListener("click", () => {
@@ -314,7 +505,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function agregarParada(lugar) {
     if (!estado.resumen || !lugar) return;
-    estado.itinerario.push({ id: lugar.id, nombre: lugar.nombre, lat: lugar.lat, lon: lugar.lon, intereses: lugar.intereses || [] });
+    estado.itinerario.push({
+      id: lugar.id,
+      nombre: lugar.nombre,
+      lat: lugar.lat,
+      lon: lugar.lon,
+      intereses: lugar.intereses || [],
+      horas_estimadas: lugar.horas_estimadas,
+      proposito: lugar.proposito,
+    });
     renderParadasItinerario();
   }
 
@@ -641,6 +840,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     window.RutaApp.aplicarPlanIA({ resumen: ruta.resumen, paradas: ruta.paradas || [] });
+    estado.lapsoActual = null;
+    estado.tramosElegidos = null;
+    estado.propositos = {};
     cargarSugerencias(RutaFormularios.obtenerValores());
   }
 
@@ -775,6 +977,17 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.guardarRutaBtn.addEventListener("click", guardarRuta);
   }
 
+  // Todo fluye: al aplicar ajustes o cambiar personas / hora de salida se
+  // recalcula el gasto; la hora de salida también cambia las sugerencias.
+  document.addEventListener("ajustes-gasto-aplicados", recalcularGasto);
+  document.getElementById("hero-form").addEventListener("change", (evento) => {
+    if (evento.target.name === "personas") programarRecalculoDeGasto();
+    if (evento.target.name === "hora_salida" && estado.resumen) {
+      programarRecalculoDeGasto();
+      cargarSugerencias(RutaFormularios.obtenerValores());
+    }
+  });
+
   if (elementos.abrirGoogleMapsBtn) {
     elementos.abrirGoogleMapsBtn.addEventListener("click", abrirEnGoogleMaps);
   }
@@ -808,8 +1021,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // no duplicar lógica de mapa/resumen/itinerario.
   window.RutaApp = {
     aplicarPlanIA(opcion) {
+      // Lo que la IA aprendió en la conversación (origen, destino, personas,
+      // hora de salida, intereses) pasa al formulario para que todo lo demás
+      // (gasto, tramos, sugerencias) siga usándolo.
+      const form = document.getElementById("hero-form");
+      form.querySelector('[name="origen"]').value = opcion.resumen.origen.nombre;
+      form.querySelector('[name="destino"]').value = opcion.resumen.destino.nombre;
+      if (opcion.resumen.origen.nombre && opcion.resumen.destino.nombre) {
+        form.querySelector('[name="nombre"]').value = `${opcion.resumen.origen.nombre} a ${opcion.resumen.destino.nombre}`;
+      }
+      form.querySelectorAll("[data-interes]").forEach((chip) => {
+        chip.classList.toggle("is-active", (opcion.intereses || []).includes(chip.dataset.interes));
+      });
+      restaurarAjustes(form, opcion.ajustes || {});
+
       estado.resumen = opcion.resumen;
-      estado.itinerario = opcion.paradas.map((p) => ({ id: p.id, nombre: p.nombre, lat: p.lat, lon: p.lon, intereses: p.intereses || [] }));
+      estado.itinerario = opcion.paradas.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        lat: p.lat,
+        lon: p.lon,
+        intereses: p.intereses || [],
+        horas_estimadas: p.horas_estimadas,
+        proposito: p.proposito,
+      }));
       estado.ultimoOrigenDestino = { origen: opcion.resumen.origen.nombre, destino: opcion.resumen.destino.nombre };
 
       elementos.resultados.hidden = false;
@@ -819,6 +1054,12 @@ document.addEventListener("DOMContentLoaded", () => {
       renderItinerarioBase(estado.resumen);
 
       elementos.resultados.scrollIntoView({ behavior: "smooth" });
+
+      // Las sugerencias y los tramos se arman con los datos de este plan.
+      estado.lapsoActual = null;
+      estado.tramosElegidos = null;
+      estado.propositos = {};
+      cargarSugerencias(RutaFormularios.obtenerValores());
     },
   };
 });

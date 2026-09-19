@@ -67,6 +67,34 @@ medio de $25.5/l porque la Premium cuesta ~$5-6 más.
 Los imprevistos ($500–$2,000) llegan al tope a las 20 h y no a las 40 h
 porque casi nadie hace viajes tan largos (pedido de Angel).
 
+## Sugerencias: por qué lapsos automáticos en vez de "horas máximas"
+
+Angel no quería una pregunta más en el formulario, y "horas máximas de
+manejo seguido" casi nadie la llenaba. Ahora la duración del viaje decide
+sola cuántos lapsos hay (~3 h cada uno) y la ventana de recomendación
+(30 min después de salir a 20 min antes de llegar). El valor de 3 h
+(`LAPSO_OBJETIVO_H`) y los 30/20 min están como constantes en
+`ai_service.py` por si se quieren afinar.
+
+## Tramos personalizados: por qué "estricto" y por qué dormir es especial
+
+Angel quiso que elegir "comer" en un tramo recomiende SOLO lugares donde se
+puede comer, y que en automático salga de todo pero nunca "dormir" si no
+aplica (solo si se pasa de las 8 pm). Por eso un tramo personalizado filtra
+duro y uno automático solo prioriza, y "dormir" depende de la hora del
+reloj. Se eligió que sea un solo toque por tramo (fila de chips al tocar el
+tramo) y no un formulario, para no volver invasiva la app. La base tiene 96
+de 369 lugares con interés "comida" y 42 con "descanso" (más las ciudades
+grandes cuentan como dónde dormir), por eso a veces un tramo estricto sale
+vacío y se avisa.
+
+## La IA de "Planear con IA" debe seguir las mismas reglas que la app
+
+Cada vez que cambien las reglas de la app (gasto, tramos, dormir, ventana de
+recomendación) hay que reflejarlo en los prompts de `llm_provider.py` **y**
+hacerlas cumplir en el servidor (`preparar_objetivos_ia`), porque el modelo
+puede equivocarse. Ver regla en `AGENTS.md`.
+
 ## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al

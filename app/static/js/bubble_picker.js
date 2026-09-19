@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       burbuja.addEventListener("click", () => {
         input.value = burbuja.dataset.bubbleValor;
         marcar(burbuja.dataset.bubbleValor);
+        input.dispatchEvent(new Event("change", { bubbles: true }));
       });
     });
 

@@ -68,6 +68,11 @@ inicio del archivo que edites.
   `showModal()`: `styles.css` ya congela la página de atrás mientras haya
   un `<dialog open>` (solo se mueve la ventana). No uses divs con overlay
   propio ni pongas `overflow` en `body` a mano — se rompería esa regla.
+- Si cambias reglas de la app (gasto, tramos, cuándo se recomienda comer o
+  dormir, qué se pregunta en el formulario), actualiza también la IA de
+  "Planear con IA": los prompts de `app/services/llm_provider.py` y, sobre
+  todo, `ai_service.preparar_objetivos_ia`, que hace cumplir las reglas en el
+  servidor aunque el modelo se equivoque.
 - Explica el "por qué" de un bug antes o junto con el arreglo, no solo
   apliques el fix sin decir la causa.
 - Para cambios grandes o con varios pasos, plantea el plan y espera

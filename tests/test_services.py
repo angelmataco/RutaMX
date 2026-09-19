@@ -218,3 +218,123 @@ def test_formato_duracion():
     assert formato_duracion(9.5) == "9 h 30 min"
     assert formato_duracion(9) == "9 h"
     assert formato_duracion(0.75) == "45 min"
+
+
+def test_lapsos_viaje_corto_sin_ventana():
+    assert ai_service.lapsos_de_la_ruta(0) == []
+    assert ai_service.lapsos_de_la_ruta(0.8) == []  # 30 min al salir + 20 min al llegar no dejan ventana
+
+
+def test_lapsos_cubren_de_30_min_a_20_min_antes_de_llegar():
+    lapsos = ai_service.lapsos_de_la_ruta(6)
+    assert lapsos[0]["desde_h"] == 0.5
+    assert lapsos[-1]["hasta_h"] == round(6 - 20 / 60, 2)
+    assert len(lapsos) == 2  # ~3 h por lapso
+    # sin huecos ni traslapes entre lapsos
+    assert lapsos[0]["hasta_h"] == lapsos[1]["desde_h"]
+
+
+def test_lapsos_crecen_con_la_duracion():
+    assert len(ai_service.lapsos_de_la_ruta(2)) == 1
+    assert len(ai_service.lapsos_de_la_ruta(12)) == 4
+    assert len(ai_service.lapsos_de_la_ruta(50)) > 10
+
+
+def test_lapsos_traen_hora_del_reloj():
+    lapsos = ai_service.lapsos_de_la_ruta(6, hora_salida="08:00")
+    assert lapsos[0]["reloj_desde"] == "08:30"
+    assert lapsos[-1]["reloj_hasta"] == "13:40"
+    assert all(l["dia"] == 1 and not l["cruza_noche"] for l in lapsos)
+
+
+def test_lapsos_el_usuario_elige_cuantos_tramos():
+    assert len(ai_service.lapsos_de_la_ruta(12, tramos=3)) == 3
+    assert len(ai_service.lapsos_de_la_ruta(12, tramos=6)) == 6
+    # nunca más tramos de los que caben (mínimo 30 min cada uno)
+    assert len(ai_service.lapsos_de_la_ruta(2, tramos=6)) <= 3
+
+
+def test_lapso_de_noche_pide_hospedaje_y_al_mediodia_comida():
+    salida_tarde = ai_service.lapsos_de_la_ruta(10, hora_salida="17:00")
+    assert any(l["proposito"] == "descanso" for l in salida_tarde)
+    assert any(l["cruza_noche"] for l in salida_tarde)
+
+    salida_manana = ai_service.lapsos_de_la_ruta(9, tramos=3, hora_salida="08:00")
+    # tramos: 08:30-11:13, 11:13-13:57, 13:57-16:40 -> la comida cae en el tercero
+    assert [l["proposito"] for l in salida_manana] == ["turismo", "turismo", "comida"]
+
+
+def test_lapsos_de_viaje_largo_cambian_de_dia():
+    lapsos = ai_service.lapsos_de_la_ruta(30, hora_salida="08:00")
+    assert max(l["dia"] for l in lapsos) >= 2
+
+
+def test_dormir_solo_aplica_si_el_tramo_termina_despues_de_las_8pm():
+    de_dia = ai_service.lapsos_de_la_ruta(6, hora_salida="08:00")
+    assert not any(l["permite_dormir"] for l in de_dia)
+    assert not any(l["proposito"] == "descanso" for l in de_dia)
+
+    de_tarde = ai_service.lapsos_de_la_ruta(10, hora_salida="17:00")
+    assert any(l["permite_dormir"] for l in de_tarde)
+
+
+def test_usuario_personaliza_el_proposito_de_un_tramo():
+    lapsos = ai_service.lapsos_de_la_ruta(9, tramos=3, hora_salida="08:00", propositos={0: "comida", 1: "turismo"})
+    assert lapsos[0]["proposito"] == "comida" and lapsos[0]["personalizado"] is True
+    assert lapsos[1]["proposito"] == "turismo" and lapsos[1]["personalizado"] is True
+    assert lapsos[2]["personalizado"] is False  # sigue en automático
+
+
+def test_dormir_pedido_donde_no_aplica_se_ignora():
+    lapsos = ai_service.lapsos_de_la_ruta(6, hora_salida="08:00", propositos={0: "descanso"})
+    assert lapsos[0]["personalizado"] is False and lapsos[0]["proposito"] != "descanso"
+
+
+def test_encaja_con_lo_pedido_es_estricto():
+    from types import SimpleNamespace as D
+
+    fonda = D(intereses=["comida", "cultura"], tipo="pueblo_magico")
+    cascada = D(intereses=["naturaleza"], tipo="sitio_turistico")
+    ciudad = D(intereses=["cultura"], tipo="ciudad_principal")
+    assert ai_service._encaja_con_lo_pedido(fonda, "comida", []) is True
+    assert ai_service._encaja_con_lo_pedido(cascada, "comida", []) is False
+    assert ai_service._encaja_con_lo_pedido(ciudad, "descanso", []) is True   # hay dónde dormir
+    assert ai_service._encaja_con_lo_pedido(cascada, "descanso", []) is False
+    assert ai_service._encaja_con_lo_pedido(cascada, "turismo", ["naturaleza", "comida"]) is True
+    assert ai_service._encaja_con_lo_pedido(fonda, "turismo", ["naturaleza"]) is False
+    assert ai_service._encaja_con_lo_pedido(fonda, "turismo", []) is True  # sin intereses, cualquiera
+
+
+def test_ia_objetivos_fuera_de_la_ventana_se_descartan():
+    objetivos = [
+        {"proposito": "cultura", "hora_objetivo": 0.2},   # antes de 30 min
+        {"proposito": "cultura", "hora_objetivo": 3.0},
+        {"proposito": "cultura", "hora_objetivo": 5.9},   # menos de 20 min antes de llegar (6 h)
+    ]
+    listos = ai_service.preparar_objetivos_ia(objetivos, 6, "08:00")
+    assert [o["hora_objetivo"] for o in listos] == [3.0]
+
+
+def test_ia_no_puede_proponer_dormir_de_dia():
+    listos = ai_service.preparar_objetivos_ia(
+        [{"proposito": "descanso", "hora_objetivo": 3.0}], 6, "08:00", ["playas"]
+    )
+    assert listos[0]["proposito"] == "playas"  # se cambia por turismo
+    assert listos[0]["estricto"] is False
+
+
+def test_ia_dormir_si_hay_noche_en_el_viaje():
+    # sale a las 17:00: a ~3.5 h son las 20:30
+    listos = ai_service.preparar_objetivos_ia([{"proposito": "descanso", "hora_objetivo": 3.5}], 10, "17:00")
+    assert listos[0]["proposito"] == "descanso" and listos[0]["estricto"] is True
+
+
+def test_ia_sin_hora_de_salida_supone_las_8am_y_no_duerme_de_dia():
+    listos = ai_service.preparar_objetivos_ia([{"proposito": "descanso", "hora_objetivo": 4}], 8, None)
+    assert listos[0]["proposito"] != "descanso"
+
+
+def test_ia_comida_es_estricta_y_tiene_ventana():
+    listos = ai_service.preparar_objetivos_ia([{"proposito": "comida", "hora_objetivo": 5.0}], 10, "08:00")
+    assert listos[0]["estricto"] is True
+    assert listos[0]["ventana"] == (3.5, 6.5)

@@ -276,3 +276,47 @@ def test_nombres_de_destinos_ordenados_por_importancia(client):
     rangos = [tipo_de[n] for n in nombres]
     assert rangos == sorted(rangos)  # las ciudades principales van primero
     assert nombres.index("León") < nombres.index(next(n for n in nombres if tipo_de[n] == 2))
+
+
+def test_sugerencias_devuelven_lapsos_y_respetan_la_ventana(client):
+    datos = client.get(
+        "/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&intereses=comida&limite=12"
+    ).get_json()
+    assert len(datos["lapsos"]) >= 2
+    tiempo_h = datos["lapsos"][-1]["hasta_h"] + 20 / 60
+    for lugar in datos["sugerencias"]:
+        if "horas_estimadas" in lugar:
+            assert 0.5 <= lugar["horas_estimadas"] <= tiempo_h
+            assert lugar["lapso"] is not None
+
+
+def test_sugerencias_de_un_solo_lapso(client):
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&lapso=0&limite=8").get_json()
+    primero = datos["lapsos"][0]
+    for lugar in datos["sugerencias"]:
+        assert primero["desde_h"] <= lugar["horas_estimadas"] <= primero["hasta_h"]
+        assert lugar["lapso"] == 0
+
+
+def test_tramo_de_comida_recomienda_solo_lugares_para_comer(client):
+    url = "/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&tramos=3&propositos=0:comida&lapso=0&limite=8"
+    datos = client.get(url).get_json()
+    assert datos["lapsos"][0]["personalizado"] is True
+    assert datos["lapsos"][0]["proposito"] == "comida"
+    for lugar in datos["sugerencias"]:
+        assert "comida" in lugar["intereses"]
+        assert lugar["lapso"] == 0
+
+
+def test_todo_el_camino_respeta_tramos_personalizados(client):
+    url = "/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&tramos=3&propositos=0:comida&limite=16"
+    datos = client.get(url).get_json()
+    for lugar in datos["sugerencias"]:
+        if lugar.get("lapso") == 0:
+            assert "comida" in lugar["intereses"]
+
+
+def test_sin_horario_nocturno_no_se_sugiere_dormir(client):
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&hora_salida=08:00&limite=16").get_json()
+    assert not any(l["proposito"] == "descanso" for l in datos["lapsos"])
+    assert not any(l.get("proposito") == "descanso" for l in datos["sugerencias"])
