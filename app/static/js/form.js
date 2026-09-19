@@ -9,8 +9,8 @@ const RutaFormularios = (() => {
       destino: form.querySelector('[name="destino"]'),
       nombre: form.querySelector('[name="nombre"]'),
       personas: form.querySelector('[name="personas"]'),
-      comidas: form.querySelector('[name="comidas"]'),
-      noches: form.querySelector('[name="noches"]'),
+      comidas: document.querySelector('[data-modal-ajustes] [name="comidas"]'),
+      noches: document.querySelector('[data-modal-ajustes] [name="noches"]'),
       horasMax: form.querySelector('[name="horas_max"]'),
       horaSalida: form.querySelector('[name="hora_salida"]'),
       chips: Array.from(form.querySelectorAll("[data-interes]")),
@@ -18,7 +18,7 @@ const RutaFormularios = (() => {
   }
 
   function valorDeAjuste(nombre) {
-    const activo = form.querySelector(`[data-ajuste="${nombre}"].is-active`);
+    const activo = document.querySelector(`[data-ajuste="${nombre}"].is-active`);
     return activo ? activo.dataset.valor : "";
   }
 
@@ -51,6 +51,19 @@ const RutaFormularios = (() => {
     };
   }
 
+  // "⚙️ Ajustes de gasto" o "⚙️ Ajustes de gasto · 2" según lo que se haya tocado.
+  function actualizarBotonAjustes() {
+    const boton = document.querySelector("[data-abrir-ajustes-gasto]");
+    if (!boton) return;
+    const c = camposDe();
+    const activos =
+      document.querySelectorAll("[data-ajuste].is-active").length +
+      (c.comidas.value !== "" ? 1 : 0) +
+      (c.noches.value !== "" ? 1 : 0);
+    boton.textContent = activos ? `⚙️ Ajustes de gasto · ${activos}` : "⚙️ Ajustes de gasto";
+    boton.classList.toggle("is-activo", activos > 0);
+  }
+
   function init(onSubmit) {
     if (!form) return;
 
@@ -60,7 +73,7 @@ const RutaFormularios = (() => {
 
     // Grupos de opciones de una sola elección (coche, gasolina): tocar la
     // activa la desmarca y se vuelve al valor típico.
-    form.querySelectorAll("[data-chips-unico]").forEach((grupo) => {
+    document.querySelectorAll("[data-chips-unico]").forEach((grupo) => {
       grupo.querySelectorAll(".chip").forEach((chip) => {
         chip.addEventListener("click", () => {
           const estabaActivo = chip.classList.contains("is-active");
@@ -70,11 +83,20 @@ const RutaFormularios = (() => {
       });
     });
 
+    // Botón pequeño "Ajustes de gasto": abre el diálogo y muestra cuántos
+    // ajustes hay activos.
+    const dialogoAjustes = document.querySelector("[data-modal-ajustes]");
+    const botonAjustes = document.querySelector("[data-abrir-ajustes-gasto]");
+    if (dialogoAjustes && botonAjustes) {
+      botonAjustes.addEventListener("click", () => dialogoAjustes.showModal());
+      dialogoAjustes.addEventListener("close", actualizarBotonAjustes);
+    }
+
     form.addEventListener("submit", (evento) => {
       evento.preventDefault();
       if (onSubmit) onSubmit(leerValores());
     });
   }
 
-  return { init, obtenerValores: leerValores, obtenerAjustes: leerAjustes };
+  return { init, obtenerValores: leerValores, obtenerAjustes: leerAjustes, actualizarBotonAjustes };
 })();

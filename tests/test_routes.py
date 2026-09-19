@@ -260,3 +260,19 @@ def test_api_gasto_ok(client):
 
 def test_api_gasto_sin_datos(client):
     assert client.post("/api/gasto", json={}).status_code == 400
+
+
+def test_nombres_de_destinos_ordenados_por_importancia(client):
+    from app.models import Destino
+
+    nombres = client.get("/api/destinos/nombres").get_json()["nombres"]
+    assert len(nombres) == len(set(nombres))  # sin repetidos
+
+    rango = {"ciudad_principal": 0, "pueblo_magico": 1, "sitio_turistico": 2}
+    tipo_de = {}
+    with client.application.app_context():
+        for d in Destino.query.all():
+            tipo_de[d.nombre] = min(tipo_de.get(d.nombre, 3), rango.get(d.tipo, 3))
+    rangos = [tipo_de[n] for n in nombres]
+    assert rangos == sorted(rangos)  # las ciudades principales van primero
+    assert nombres.index("León") < nombres.index(next(n for n in nombres if tipo_de[n] == 2))

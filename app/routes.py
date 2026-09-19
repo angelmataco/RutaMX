@@ -81,7 +81,16 @@ def api_ia_planear():
 
 @main_bp.route("/api/destinos/nombres")
 def api_destinos_nombres():
-    nombres = sorted({d.nombre for d in Destino.query.all()})
+    # Ordenados por importancia: ciudades principales primero (las más
+    # pobladas antes), luego pueblos mágicos y sitios turísticos. El
+    # autocompletado respeta este orden, así "León" sale antes que
+    # cualquier sitio turístico de León.
+    prioridad_tipo = {"ciudad_principal": 0, "pueblo_magico": 1, "sitio_turistico": 2}
+    destinos = sorted(
+        Destino.query.all(),
+        key=lambda d: (prioridad_tipo.get(d.tipo, 3), -(d.poblacion or 0), d.nombre),
+    )
+    nombres = list(dict.fromkeys(d.nombre for d in destinos))  # sin repetidos, conserva el orden
     return jsonify({"nombres": nombres})
 
 

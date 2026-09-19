@@ -612,16 +612,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // Devuelve al formulario las preferencias de gasto con las que se guardó la ruta.
   function restaurarAjustes(form, ajustes) {
     const poner = (nombre, valor) => {
-      const campo = form.querySelector(`[name="${nombre}"]`);
+      const campo = document.querySelector(`[name="${nombre}"]`);
       campo.value = valor ?? "";
       campo.dispatchEvent(new Event("input", { bubbles: true }));
     };
     poner("personas", ajustes.personas);
     poner("comidas", ajustes.comidas);
     poner("noches", ajustes.noches);
-    form.querySelectorAll("[data-ajuste]").forEach((chip) => {
+    document.querySelectorAll("[data-ajuste]").forEach((chip) => {
       chip.classList.toggle("is-active", ajustes[chip.dataset.ajuste] === chip.dataset.valor);
     });
+    RutaFormularios.actualizarBotonAjustes();
     const hora = ajustes.hora_salida || "";
     form.querySelector("[data-time-hidden]").value = hora;
     form.querySelector("[data-time-display]").textContent = hora || "Elegir hora";
@@ -647,6 +648,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return normalizarClave(texto)
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "");
+  }
+
+  // ¿`clave` (ya sin acentos ni mayúsculas) aparece en `nombre` como palabra(s)
+  // completa(s)? "leon" está en "Centro histórico de León", pero "leo" no.
+  function contienePalabraCompleta(nombre, clave) {
+    const limpio = (texto) => ` ${normalizarAcentos(texto).replace(/[^a-z0-9ñ]+/g, " ").trim()} `;
+    return limpio(nombre).includes(limpio(clave));
   }
 
   function initAutocompletado(nombres) {
@@ -682,7 +690,22 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        coincidencias = nombres.filter((nombre) => normalizarAcentos(nombre).includes(clave)).slice(0, MAX_SUGERENCIAS);
+        // 1) Los nombres que EMPIEZAN con lo escrito (se filtran letra por
+        //    letra). `nombres` ya viene ordenado por importancia (ciudades
+        //    grandes primero); si lo escrito es exactamente un nombre, ese
+        //    sube al primer lugar.
+        // 2) Cuando lo escrito ya es una palabra completa (ej. "leon",
+        //    "mexico"), se agregan también los nombres que la contienen,
+        //    como "Centro histórico de León" o "Ciudad de México".
+        const conPrefijo = nombres.filter((nombre) => normalizarAcentos(nombre).startsWith(clave));
+        conPrefijo.sort((a, b) => Number(normalizarAcentos(b) === clave) - Number(normalizarAcentos(a) === clave));
+
+        const yaIncluidos = new Set(conPrefijo);
+        const conLaPalabra = nombres.filter(
+          (nombre) => !yaIncluidos.has(nombre) && contienePalabraCompleta(nombre, clave)
+        );
+
+        coincidencias = [...conPrefijo, ...conLaPalabra].slice(0, MAX_SUGERENCIAS);
 
         if (!coincidencias.length) {
           cerrar();

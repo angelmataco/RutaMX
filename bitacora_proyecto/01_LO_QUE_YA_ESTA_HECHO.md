@@ -264,9 +264,31 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   pruebas apagan la estimación de casetas por IA (`tests/conftest.py`)
   para no gastar tokens.
 
+## Autollenado y formulario del inicio (rediseño)
+
+- **Autollenado de Origen/Destino:** primero salen los nombres que
+  EMPIEZAN con lo escrito (se filtra letra por letra, con las ciudades
+  importantes primero); y cuando lo escrito ya es una palabra completa se
+  agregan también los nombres que la contienen. Ej.: "l" → León, Los
+  Mochis, La Paz…; "leo" → León; "leon" → León, Centro Histórico de León,
+  Zona Piel y Calzado de León; "mexico" → Ciudad de México, Centro
+  Histórico de la Ciudad de México. El orden lo da `/api/destinos/nombres`
+  (ciudad principal → pueblo mágico → sitio turístico, y por población);
+  un nombre exacto sube al primer lugar. Sin acentos ni mayúsculas.
+  Código: `initAutocompletado` y `contienePalabraCompleta` en `main.js`.
+- **Orden del formulario:** Origen/Destino → Nombre → ¿Qué buscas? →
+  ¿Cuántas personas van? → Horas máximas → Hora de salida → botones.
+- **Personas:** 8 casillas grandes que llenan todo el ancho (sin "Otro";
+  máximo 8). `bubble_picker.js` ya acepta selectores sin botón "Otro".
+- **Ajustes de gasto:** dejó de ser un desplegable dentro del formulario.
+  Ahora es un botón pequeño y discreto ("⚙️ Ajustes de gasto") centrado
+  bajo los botones principales, que abre una ventana flotante (`<dialog>`)
+  con coche, gasolina, comidas y noches. Muestra "· N" cuando hay ajustes
+  activos.
+
 ## Calidad / pruebas
 
-- 69 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 70 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el

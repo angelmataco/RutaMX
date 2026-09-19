@@ -1,4 +1,4 @@
-// Selector de "burbujas" para presupuesto y horas máximas de manejo — una
+// Selector de "burbujas" para personas y horas máximas de manejo — una
 // fila de opciones predefinidas (deslizable) en vez de una lista plana de
 // <datalist>, con un botón "Otro" para escribir un valor exacto distinto.
 
@@ -17,8 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
         b.classList.toggle("is-activa", esta);
         if (esta) coincide = true;
       });
-      btnOtro.classList.toggle("is-activa", !coincide && Boolean(valor));
-      input.hidden = coincide || !valor;
+      if (btnOtro) btnOtro.classList.toggle("is-activa", !coincide && Boolean(valor));
+      input.hidden = !btnOtro || coincide || !valor;
     }
 
     burbujas.forEach((burbuja) => {
@@ -28,12 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    btnOtro.addEventListener("click", () => {
-      input.hidden = false;
-      burbujas.forEach((b) => b.classList.remove("is-activa"));
-      btnOtro.classList.add("is-activa");
-      input.focus();
-    });
+    if (btnOtro) {
+      btnOtro.addEventListener("click", () => {
+        input.hidden = false;
+        burbujas.forEach((b) => b.classList.remove("is-activa"));
+        btnOtro.classList.add("is-activa");
+        input.focus();
+      });
+    }
 
     input.addEventListener("input", () => {
       const coincide = burbujas.some((b) => b.dataset.bubbleValor === input.value);
