@@ -122,6 +122,30 @@ y Latin America's 50 Best 2025 (Forbes México). Sesgo conocido: estas fuentes
 favorecen alta cocina y pocas ciudades (23 de 32 estados quedan sin ningún
 lugar destacado), así que no sirven solas para decidir dónde NO hay buena comida.
 
+## Prioridad por reconocimiento: por qué solo si la ruta pasa cerca (40 km)
+
+Angel pidió que lo distinguido (estrella, Michelin, UNESCO) salga primero
+"solo si la ruta pasa cerca". El sistema de sugerencias acepta lugares hasta
+150 km de la carretera, así que al darles prioridad Guadalajara (a 145 km de
+León → Monterrey) subió al primer lugar. Se agregó `RADIO_PRIORIDAD_KM = 40`
+(medido con casos reales: Atlixco 30 km, Chocholá 36, Playa del Carmen 39,
+Tulum 48). Los restaurantes del futuro solo se recomiendan si el usuario pide una
+parada para comer (regla 7b del plan 04); en automático solo ciudades.
+
+## Estrellas: cuántas salen por ruta y por qué hay un tope de 2
+
+Medido con 40 rutas largas al azar entre ciudades grandes (250-1,500 km,
+2026-09-19): 42 % no pasa cerca (≤ 40 km) de ningún lugar con estrella, 20 % pasa
+por 1, 15 % por 2, 8 % por 3 y 15 % por 4 o más; o sea 38 % tiene 2 o más y 22 %
+tiene 3 o más. Se concentran en pocos corredores: la **península de Yucatán**
+(Mérida, Chocholá, Tixkokob, Puerto Morelos, Playa del Carmen), **Puebla +
+Atlixco**, y Baja California. Podar "comida" NO cambia esto (las 21 estrellas
+siguen igual). Con restaurantes el riesgo sube en ciudades con muchas estrellas
+(CDMX tiene 11 restaurantes con estrella y 27 Bib Gourmand), por eso el tope de
+2 al frente (y ninguna más en la primera vista) es genérico y se aplicará
+también a restaurantes. **5 visibles** (decisión de Angel): 5 tarjetas en una
+fila en pantallas anchas; en pantallas medianas (3 columnas) quedan 3 + 2.
+
 ## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al

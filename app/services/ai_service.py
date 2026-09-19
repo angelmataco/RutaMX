@@ -18,6 +18,7 @@ consulta `destinos` como siempre.
 """
 
 import random
+import re
 
 from app.models import Destino
 from app.services import gasto_service, maps_service, route_service
@@ -51,6 +52,17 @@ HORAS_MINIMAS_ANTES_DE_LLEGAR = 20 / 60
 # (un viaje de 6 h -> 2 lapsos; uno de 12 h -> 4). Sustituye a la vieja
 # pregunta "horas máximas de manejo seguido": la app lo decide sola.
 LAPSO_OBJETIVO_H = 3.0
+
+# Un lugar distinguido (estrella / Michelin...) solo pasa al frente si la ruta
+# pasa cerca: a lo más este desvío (km) desde la carretera. Más lejos sigue
+# pudiendo aparecer, pero sin prioridad.
+RADIO_PRIORIDAD_KM = 40
+
+# Cuántos lugares se ven por página en "Descubre en el camino" (debe coincidir con
+# MOSTRAR_SUGERENCIAS en main.js) y cuántos distinguidos (★) se ponen al frente como
+# máximo, para que ninguna ruta se llene de puras estrellas.
+TAMANO_PAGINA_SUGERENCIAS = 5
+MAX_DISTINGUIDOS_AL_FRENTE = 2
 
 # Un tramo no puede ser más corto que esto (limita cuántos tramos se pueden pedir).
 LAPSO_MINIMO_H = 0.5
@@ -110,6 +122,85 @@ LUGARES_DEMO = [
         "intereses": ["pueblos_magicos", "comida"],
     },
 ]
+
+
+def _dato(obj, clave):
+    """Lee un campo de un destino (objeto) o de un lugar ya armado (dict)."""
+    return obj.get(clave) if isinstance(obj, dict) else getattr(obj, clave, None)
+
+
+def prestigio(obj):
+    """Qué tan distinguido es un lugar por su reconocimiento público (0 = ninguno).
+
+    REGLA (Angel): los lugares con estrella, o mencionados por Michelin u otra
+    organización, tienen preferencia en las recomendaciones, siempre que la ruta
+    pase cerca (los candidatos ya vienen filtrados por cercanía a la carretera).
+    Sirve igual para destinos y, en el futuro, para restaurantes y hoteles: basta
+    con que tengan `gastronomia_destacada` y `reconocimiento_gastronomico`.
+    Más puntos = más distinguido: estrella Michelin > UNESCO / 50 Best > Bib Gourmand.
+    """
+    if not _dato(obj, "gastronomia_destacada"):
+        return 0
+    texto = _dato(obj, "reconocimiento_gastronomico") or ""
+    puntos = 1
+    if re.search(r"unesco", texto, re.I):
+        puntos += 2
+    if re.search(r"2 estrellas|dos estrellas", texto, re.I):
+        puntos += 4
+    elif re.search(r"estrella", texto, re.I):
+        puntos += 3
+    if re.search(r"bib gourmand", texto, re.I):
+        puntos += 1
+    if re.search(r"50 best", texto, re.I):
+        puntos += 2
+    return puntos
+
+
+def prioridad(obj):
+    """`prestigio` pero solo si la ruta pasa cerca (a `RADIO_PRIORIDAD_KM` o menos).
+    Si no se conoce la distancia se asume que sí está cerca."""
+    distancia = _dato(obj, "distancia_a_ruta_km")
+    if distancia is not None and distancia > RADIO_PRIORIDAD_KM:
+        return 0
+    return prestigio(obj)
+
+
+def _linea_de_tiempo(lugares, tamano_pagina=None):
+    """Ordena las sugerencias como una línea de tiempo del viaje:
+    1) al frente van los lugares distinguidos (estrella / Michelin...) cercanos a
+       la ruta, sin importar la hora, pero **como máximo `MAX_DISTINGUIDOS_AL_FRENTE`**
+       (los más distinguidos; a igual puntaje, el más cercano al inicio), para que
+       una ruta no se llene de puras estrellas;
+    2) después todo lo demás en orden de camino (a 1 h, luego a 2 h, luego a 3 h y
+       media…). Los distinguidos que sobran conservan su ★ pero entran a la línea de
+       tiempo por su hora, y **nunca dentro de la primera página**.
+    Así el usuario ve rápido qué tiene disponible en las primeras horas."""
+    tamano_pagina = tamano_pagina or TAMANO_PAGINA_SUGERENCIAS
+
+    def horas(lugar):
+        valor = lugar.get("horas_estimadas")
+        return valor if valor is not None else 0
+
+    distinguidos = sorted((l for l in lugares if prioridad(l) > 0), key=lambda l: (-prioridad(l), horas(l)))
+    al_frente = distinguidos[:MAX_DISTINGUIDOS_AL_FRENTE]
+    sobrantes = distinguidos[MAX_DISTINGUIDOS_AL_FRENTE:]
+    comunes = sorted((l for l in lugares if prioridad(l) == 0), key=horas)
+
+    # La primera página: los distinguidos del frente + los primeros comunes por hora.
+    huecos = max(0, tamano_pagina - len(al_frente))
+    primera_pagina = al_frente + comunes[:huecos]
+    # El resto de la línea de tiempo (comunes que siguen + distinguidos sobrantes), por hora.
+    resto = sorted(comunes[huecos:] + sobrantes, key=horas)
+    return primera_pagina + resto
+
+
+def _elegir_con_distinguidos(lugares, limite):
+    """Los primeros `limite` de `lugares` (ya ordenados por relevancia), pero
+    sin dejar fuera a ningún distinguido cercano a la ruta."""
+    elegidos = lugares[:limite]
+    ids = {l["id"] for l in elegidos}
+    faltan = [l for l in lugares[limite:] if prioridad(l) > 0 and l["id"] not in ids]
+    return elegidos + faltan
 
 
 def lapsos_de_la_ruta(tiempo_h, tramos=None, hora_salida=None, propositos=None):
@@ -228,6 +319,7 @@ def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
         "intereses": destino.intereses or [],
         # Gastronomía reconocida (UNESCO / Guía Michelin): se muestra con una estrellita
         # y en los tramos de "comer" va primero.
+        "distancia_a_ruta_km": getattr(destino, "distancia_a_ruta_km", None),
         "gastronomia_destacada": bool(getattr(destino, "gastronomia_destacada", False)),
         "reconocimiento_gastronomico": getattr(destino, "reconocimiento_gastronomico", None),
     }
@@ -433,9 +525,8 @@ def asignar_paradas_a_objetivos(candidatos, objetivos):
                 continue
             coincide_proposito = 0 if _coincide_proposito(destino.intereses or [], destino.tipo, objetivo["proposito"]) else 1
             distancia_hora = abs(horas_estimadas - objetivo["hora_objetivo"])
-            # Para comer, primero los lugares con gastronomía destacada.
-            destacado = 0 if (objetivo["proposito"] == "comida" and getattr(destino, "gastronomia_destacada", False)) else 1
-            puntaje = (coincide_proposito, destacado, distancia_hora)
+            # Entre los que encajan, primero el más distinguido (estrella / Michelin...).
+            puntaje = (coincide_proposito, -prioridad(destino), distancia_hora)
             if mejor_puntaje is None or puntaje < mejor_puntaje:
                 mejor_puntaje = puntaje
                 mejor = (destino, horas_estimadas)
@@ -537,13 +628,13 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
         random.shuffle(dentro)
         dentro.sort(
             key=lambda item: (
+                -prioridad(item[0]),  # los distinguidos (y cercanos a la ruta) van primero
                 0 if _coincide_proposito(item[0].intereses or [], item[0].tipo, objetivo["proposito"]) else 1,
-                0 if (objetivo["proposito"] == "comida" and getattr(item[0], "gastronomia_destacada", False)) else 1,
                 0 if (intereses and intereses & set(item[0].intereses or [])) else 1,
                 -(item[0].poblacion or 0) if objetivo["proposito"] == "descanso" else 0,
             )
         )
-        return [armar(d, h) for d, h in dentro[:limite]]
+        return _linea_de_tiempo([armar(d, h) for d, h in dentro[:limite]])
 
     asignadas = []
     for lugar in asignar_paradas_a_objetivos(pool, objetivos):
@@ -562,7 +653,7 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
         for indice in por_lapso:  # una por lapso en cada vuelta
             if por_lapso[indice]:
                 relleno.append(por_lapso[indice].pop(0))
-    return (asignadas + relleno)[:limite]
+    return _linea_de_tiempo(_elegir_con_distinguidos(asignadas + relleno, limite))
 
 
 def _consulta_destinos(excluir_ids):
@@ -615,6 +706,7 @@ def _candidatos_en_el_corredor(ruta, limite, excluir_ids):
         if tiempo_total and horas_estimadas > tiempo_total - HORAS_MINIMAS_ANTES_DE_LLEGAR:
             continue
 
+        destino.distancia_a_ruta_km = round(distancia_perp, 1) if distancia_perp is not None else None
         calculados.append((destino, horas_estimadas, distancia_perp))
 
     for radio in RADIOS_CORREDOR_KM:

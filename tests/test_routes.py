@@ -320,3 +320,39 @@ def test_sin_horario_nocturno_no_se_sugiere_dormir(client):
     datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&hora_salida=08:00&limite=16").get_json()
     assert not any(l["proposito"] == "descanso" for l in datos["lapsos"])
     assert not any(l.get("proposito") == "descanso" for l in datos["sugerencias"])
+
+
+def test_lugares_con_estrella_van_primero_en_la_primera_pagina(client):
+    """CDMX -> Oaxaca pasa por Puebla y Atlixco (Michelin): salen antes que el resto."""
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&limite=16").get_json()
+    sugerencias = datos["sugerencias"]
+    marcas = [bool(s["gastronomia_destacada"]) for s in sugerencias]
+    assert any(marcas)
+    assert marcas[0] is True                       # el primero ya es distinguido
+    assert marcas == sorted(marcas, reverse=True)  # todos los distinguidos antes que los demás
+    assert all(marcas[:2])                         # y entran en las primeras 4 (aquí hay al menos 2)
+
+
+def test_en_un_tramo_los_distinguidos_tambien_van_primero(client):
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&tramos=3&lapso=0&limite=8").get_json()
+    marcas = [bool(s["gastronomia_destacada"]) for s in datos["sugerencias"]]
+    assert marcas == sorted(marcas, reverse=True)
+    assert marcas[0] is True
+
+
+def test_un_lugar_con_estrella_lejos_de_la_ruta_no_pasa_al_frente(client):
+    """León -> Monterrey: Guadalajara (145 km de la ruta) no debe ir primero."""
+    datos = client.get("/api/sugerencias?origen=Leon&destino=Monterrey&limite=16").get_json()
+    primeros = [s["nombre"] for s in datos["sugerencias"][:4]]
+    assert "Guadalajara" not in primeros
+    for s in datos["sugerencias"]:
+        if s["nombre"] == "Guadalajara":
+            assert s["distancia_a_ruta_km"] > 40
+
+
+def test_sugerencias_forman_una_linea_de_tiempo(client):
+    """Después de los distinguidos, todo va en orden de camino (sin saltos de 6 h a 1 h a 4 h)."""
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&limite=16").get_json()
+    resto = [s["horas_estimadas"] for s in datos["sugerencias"] if not s["gastronomia_destacada"]]
+    assert len(resto) >= 4
+    assert resto == sorted(resto)

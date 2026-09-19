@@ -10,7 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
     resumen: null,
     itinerario: [], // lista de { id, nombre }
     ultimoOrigenDestino: null, // { origen, destino } del último viaje calculado
-    sugerenciasPool: [], // lugares ya traídos del servidor, listos para mostrarse
+    sugerenciasLista: [], // sugerencias del lote actual, en orden de línea de tiempo
+    sugerenciasExpandido: false, // ¿se ven todas o solo las primeras?
     sugerenciasVistosIds: new Set(), // para no repetir con "excluir" al pedir más
     sugerenciasValores: null, // últimos valores del formulario, para "ver más"
   };
@@ -19,7 +20,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return (texto || "").trim().toLowerCase();
   }
 
-  const MOSTRAR_SUGERENCIAS = 4;
+  // Cuántas sugerencias se ven de entrada (igual que TAMANO_PAGINA_SUGERENCIAS en
+  // ai_service.py) y cuántas se piden en cada lote. El resto se despliega con "Ver más".
+  const MOSTRAR_SUGERENCIAS = 5;
+  const TAMANO_LOTE = 20;
 
   const elementos = {
     resultados: document.querySelector("[data-resultados]"),
@@ -37,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tramosControl: document.querySelector("[data-tramos-control]"),
     tramosOpciones: document.querySelector("[data-tramos-opciones]"),
     tramosNota: document.querySelector("[data-tramos-nota]"),
+    lineaTiempo: document.querySelector("[data-linea-tiempo]"),
     tramoProposito: document.querySelector("[data-tramo-proposito]"),
     tramoPropositoTitulo: document.querySelector("[data-tramo-proposito-titulo]"),
     tramoPropositoOpciones: document.querySelector("[data-tramo-proposito-opciones]"),
@@ -285,11 +290,11 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">Buscando ideas para tu recorrido…</p>';
     elementos.verMasBtn.hidden = true;
 
-    // Se pide un lote grande una sola vez; la grilla solo muestra 4 a la
-    // vez y va tomando del resto, así siempre hay con qué reponer.
-    estado.sugerenciasPool = await pedirSugerencias(valores, 16, Array.from(estado.sugerenciasVistosIds));
+    // Se pide un lote de una vez; ya viene ordenado como línea de tiempo.
+    estado.sugerenciasLista = await pedirSugerencias(valores, TAMANO_LOTE, Array.from(estado.sugerenciasVistosIds));
+    estado.sugerenciasExpandido = false;
     renderLapsos();
-    mostrarSugerencias(tomarDelPool(MOSTRAR_SUGERENCIAS));
+    renderSugerencias();
   }
 
   // Controles de los tramos del viaje: cuántos tramos (Automático, 2…6) y
@@ -408,32 +413,64 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.tramosNota.textContent = "Sin hora de salida, los horarios suponen que sales a las 08:00.";
   }
 
-  function tomarDelPool(cantidad) {
-    const tomados = estado.sugerenciasPool.splice(0, cantidad);
-    tomados.forEach((lugar) => estado.sugerenciasVistosIds.add(lugar.id));
-    return tomados;
-  }
-
-  async function ampliarPool() {
+  // Todas las sugerencias del lote se dibujan en orden de línea de tiempo; se ven
+  // las primeras MOSTRAR_SUGERENCIAS y el resto queda plegado hasta que el usuario
+  // toca "Ver todas" (y puede volver a ocultarlas).
+  async function ampliarLista() {
     if (!estado.sugerenciasValores) return;
-    const nuevoLote = await pedirSugerencias(estado.sugerenciasValores, 16, Array.from(estado.sugerenciasVistosIds));
-    estado.sugerenciasPool.push(...nuevoLote);
+    const yaVistos = new Set([...estado.sugerenciasVistosIds, ...estado.sugerenciasLista.map((l) => l.id)]);
+    const nuevoLote = await pedirSugerencias(estado.sugerenciasValores, TAMANO_LOTE, Array.from(yaVistos));
+    estado.sugerenciasLista.push(...nuevoLote);
   }
 
-  function mostrarSugerencias(lugares) {
-    elementos.sugerenciasContenedor.innerHTML = "";
+  function renderSugerencias() {
+    const contenedor = elementos.sugerenciasContenedor;
+    contenedor.innerHTML = "";
+    contenedor.classList.toggle("is-expandido", estado.sugerenciasExpandido);
 
-    if (!lugares.length) {
-      elementos.sugerenciasContenedor.innerHTML =
+    if (!estado.sugerenciasLista.length) {
+      contenedor.innerHTML =
         estado.lapsoActual === null
           ? '<p class="empty-state">No encontramos sugerencias para estos intereses todavía.</p>'
           : `<p class="empty-state">${mensajeSinLugaresEnTramo()}</p>`;
       elementos.verMasBtn.hidden = true;
+      elementos.lineaTiempo.hidden = true;
       return;
     }
 
-    lugares.forEach((lugar) => agregarCardSugerencia(lugar));
-    elementos.verMasBtn.hidden = estado.sugerenciasPool.length === 0;
+    estado.sugerenciasLista.forEach((lugar, indice) => {
+      const card = agregarCardSugerencia(lugar);
+      card.classList.toggle("card--extra", indice >= MOSTRAR_SUGERENCIAS);
+    });
+    actualizarLineaDeTiempo();
+  }
+
+  // Las sugerencias van como línea de tiempo: primero los destacados (★) y luego
+  // todo en orden de camino. Esta etiqueta dice qué horas se están viendo y el
+  // botón despliega (o vuelve a plegar) el resto.
+  function actualizarLineaDeTiempo() {
+    const lista = estado.sugerenciasLista;
+    const visibles = estado.sugerenciasExpandido ? lista : lista.slice(0, MOSTRAR_SUGERENCIAS);
+    const destacados = visibles.filter((l) => l.gastronomia_destacada && (l.distancia_a_ruta_km ?? 0) <= 40);
+    const horas = (grupo) => grupo.filter((l) => !destacados.includes(l) && typeof l.horas_estimadas === "number").map((l) => l.horas_estimadas);
+    const enOrden = horas(visibles);
+
+    const partes = [];
+    if (destacados.length) partes.push(`★ ${destacados.length} ${destacados.length === 1 ? "destacado" : "destacados"} cerca de tu ruta`);
+    if (enOrden.length) {
+      const desde = Math.min(...enOrden);
+      const hasta = Math.max(...enOrden);
+      partes.push(desde === hasta ? `a ${formatoDuracion(hasta)} del inicio` : `de ${formatoDuracion(desde)} a ${formatoDuracion(hasta)} del inicio`);
+    }
+    elementos.lineaTiempo.textContent = partes.join(" · ");
+    elementos.lineaTiempo.hidden = !partes.length;
+
+    // "Ver más" (con flechita) despliega el resto; "Ver menos" lo vuelve a plegar.
+    const extras = lista.slice(MOSTRAR_SUGERENCIAS);
+    elementos.verMasBtn.hidden = extras.length === 0;
+    elementos.verMasBtn.setAttribute("aria-expanded", String(estado.sugerenciasExpandido));
+    elementos.verMasBtn.classList.toggle("is-abierto", estado.sugerenciasExpandido);
+    elementos.verMasBtn.querySelector("[data-ver-mas-texto]").textContent = estado.sugerenciasExpandido ? "Ver menos" : "Ver más";
   }
 
   function mensajeSinLugaresEnTramo() {
@@ -495,37 +532,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     nodo.querySelector("[data-agregar-parada]").addEventListener("click", () => {
       agregarParada(lugar);
-      reponerSugerencia(card);
+      quitarSugerencia(lugar);
     });
 
     nodo.querySelector("[data-descartar]").addEventListener("click", () => {
-      reponerSugerencia(card);
+      quitarSugerencia(lugar);
     });
 
     elementos.sugerenciasContenedor.appendChild(nodo);
+    return card;
   }
 
-  async function reponerSugerencia(card) {
-    card.remove();
-
-    if (!estado.sugerenciasPool.length) {
-      await ampliarPool();
-    }
-
-    const [siguiente] = tomarDelPool(1);
-    if (siguiente) agregarCardSugerencia(siguiente);
-
-    if (!elementos.sugerenciasContenedor.children.length) {
-      elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">No encontramos más sugerencias para estos intereses.</p>';
-    }
-    elementos.verMasBtn.hidden = estado.sugerenciasPool.length === 0;
+  // Al agregar a la parada o descartar una sugerencia se quita de la lista y se
+  // vuelve a dibujar; si quedan pocas, se trae otro lote.
+  async function quitarSugerencia(lugar) {
+    estado.sugerenciasVistosIds.add(lugar.id);
+    estado.sugerenciasLista = estado.sugerenciasLista.filter((l) => l.id !== lugar.id);
+    if (estado.sugerenciasLista.length < MOSTRAR_SUGERENCIAS) await ampliarLista();
+    renderSugerencias();
   }
 
-  async function verMasSugerencias() {
-    if (estado.sugerenciasPool.length < MOSTRAR_SUGERENCIAS) {
-      await ampliarPool();
-    }
-    mostrarSugerencias(tomarDelPool(MOSTRAR_SUGERENCIAS));
+  function alternarSugerencias() {
+    estado.sugerenciasExpandido = !estado.sugerenciasExpandido;
+    elementos.sugerenciasContenedor.classList.toggle("is-expandido", estado.sugerenciasExpandido);
+    actualizarLineaDeTiempo();
   }
 
   function agregarParada(lugar) {
@@ -1026,7 +1056,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (elementos.verMasBtn) {
-    elementos.verMasBtn.addEventListener("click", verMasSugerencias);
+    elementos.verMasBtn.addEventListener("click", alternarSugerencias);
   }
 
   if (elementos.verRutasBtn) {

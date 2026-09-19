@@ -299,6 +299,30 @@ incluyendo los destinos generales aunque no sean de comida, y **dormir solo
 aplica si el tramo termina después de las 20:00 o cruza la noche** (regla ya
 implementada).
 
+## 7b. Regla de prioridad por reconocimiento (definida por Angel, 2026-09-19)
+
+Aplica a **ciudades y pueblos hoy** y a **restaurantes y hoteles cuando existan**:
+
+1. **Ciudades y pueblos distinguidos (estrella ★):** SIEMPRE tienen preferencia
+   (en automático y en "Comer"), en la primera página y de ser posible en el
+   primer lugar, **solo si la ruta pasa cerca** (≤ 40 km). Llevan la estrella y
+   la nota "recomendada a nivel gastronómico por Michelin / UNESCO / …". **Ya
+   implementado.**
+2. **Restaurantes y hoteles (futuro): solo entran si el usuario lo pide.**
+   - Si el usuario **deja todo en automático**, NO se recomiendan restaurantes
+     ni hoteles: solo ciudades y pueblos (con la prioridad del punto 1).
+   - Si el usuario **pide una parada para comer** (tramo en "Comer"), ahí sí
+     entran los restaurantes; igual con hoteles y "Dormir".
+   - Dentro de "Comer": primero los restaurantes con estrella / reconocidos
+     (que estén a ≤ 40 km de la ruta o dentro de una ciudad de la ruta), luego
+     los demás restaurantes buenos, y después las ciudades distinguidas.
+3. **Cómo implementarlo sin reescribir nada:** los establecimientos deben
+   exponer los mismos campos que ya usa `ai_service.prioridad()`:
+   `gastronomia_destacada`, `reconocimiento_gastronomico` y
+   `distancia_a_ruta_km`. Así `prestigio()` / `prioridad()` /
+   `_distinguidos_primero()` funcionan igual para destinos y para restaurantes.
+   Lo nuevo será el filtro "solo con tramo de Comer/Dormir".
+
 ## 8. Orden de trabajo (checklist)
 
 - [ ] Fase 0: Angel decide cómo definir "calidad" sin pagar (ver 2.2) y confirma
@@ -312,7 +336,8 @@ implementada).
 - [ ] Fase 3: adaptar toda la app y la IA (sección 5) con pruebas y prueba en
       navegador.
 - [ ] Fase 4: restaurantes y hoteles en carretera.
-- [ ] Fase 5: nueva forma de recomendar (orden de 7) y precios reales en el gasto.
+- [x] Prioridad a ciudades distinguidas cerca de la ruta (hecho, ver 7b).
+- [ ] Fase 5: nueva forma de recomendar (orden de 7 y regla 7b para restaurantes) y precios reales en el gasto.
 - [ ] Actualizar `01_LO_QUE_YA_ESTA_HECHO.md` al terminar cada fase y borrar lo
       hecho de este plan / de `02_LO_QUE_FALTA.md`.
 

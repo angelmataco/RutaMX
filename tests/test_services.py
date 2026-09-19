@@ -178,7 +178,9 @@ def test_generar_objetivos_automaticos_genera_comida_y_descanso():
 
 def test_sugerir_paradas_con_hora_salida_reparte_por_proposito(app_context):
     ruta = route_service.calcular_ruta("Ciudad de México", "Cancún")
-    sugerencias = ai_service.sugerir_paradas([], limite=6, ruta=ruta, horas_max=4, hora_salida="08:00")
+    # límite amplio: con la prioridad a lugares con estrella, los primeros lugares ya no son
+    # necesariamente los que salen del reparto por objetivos.
+    sugerencias = ai_service.sugerir_paradas([], limite=40, ruta=ruta, horas_max=4, hora_salida="08:00")
 
     con_proposito = [s for s in sugerencias if s.get("proposito")]
     assert con_proposito  # al menos una parada vino del reparto por objetivos
@@ -368,3 +370,100 @@ def test_para_comer_la_gastronomia_destacada_va_primero():
     )
     assert asignadas[0]["id"] == 2
     assert asignadas[0]["gastronomia_destacada"] is True
+
+
+def test_prestigio_ordena_estrella_sobre_bib():
+    michelin = {"gastronomia_destacada": True, "reconocimiento_gastronomico": "Guía Michelin México 2026: Pujol (2 estrellas)"}
+    una_estrella = {"gastronomia_destacada": True, "reconocimiento_gastronomico": "Guía Michelin México 2026: Alcalde (1 estrella)"}
+    solo_bib = {"gastronomia_destacada": True, "reconocimiento_gastronomico": "Guía Michelin México 2026: Bib Gourmand Vica"}
+    unesco = {"gastronomia_destacada": True, "reconocimiento_gastronomico": "UNESCO Ciudad Creativa de la Gastronomía (2015)"}
+    ninguno = {"gastronomia_destacada": False, "reconocimiento_gastronomico": None}
+    assert ai_service.prestigio(michelin) > ai_service.prestigio(una_estrella) > ai_service.prestigio(solo_bib) > 0
+    assert ai_service.prestigio(unesco) > ai_service.prestigio(solo_bib)
+    assert ai_service.prestigio(ninguno) == 0
+
+
+def test_linea_de_tiempo_aunque_esten_mas_lejos():
+    lugares = [
+        {"nombre": "Común", "horas_estimadas": 1, "gastronomia_destacada": False},
+        {"nombre": "Bib", "horas_estimadas": 4, "gastronomia_destacada": True, "reconocimiento_gastronomico": "Bib Gourmand X"},
+        {"nombre": "Estrella", "horas_estimadas": 5, "gastronomia_destacada": True, "reconocimiento_gastronomico": "Michelin: Y (1 estrella)"},
+        {"nombre": "Otro", "horas_estimadas": 2, "gastronomia_destacada": False},
+    ]
+    orden = [l["nombre"] for l in ai_service._linea_de_tiempo(lugares)]
+    assert orden == ["Estrella", "Bib", "Común", "Otro"]  # el resto, en orden de camino (1 h, luego 2 h)
+
+
+def test_para_cualquier_proposito_gana_el_mas_distinguido():
+    from types import SimpleNamespace as D
+
+    comun = D(id=1, nombre="Común", tipo="pueblo_magico", intereses=["cultura"], gastronomia_destacada=False,
+              reconocimiento_gastronomico=None, lat=0, lon=0, descripcion="", poblacion=None)
+    famoso = D(id=2, nombre="Famoso", tipo="ciudad_principal", intereses=["cultura"], gastronomia_destacada=True,
+               reconocimiento_gastronomico="Guía Michelin (1 estrella)", lat=0, lon=0, descripcion="", poblacion=None)
+    asignadas = ai_service.asignar_paradas_a_objetivos([(comun, 3.0), (famoso, 3.8)], [{"proposito": "cultura", "hora_objetivo": 3.0}])
+    assert asignadas[0]["id"] == 2
+
+
+def test_prioridad_solo_si_la_ruta_pasa_cerca():
+    estrella = "Guía Michelin (1 estrella)"
+    cerca = {"gastronomia_destacada": True, "reconocimiento_gastronomico": estrella, "distancia_a_ruta_km": 30}
+    lejos = {"gastronomia_destacada": True, "reconocimiento_gastronomico": estrella, "distancia_a_ruta_km": 145}
+    sin_dato = {"gastronomia_destacada": True, "reconocimiento_gastronomico": estrella}
+    assert ai_service.prioridad(cerca) > 0
+    assert ai_service.prioridad(lejos) == 0          # sigue teniendo estrella, pero sin prioridad
+    assert ai_service.prioridad(sin_dato) > 0
+    orden = [l["nombre"] for l in ai_service._linea_de_tiempo(
+        [{"nombre": "Común"}, {**lejos, "nombre": "Lejos"}, {**cerca, "nombre": "Cerca"}]
+    )]
+    assert orden == ["Cerca", "Común", "Lejos"]
+
+
+def test_linea_de_tiempo_distinguidos_primero_y_luego_por_horas():
+    lugares = [
+        {"nombre": "a 6 h", "horas_estimadas": 6.0},
+        {"nombre": "a 1 h", "horas_estimadas": 1.0},
+        {"nombre": "Estrella a 5 h", "horas_estimadas": 5.0, "gastronomia_destacada": True,
+         "reconocimiento_gastronomico": "Michelin (1 estrella)", "distancia_a_ruta_km": 10},
+        {"nombre": "a 3.5 h", "horas_estimadas": 3.5},
+        {"nombre": "a 2 h", "horas_estimadas": 2.0},
+    ]
+    assert [l["nombre"] for l in ai_service._linea_de_tiempo(lugares)] == [
+        "Estrella a 5 h", "a 1 h", "a 2 h", "a 3.5 h", "a 6 h",
+    ]
+
+
+def test_elegir_con_distinguidos_no_deja_fuera_a_ninguno():
+    lugares = [{"id": i, "horas_estimadas": i} for i in range(10)]
+    lugares.append({"id": 99, "horas_estimadas": 9, "gastronomia_destacada": True,
+                    "reconocimiento_gastronomico": "Michelin (1 estrella)"})
+    elegidos = ai_service._elegir_con_distinguidos(lugares, 5)
+    assert len(elegidos) == 6 and 99 in [l["id"] for l in elegidos]
+
+
+def _estrella(nombre, horas, prestigio_txt="Michelin (1 estrella)"):
+    return {"nombre": nombre, "horas_estimadas": horas, "gastronomia_destacada": True,
+            "reconocimiento_gastronomico": prestigio_txt, "distancia_a_ruta_km": 5}
+
+
+def test_maximo_dos_estrellas_al_frente_y_ninguna_mas_en_la_primera_pagina():
+    lugares = [_estrella("E1", 4.0, "Michelin (2 estrellas)"), _estrella("E2", 2.0), _estrella("E3", 1.0), _estrella("E4", 0.6)]
+    lugares += [{"nombre": f"c{i}", "horas_estimadas": 0.7 + i * 0.4} for i in range(10)]
+    orden = ai_service._linea_de_tiempo(lugares)
+    primera = orden[:ai_service.TAMANO_PAGINA_SUGERENCIAS]
+    estrellas_primera = [l["nombre"] for l in primera if l.get("gastronomia_destacada")]
+    assert len(estrellas_primera) == 2                      # exclusividad: solo dos estrellas al frente
+    assert primera[0]["nombre"] == "E1"                     # la más distinguida (2 estrellas) primero
+    assert primera[1]["nombre"] == "E4"                     # a igual puntaje, la más cercana al inicio
+    # las otras dos estrellas siguen apareciendo (con su ★), pero después de la primera página
+    resto = [l["nombre"] for l in orden[ai_service.TAMANO_PAGINA_SUGERENCIAS:]]
+    assert "E2" in resto and "E3" in resto
+    # y el resto de la línea de tiempo sigue en orden de horas
+    horas = [l["horas_estimadas"] for l in orden[ai_service.TAMANO_PAGINA_SUGERENCIAS:]]
+    assert horas == sorted(horas)
+
+
+def test_con_una_sola_estrella_se_llenan_los_demas_lugares_por_hora():
+    lugares = [_estrella("E1", 3.0)] + [{"nombre": f"c{i}", "horas_estimadas": 1 + i} for i in range(8)]
+    primera = ai_service._linea_de_tiempo(lugares)[:ai_service.TAMANO_PAGINA_SUGERENCIAS]
+    assert [l["nombre"] for l in primera] == ["E1", "c0", "c1", "c2", "c3"]

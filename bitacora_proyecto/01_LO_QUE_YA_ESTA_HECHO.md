@@ -434,9 +434,66 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Nota técnica: la columna `fuente` de `destinos` solo acepta `curada` o
   `ia_generada` (restricción de la base); los lugares nuevos quedaron `curada`.
 
+## Prioridad a los lugares distinguidos (estrella / Michelin / UNESCO)
+
+- **Regla de Angel:** una ciudad o pueblo con reconocimiento gastronómico
+  (estrella ★) tiene preferencia en las recomendaciones **siempre que la ruta
+  pase cerca** (a **40 km o menos** de desvío, `RADIO_PRIORIDAD_KM`). Salen en la
+  **primera página** (las primeras 4 sugerencias) y, de ser posible, en el
+  primer lugar, tanto en "Todo el camino" como dentro de un tramo. Aplica igual
+  en automático que en un tramo de "Comer", y también a "Planear con IA"
+  (`asignar_paradas_a_objetivos`).
+- **Cómo se ordena:** `ai_service.prestigio()` da puntos por reconocimiento
+  (estrella Michelin > UNESCO / 50 Best > Bib Gourmand; 2 estrellas suman más);
+  `prioridad()` lo aplica solo si el lugar está a ≤ 40 km de la carretera;
+  `_distinguidos_primero()` los sube al frente (los más distinguidos primero; a
+  igual puntaje, el más cercano al inicio del viaje). Cada sugerencia trae ahora
+  `distancia_a_ruta_km`.
+- **Por qué el límite de 40 km:** las sugerencias aceptan lugares hasta 150 km de
+  la ruta; sin este límite, en León → Monterrey Guadalajara (145 km de la
+  carretera) saltaba al primer lugar solo por tener estrella. Más allá de 40 km
+  el lugar sigue pudiendo aparecer, pero sin prioridad (conserva su ★).
+- Ejemplos verificados: CDMX → Oaxaca (Atlixco y Puebla primero), Mérida → Cancún
+  (Playa del Carmen y Puerto Morelos primero; Tulum, a 48 km, sin prioridad),
+  León → Monterrey (Guadalajara ya no va primero).
+- 4 tests nuevos (rutas y prioridad).
+
+## Sugerencias como línea de tiempo (5 visibles, "Ver más" y máximo 2 estrellas)
+
+- **Pedido de Angel:** que las recomendaciones no salgan "desfasadas" (una a 6 h,
+  luego a 1 h, luego a 4 h) sino como una **línea de tiempo del viaje**, para ver
+  rápido qué hay disponible en las primeras horas.
+- **Orden (`ai_service._linea_de_tiempo`):** (1) al frente los lugares distinguidos
+  (★) cercanos a la ruta, sin importar la hora, **máximo 2**
+  (`MAX_DISTINGUIDOS_AL_FRENTE`) para que ninguna ruta se llene de puras
+  estrellas; (2) después todo lo demás en orden de camino (a 1 h, luego a 2 h,
+  luego a 3 h y media…). Las estrellas que sobran conservan su ★ pero entran a la
+  línea de tiempo por su hora y **nunca dentro de la primera vista**. Aplica en
+  "Todo el camino" y dentro de un tramo, y valdrá igual para restaurantes.
+  `_elegir_con_distinguidos` asegura que ningún distinguido cercano se pierda.
+- **5 visibles, no 4:** se ven 5 tarjetas en una fila (5 columnas en pantallas de
+  más de ~980 px; 3, 2 o 1 en pantallas más chicas), más compactas que antes
+  (`TAMANO_PAGINA_SUGERENCIAS` en `ai_service.py` y `MOSTRAR_SUGERENCIAS` en
+  `main.js`, deben coincidir). Se piden 20 por lote (`TAMANO_LOTE`), repartidos a
+  lo largo de la ruta y ordenados por hora.
+- **"Ver más ▸" en vez de "ver más recomendaciones":** botón centrado con una
+  flechita; al tocarlo se **despliegan todas las demás** (mismas tarjetas, mismo
+  diseño, en filas de 5, ordenadas por hora del viaje) y se recorren con el
+  scroll de la página. El botón pasa a "Ver menos" (flecha girada) y las vuelve a
+  plegar, dejando solo las primeras 5. Agregar o descartar una tarjeta la quita de
+  la lista y la vuelve a dibujar (si quedan pocas, trae otro lote).
+- **Etiqueta** sobre las tarjetas: "★ 2 destacados cerca de tu ruta · de 54 min a
+  1 h 18 min del inicio" (cambia al desplegar).
+- **Hallazgo:** en CDMX → Oaxaca casi todos los candidatos caen en la primera mitad
+  del viaje y entre las 3 h y la llegada solo hay uno (Tehuacán): la base tiene
+  pocos lugares a lo largo de esa carretera. Se resuelve agregando más lugares
+  (ver plan 04).
+- Tests nuevos: orden por horas, máximo 2 estrellas en la primera vista, que
+  ninguna se pierda, y línea de tiempo por la API.
+
 ## Calidad / pruebas
 
-- 100 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 114 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el

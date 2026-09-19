@@ -22,11 +22,16 @@
       <div class="tramos-control__opciones tramos-control__opciones--largas" data-tramo-proposito-opciones></div>
     </div>
 
+    <p class="linea-tiempo" data-linea-tiempo hidden></p>
+
     <div class="cards-grid" data-sugerencias>
       <p class="empty-state">Llena el formulario y calcula tu ruta para ver sugerencias de paradas.</p>
     </div>
 
-    <button type="button" class="btn btn--ghost btn--ver-mas" data-ver-mas hidden>Ver más recomendaciones</button>
+    <button type="button" class="btn btn--ghost btn--ver-mas" data-ver-mas aria-expanded="false" hidden>
+      <span data-ver-mas-texto>Ver más</span>
+      <span class="btn--ver-mas__flecha" aria-hidden="true">▸</span>
+    </button>
   </div>
 </section>
 
