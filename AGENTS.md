@@ -7,8 +7,9 @@ cualquier IA que toque este repo, sin importar cuál.
 ## Leer primero, siempre
 
 Antes de proponer un plan, escribir código, o responder cualquier
-pregunta sobre el estado del proyecto, lee los 3 archivos de
-[`bitacora_proyecto/`](bitacora_proyecto/):
+pregunta sobre el estado del proyecto, lee los archivos de
+[`bitacora_proyecto/`](bitacora_proyecto/) (los 3 primeros siempre; el 4.º si
+vas a tocar etiquetas, destinos, restaurantes u hoteles):
 
 1. **`bitacora_proyecto/01_LO_QUE_YA_ESTA_HECHO.md`** — qué ya existe y
    funciona. No reimplementes algo que ya está hecho.
@@ -19,6 +20,12 @@ pregunta sobre el estado del proyecto, lee los 3 archivos de
    decisiones que no son obvias leyendo el código. Si estás por deshacer
    o contradecir algo documentado aquí, dile al usuario explícitamente
    qué decisión estás cambiando y por qué, no lo hagas en silencio.
+
+4. **`bitacora_proyecto/04_PLAN_RESTAURANTES_Y_HOTELES.md`** — el plan (aún sin
+   implementar) para re-etiquetar la base de destinos y agregar restaurantes y
+   hoteles. Si vas a tocar `destinos`, sus etiquetas, o cómo se recomienda
+   comer/dormir, síguelo o dile al usuario qué cambia y por qué. Si lo
+   implementas por fases, actualiza su checklist.
 
 Esto evita que dos IAs trabajando en paralelo (Claude y Codex) se
 contradigan, dupliquen trabajo, o reintroduzcan un bug que ya se arregló

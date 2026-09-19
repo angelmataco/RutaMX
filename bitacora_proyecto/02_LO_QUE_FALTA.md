@@ -9,11 +9,18 @@ la regla completa en `AGENTS.md`.
 
 ## Por planear / decidir con Angel (pedido explícito)
 
-- **Tramos: pendientes menores.** La base solo tiene ciudades, pueblos y
-  sitios turísticos (no restaurantes ni hoteles): "comida" y "hospedaje" son
-  lugares con esa etiqueta o una ciudad grande donde dormir. Si se quiere
-  recomendar restaurantes/hoteles concretos hace falta otra fuente de datos.
-  El desayuno no se sugiere (se supone que se desayuna antes de salir).
+- **Re-etiquetar la base y agregar restaurantes y hoteles (siguiente paso
+  grande, pedido de Angel, sin pagar nada).** Plan completo en
+  [`04_PLAN_RESTAURANTES_Y_HOTELES.md`](04_PLAN_RESTAURANTES_Y_HOTELES.md).
+  Orden acordado: (1) revisar las etiquetas de los 369 destinos con criterios
+  comprobables y un reporte que Angel revisa antes de cambiar nada; (2) crear
+  la tabla `establecimientos` (restaurantes y hoteles buenos, con cupos según
+  el tamaño del lugar, más algunos en carretera con menos prioridad); (3)
+  adaptar TODA la app y la IA de "Planear con IA" para que sigan fluyendo igual
+  con las tablas nuevas; (4) nueva forma de recomendar (restaurantes primero,
+  luego pueblos/ciudades con muy buena comida, marcados claramente). Decisión
+  abierta principal: cómo definir "bueno" sin pagar (las calificaciones de
+  Tripadvisor/Google no se pueden guardar ni son gratis).
 
 - **Tiempo de la app vs Google Maps.** León → Cabo San Lucas: la app dice
   ~50 h y Google Maps ~44 h. Causa probable: OSRM (servidor demo) usa

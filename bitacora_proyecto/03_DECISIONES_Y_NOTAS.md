@@ -95,6 +95,19 @@ recomendación) hay que reflejarlo en los prompts de `llm_provider.py` **y**
 hacerlas cumplir en el servidor (`preparar_objetivos_ia`), porque el modelo
 puede equivocarse. Ver regla en `AGENTS.md`.
 
+## Restaurantes y hoteles: por qué primero se re-etiqueta y por qué no se guardan calificaciones
+
+Angel no quiere pagar nada y quiere lugares buenos, no al azar. Se decidió
+(2026-09-19): primero revisar las etiquetas de la base actual y después crear
+las tablas de restaurantes y hoteles (el análisis de restaurantes sirve a las
+dos cosas). Hallazgos que condicionan todo (detalle en
+`04_PLAN_RESTAURANTES_Y_HOTELES.md`): las calificaciones no son gratis ni se
+pueden guardar (Tripadvisor solo permite guardar el `location_id`); y
+OpenStreetMap está mapeado de forma desigual (León 51 restaurantes vs Oaxaca
+369), así que **contar restaurantes no mide la gastronomía**: por eso la
+etiqueta "comida" se apoya en reconocimientos públicos (UNESCO, Michelin) y en
+la decisión del equipo, no en el conteo.
+
 ## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al

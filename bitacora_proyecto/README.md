@@ -19,11 +19,16 @@ lectura obligatoria antes de cualquier cambio.
 - **`03_DECISIONES_Y_NOTAS.md`** — el "por qué" detrás de decisiones que no
   son obvias con solo ver el código (por qué se cambió de X a Y, bugs
   raros que ya se resolvieron, cosas que probamos y no funcionaron).
+- **`04_PLAN_RESTAURANTES_Y_HOTELES.md`** — el plan detallado (todavía sin
+  implementar) para re-etiquetar la base de destinos y agregar restaurantes y
+  hoteles con calidad, sin pagar nada, y que toda la app y la IA sigan
+  fluyendo igual.
 
 ## Regla para cualquier IA (Claude, Codex, o la que sea)
 
-1. **Antes de proponer o hacer cualquier cambio**, leer los 3 archivos de
-   esta carpeta para tener el contexto completo del proyecto.
+1. **Antes de proponer o hacer cualquier cambio**, leer los archivos de
+   esta carpeta (01, 02 y 03 siempre; el 04 si tocas destinos, etiquetas,
+   restaurantes u hoteles) para tener el contexto completo del proyecto.
 2. **Después de hacer un cambio real** (funcionalidad nueva, bug
    arreglado, decisión de arquitectura, o incluso una idea nueva que
    Angel o Roberto mencionen aunque no se implemente todavía), actualizar
