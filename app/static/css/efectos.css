@@ -444,6 +444,8 @@
 /* En pantallas angostas el menú pasa a su propia fila, centrado, para que el navbar no se desborde. */
 @media (max-width: 640px) {
   .navbar__inner {
+    display: flex;
+    justify-content: space-between;
     flex-wrap: wrap;
     row-gap: 12px;
   }
@@ -1019,7 +1021,7 @@
    Las variables --mx --my --xp --spot-on las escribe efectos/spotlight.js.
    La lista de superficies debe coincidir con SUPERFICIES en spotlight.js.
    ========================================================================== */
-:is(.card, .ruta-burbuja, .modal-auth, .modal-ajustes, .modal-rutas, .modal-ia) {
+:is(.card, .ruta-burbuja, .modal-auth, .modal-ajustes, .modal-rutas, .modal-ia, .navbar__menu) {
   --spot-color: color-mix(in srgb, var(--color-terracota) calc((1 - var(--xp, 0.5)) * 100%), var(--color-mostaza));
   --spot-radio: 220px;
   --spot-brillo: 16%; /* fuerza del resplandor interior */

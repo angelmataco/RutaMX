@@ -1,5 +1,6 @@
 {% from "partials/icons.html" import icono %}
-<header class="navbar">
+<div class="navbar-espacio" data-navbar-espacio>
+<header class="navbar" data-navbar>
   <div class="container navbar__inner">
     <a href="{{ url_for('main.index') }}" class="navbar__brand" aria-label="RutaMX, inicio">
       <img class="navbar__logo" src="{{ url_for('static', filename='img/logo-emblema.svg') }}" width="48" height="48" alt="" />
@@ -13,15 +14,27 @@
       <a href="#descubre">Descubre</a>
       <a href="#itinerario">Itinerario</a>
     </nav>
-    <div class="navbar__auth" data-auth-widget>
+    <div class="navbar__auth" data-auth-widget data-blobatar-dir="{{ url_for('static', filename='js/vendor/') }}">
       <button type="button" class="btn btn--ghost" data-abrir-login>Iniciar sesión</button>
       <div class="navbar__usuario" data-usuario-info hidden>
-        <span data-usuario-nombre></span>
-        <button type="button" class="btn btn--ghost" data-cerrar-sesion>Cerrar sesión</button>
+        <button type="button" class="navbar__avatar" data-avatar-btn aria-haspopup="true" aria-expanded="false" aria-controls="menu-usuario" aria-label="Mi cuenta">
+          <span data-avatar-img aria-hidden="true"></span>
+        </button>
+        <div class="navbar__menu" id="menu-usuario" data-menu-usuario hidden>
+          <div class="navbar__menu-cabecera">
+            <button type="button" class="navbar__menu-avatar" data-avatar-menu aria-label="Tu avatar: pícale"></button>
+            <div>
+              <p class="navbar__menu-nombre" data-usuario-nombre></p>
+              <p class="navbar__menu-nota">Sesión iniciada</p>
+            </div>
+          </div>
+          <button type="button" class="btn btn--ghost btn--block" data-cerrar-sesion>Cerrar sesión</button>
+        </div>
       </div>
     </div>
   </div>
 </header>
+</div>
 
 <dialog class="modal-auth" data-modal-auth>
   <form method="dialog" class="modal-auth__cerrar">

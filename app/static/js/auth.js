@@ -16,6 +16,10 @@ const RutaAuth = (() => {
     elementos.cerrarSesionBtn = document.querySelector("[data-cerrar-sesion]");
     elementos.usuarioInfo = document.querySelector("[data-usuario-info]");
     elementos.usuarioNombre = document.querySelector("[data-usuario-nombre]");
+    elementos.avatarBtn = document.querySelector("[data-avatar-btn]");
+    elementos.avatarImg = document.querySelector("[data-avatar-img]");
+    elementos.avatarMenu = document.querySelector("[data-avatar-menu]");
+    elementos.menuUsuario = document.querySelector("[data-menu-usuario]");
     elementos.vistaLogin = document.querySelector("[data-vista-login]");
     elementos.vistaRegistro = document.querySelector("[data-vista-registro]");
     elementos.formLogin = document.querySelector("[data-form-login]");
@@ -31,8 +35,25 @@ const RutaAuth = (() => {
     elementos.abrirLoginBtn.hidden = Boolean(usuarioActual);
     elementos.usuarioInfo.hidden = !usuarioActual;
     if (usuarioActual) {
-      elementos.usuarioNombre.textContent = `Hola, ${usuarioActual.nombre}`;
+      elementos.usuarioNombre.textContent = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+      pintarAvatar(`${usuarioActual.nombre} ${usuarioActual.apellido}`);
+    } else {
+      alternarMenu(false);
+      RutaAvatar.detener();
     }
+  }
+
+  // El avatar (Blobatar) vive en avatar.js.
+  function pintarAvatar(texto) {
+    RutaAvatar.pintar(texto, elementos.avatarImg, elementos.avatarMenu, elementos.widget.dataset.blobatarDir);
+  }
+
+  function alternarMenu(abrir) {
+    if (!elementos.menuUsuario) return;
+    const abierto = typeof abrir === "boolean" ? abrir : elementos.menuUsuario.hidden;
+    elementos.menuUsuario.hidden = !abierto;
+    elementos.avatarBtn.setAttribute("aria-expanded", String(abierto));
+    RutaAvatar.menu(abierto);
   }
 
   function mostrarVista(vista) {
@@ -119,6 +140,24 @@ const RutaAuth = (() => {
     if (elementos.abrirLoginBtn) {
       elementos.abrirLoginBtn.addEventListener("click", () => abrirModal("login"));
     }
+    if (elementos.avatarMenu) {
+      elementos.avatarMenu.addEventListener("click", () => RutaAvatar.pulsarMenu());
+    }
+    if (elementos.avatarBtn) {
+      elementos.avatarBtn.addEventListener("click", () => {
+        alternarMenu();
+        RutaAvatar.pulsarBarra();
+      });
+      document.addEventListener("click", (evento) => {
+        if (!elementos.usuarioInfo.contains(evento.target)) alternarMenu(false);
+      });
+      document.addEventListener("keydown", (evento) => {
+        if (evento.key === "Escape" && !elementos.menuUsuario.hidden) {
+          alternarMenu(false);
+          elementos.avatarBtn.focus();
+        }
+      });
+    }
     if (elementos.cerrarSesionBtn) {
       elementos.cerrarSesionBtn.addEventListener("click", cerrarSesion);
     }
@@ -150,6 +189,7 @@ const RutaAuth = (() => {
 
   return {
     init,
+    cerrarMenu: () => alternarMenu(false),
     abrirModalLogin: () => abrirModal("login"),
     abrirModalRegistro: () => abrirModal("registro"),
     obtenerUsuarioActual: () => usuarioActual,

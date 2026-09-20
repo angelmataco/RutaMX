@@ -42,6 +42,57 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   se abre solo en vez de fallar con un error confuso.
 - Probado en vivo: registro → guardar ruta → cerrar sesión (ya no
   aparece en el selector) → volver a iniciar sesión (reaparece).
+- **Avatar de sesión con Blobatar** (blobatar.dev, MIT): con sesión iniciada, el
+  botón "Iniciar sesión" del navbar se cambia por un avatar redondo; al picarlo se
+  despliega un menú con el avatar grande, nombre + apellido y "Cerrar sesión" (se cierra
+  con clic fuera o con Esc). El avatar sale de `nombre + apellido`, así que es siempre
+  el mismo para la misma cuenta y no se guarda nada en la base. Sin círculo alrededor, solo el monito. Siempre se mueve poquito
+  (respira, parpadea, mira de reojo). Con el mouse a menos de 220 px sus ojos lo siguen; al
+  picarle al del navbar se enoja (rosado-rojo, ceño fruncido) 1.4 s y, al terminar, se queda quieto
+  (animaciones en pausa) mientras la ventana de perfil esté abierta. Esa ventana tiene su propio
+  monito: sigue al mouse siempre (aunque esté lejos) con los ojos mucho más exagerados que el
+  del navbar (`--mo-track-travel`: 12px contra 6.5px), y se enoja con cada clic sobre él, uno a
+  la vez (si ya está enojado, el clic no hace nada). Al cerrar la ventana (clic fuera, Esc,
+  clic en el avatar o Cerrar sesión) el del navbar vuelve a su vida normal. Probado con 14
+  nombres distintos (siluetas, acentos y ñ): enojo, quietud, seguimiento y cierre.
+  Lógica en `app/static/js/avatar.js` (`RutaAvatar`). Archivos:
+  `app/static/js/vendor/` (`blobatar.js` = dist/internal.js de blobatar 2.7.0,
+  `blobatar-gaze.js` = gaze.js, `blobatar-expresiones.js` = expression.js; sin dependencias),
+  `app/static/css/blobatar-motion.css` y `blobatar-gaze.css` (enlazados en `base.html`), `auth.js` (`pintarAvatar`, `alternarMenu`; lo carga con `import()`
+  solo al haber sesión), `partials/navbar.html` y estilos `.navbar__avatar/.navbar__menu`
+  en `styles.css`. El paquete completo está guardado en
+  `iCloud/Universidad/Más/blobatar/` (con `LEEME.md`) para usarlo en otros proyectos.
+  Probado en vivo con una sesión simulada (no había cuentas reales en la base).
+
+## Navbar fijo que se encoge y tope suave entre secciones
+
+- **Navbar fijo** (`position: fixed`, `navbar.js` + bloque final de `styles.css`): al bajar más de
+  48 px se encoge a ~53 px (51 en celular) con fondo translúcido y desenfoque; quedan el
+  logo, "RutaMX" y los botones de navegación (con su misma animación gooey y su sección activa),
+  repartidos en tercios de la pantalla (la marca centrada en el primer tercio y los botones en el
+  segundo, simétricos respecto al centro); el avatar se oculta y, si la ventana de perfil estaba abierta, se cierra. En celular no cabe el nombre
+  junto a los botones: quedan el logo y los botones juntos, centrados, en una fila. Al subir de 16 px vuelve a su tamaño completo.
+  Un espaciador (`.navbar-espacio`) conserva la altura completa en el flujo, así el contenido
+  no salta al encogerse. Queda por encima del mapa, la píldora y el grid reveal; las ventanas
+  `<dialog>` lo tapan como al resto de la página. `scroll-padding-top` evita que los enlaces del
+  navbar dejen el título de la sección tapado.
+- **Tope suave entre secciones** (`tope.js` + `.section` en `styles.css`): al dejar de deslizar a
+  menos de ~70 px (8 % de la altura de la ventana) del inicio de una sección, o de arriba de todo,
+  la página se acomoda sola con un desplazamiento corto. Lejos de esos puntos el scroll es libre
+  (también dentro de secciones altas). Cada sección llena al menos la pantalla bajo el navbar y
+  centra su contenido, así en pantallas altas ya no asoma el final de la sección anterior sobre
+  el itinerario.
+- **Hero más compacto y formulario a la vista:** se quitó el texto "Las distancias, tiempos y
+  recomendaciones son estimaciones demostrativas…" de la portada y el párrafo de arriba quedó en
+  dos líneas. `tope.js` tiene además un punto de tope en el recuadro del formulario ("Planea en
+  minutos"): al deslizar cerca de él, la página lo deja completo bajo el navbar, sin textos del
+  hero encima (con 768 px de alto caben sus 694 px). Sin ruta calculada, el hero recibe espacio
+  extra abajo (`body:has([data-resultados][hidden]) .hero` en `styles.css`) para que en pantallas
+  altas haya scroll suficiente para subirlo hasta el navbar.
+- Probado en vivo (escritorio 1024x768 y 1280x1000, celular 375): encogido/expandido, centrado
+  exacto (mismos px a cada lado), sin saltos de contenido, sesión y menú de perfil, ventanas
+  flotantes encima, mapa por debajo, enlaces de sección, y el tope con rueda (una muesca desde
+  arriba queda libre, cerca de "Ruta" se acomoda, una muesca más allá queda libre).
 
 ## Destinos nuevos generados con IA (multi-proveedor)
 

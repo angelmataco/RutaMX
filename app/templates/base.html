@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/efectos.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blobatar-motion.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/blobatar-gaze.css') }}" />
 </head>
 <body>
   {% include "partials/iconos_sprite.html" %}
@@ -30,6 +32,9 @@
   <script src="{{ url_for('static', filename='js/map.js') }}"></script>
   <script src="{{ url_for('static', filename='js/form.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bubble_picker.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/tope.js') }}"></script>
   <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
   <script src="{{ url_for('static', filename='js/efectos/secciones.js') }}"></script>
   <script src="{{ url_for('static', filename='js/efectos/contador.js') }}"></script>

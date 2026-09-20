@@ -80,6 +80,8 @@ abiertos dentro de features que ya están terminadas y documentadas en
 real por hacer, no porque la feature esté incompleta.
 
 **De cuentas de usuario:**
+- El test `test_registrar_usuario_duplicado_por_acentos_y_mayusculas` usa el nombre "Ángel
+  Mata" y falla porque esa cuenta real ya existe; hay que cambiarlo a un nombre ficticio.
 - No hay "recuperar PIN" (sin correo no hay a dónde mandarlo) — si
   alguien lo olvida, se resetea a mano desde la base. Aceptado a
   propósito para el alcance escolar.

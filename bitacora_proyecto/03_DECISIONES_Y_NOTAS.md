@@ -444,3 +444,113 @@ verificó con `elementFromPoint` sobre la estrella y la nota.
   aplicar el fix.
 - Para cambios grandes o con varios pasos, planear primero y confirmar
   antes de tocar código.
+
+## Botón "Iniciar sesión" no se ocultaba con sesión iniciada
+
+`renderNavbar()` (auth.js) pone `hidden` al botón, pero `.btn` define
+`display: inline-flex` y le gana al atributo `hidden` del navegador; el botón
+seguía visible junto al nombre del usuario. Se arregló con
+`.navbar__auth [hidden] { display: none; }` en `styles.css`. Si otro elemento
+con clase `.btn` debe ocultarse con `hidden`, hay que cuidar lo mismo.
+
+## Avatar del usuario: Blobatar y por qué un solo archivo copiado
+
+El proyecto no usa npm ni bundler, así que en vez de instalar el paquete se
+copió solo `dist/internal.js` (módulo ES autocontenido) a `app/static/js/vendor/`
+y `motion.css` a `static/css/blobatar-motion.css`. Se usa `internal` (`_parts`) porque
+el paquete no ofrece una función animada para JS puro; es la API de sus adaptadores y
+puede cambiar en una versión mayor. Con `animate: "hover"` solo se mueve al pasar el
+cursor por la silueta, así que `styles.css` fuerza `--mo-amp: 1` al hacer hover en todo el
+botón del avatar. El navbar creció de 68 a 77 px de alto por el avatar de 56 px.
+Si se cambia de versión mayor de Blobatar, todos los avatares cambian (el
+paquete lo documenta): mantener 2.x.
+
+## Navbar simétrico: grid de 3 columnas
+
+`.navbar__inner` era `flex` con `space-between`: los enlaces quedaban en el hueco entre la
+marca y el botón/avatar, así que se corrían al cambiar el ancho de este último (botón
+"Iniciar sesión" de ~120 px vs avatar de 64 px). Ahora es `grid-template-columns: 1fr auto 1fr`
+(marca a la izquierda, enlaces al centro exacto, sesión a la derecha). En ≤640 px vuelve a
+`flex` con los enlaces en su propia fila (regla en `efectos.css`). El avatar lleva
+`margin-right: -8px` para que la silueta, no el cuadro vacío del SVG, quede alineada con el
+borde derecho de la página.
+
+## Avatar: cómo se logra que siga el mouse y se enoje
+
+- Seguir el mouse es `gaze()` (blobatar/gaze) + `--mo-track-travel: 6.5px` en `.mo-eyes`
+  (`styles.css`); sin esa variable los ojos no se mueven aunque el driver corra. `gaze` por sí
+  solo sigue al cursor en toda la página: "cerca" lo decide `avatar.js` (distancia menor a 220 px
+  al centro del avatar) con `lookAt("pointer")` / `lookAt(null)`. El avatar del menú está oculto
+  al crearse, por eso se llama `remeasure()` al abrir el menú. Con el menú abierto solo el del
+  menú sigue al mouse y se enoja (`avatar.js`: `evaluar()` elige quién; `enojar()` va al visible);
+  el del navbar se pausa por CSS (`.navbar__avatar[aria-expanded="true"]` en `styles.css`).
+  En `enojar()` se fuerza un reflow antes de aplicar la pose: el del menú acaba de salir de
+  `display: none` y sin estilo calculado no hace la transición. 6.5 es marcado (los ojos cruzan
+  la silueta, que Blobatar permite); lo sutil es 1.5 a 4.
+- Enojo: expresión `mad` de blobatar. Las expresiones no cambian el SVG, solo variables CSS
+  y la clase `mo-expr`, así que se aplican sobre el mismo DOM y la transición es de CSS. Al
+  volver a lo normal hay que quitar (`removeProperty`) las variables de la pose, no ponerlas en 0.
+- `internal.js` es API de los adaptadores de Blobatar (puede cambiar en una versión mayor);
+  mantener 2.x. Con `prefers-reduced-motion` o sin mouse fino el seguimiento no corre (lo
+  decide el paquete).
+
+## Bug: ojos como líneas finas en el monito de la ventana de perfil
+
+`gaze(svg)` mide la forma de la cara (`getBBox`) al crearse. El monito de la ventana se
+creaba con la ventana en `display: none`: midió cero, quedó con un radio degenerado y los ojos
+salían aplastados (`scaleX` 0.29) y casi sin moverse. `remeasure()` no lo arregla, porque solo
+repite la medición si no hay marcas y aquí sí las había (malas). Solución en `avatar.js`: el
+`gaze` del monito de la ventana se crea al abrirla (ya visible) y se destruye al cerrarla.
+Cualquier avatar de Blobatar con gaze debe crearse con el elemento visible.
+
+Además: el enojo del navbar y el de la ventana son independientes (`enojar(svg)` guarda un
+temporizador por svg). El del navbar se pausa con la clase `.mo-quieto` solo cuando su enojo
+termina y la ventana sigue abierta; así no se corta a la mitad.
+
+## Tests que tocan la base real
+
+`tests/test_auth_service.py::test_registrar_usuario_duplicado_por_acentos_y_mayusculas`
+registra "Ángel Mata", que ahora choca con la cuenta real "Angel Mata" (mismo nombre
+normalizado) y falla; el fallo es del test, no de la app. Los tests corren contra Supabase:
+con el servidor de desarrollo abierto a la vez, la suite completa puede dar
+`EMAXCONNSESSION` (límite de 15 conexiones) en 1 o 2 tests; repetidos solos pasan.
+
+## Navbar fijo: cómo se evita el salto de contenido y cómo se centra la marca
+
+- Fixed + espaciador, no sticky: con `sticky` el navbar cambia de altura en el flujo y todo lo de
+  abajo se mueve al encogerse (y el navegador compensa el scroll, con parpadeo). Con `fixed` el
+  espaciador `.navbar-espacio` guarda la altura expandida (la mide `navbar.js` con las
+  transiciones apagadas, si no mediría un tamaño intermedio; se re-mide al cambiar el tamaño de la
+  ventana y al cargar las fuentes). Histéresis 48/16 px para que no parpadee en el límite.
+- En compacto (escritorio) el centro de la marca queda en 1/3 del ancho de la pantalla y el de los
+  botones en 2/3; en celular (<= 640 px) quedan juntos y centrados, porque no caben en tercios. Cuánto se
+  desplaza cada uno (`--marca-dx` y `--links-dx`) lo calcula `navbar.js` en `medir()`: mide dónde
+  caen "naturalmente" en compacto (con desplazamiento 0 y transiciones apagadas) y los mueve
+  desde ahí, por eso sirve igual con la cuadrícula de escritorio que con el flex de celular. Se
+  recalcula al cambiar el tamaño de la ventana y al cargar las fuentes. El lema sale del flujo
+  (`position: absolute`) para que la marca mida solo logo + nombre; por lo mismo `.navbar__auth`
+  también sale del flujo en compacto (si no, el avatar oculto mantiene la altura). El hueco
+  en celular es `SEPARACION_MOVIL_PX` (36 px) al inicio de `navbar.js`; en escritorio no hay
+  constante: sale de los tercios. Se probó
+  antes un centrado solo con CSS (`cqw`), pero no alcanza cuando hay que centrar el conjunto
+  marca + botones, porque el ancho de los botones no se puede leer desde CSS.
+- Si se cambia el alto del navbar compacto, hay que actualizar `--tope-superior`
+  (54px, en `styles.css`): lo usan `scroll-padding-top` y la altura mínima de las secciones.
+
+## Recuadro del formulario: por qué el hero necesita espacio abajo
+
+Antes de calcular una ruta la portada es toda la página. En una pantalla alta (1000 px) el
+scroll máximo era 140 px, menos de los ~284 que hacen falta para subir el recuadro del formulario
+hasta el navbar, así que el tope no podía dejarlo solo. Se soluciona con `padding-bottom` extra
+del hero solo mientras `[data-resultados]` está oculto (`:has()`); la constante 760 px del CSS
+es aproximada (recuadro ~694 + navbar 54 + holgura 20). Si cambia el alto del formulario,
+conviene ajustarla. El texto de "estimaciones demostrativas" se quitó de la portada por decisión
+de Angel; el aviso de "Datos de demostración" sigue en la sección Descubre.
+
+## Tope entre secciones: por qué JS y no `scroll-snap` de CSS
+
+Se probó `scroll-snap-type: y proximity`: la zona de atracción la decide el navegador y es muy
+grande; un giro de rueda de 100 px desde el inicio de una sección regresaba solo al mismo
+punto, y en secciones altas no dejaba pararse a leer. `tope.js` reemplaza eso con un imán corto
+(`FRACCION`/`MAX_PX`/`MIN_PX` al inicio del archivo). No actúa con `prefers-reduced-motion`, con
+una ventana abierta ni mientras se mantiene un clic o toque.

@@ -112,3 +112,9 @@ estructura nueva, no eliminarlo.
 
 Historial de cómo se hicieron y por qué así: ver la sección "Efectos visuales" en
 `01_LO_QUE_YA_ESTA_HECHO.md` y `03_DECISIONES_Y_NOTAS.md`.
+
+## Nota: menú del avatar en la lista de la luz
+
+`.navbar__menu` (menú desplegable del avatar) se sumó a `SUPERFICIES` en
+`spotlight.js` y al bloque `:is(...)` de `efectos.css`; solo lleva el resplandor
+interior (sin aro).

@@ -10,7 +10,7 @@ window.RutaEfectos = window.RutaEfectos || {};
 
 RutaEfectos.spotlight = (() => {
   // Debe coincidir con la lista de "Luz que sigue al cursor" en efectos.css.
-  const SUPERFICIES = ".card, .ruta-burbuja, .modal-auth, .modal-ajustes, .modal-rutas, .modal-ia";
+  const SUPERFICIES = ".card, .ruta-burbuja, .modal-auth, .modal-ajustes, .modal-rutas, .modal-ia, .navbar__menu";
 
   let ultimo = null; // último PointerEvent, para pintar una vez por cuadro
   let pendiente = false;
