@@ -5,7 +5,13 @@
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
 
-## Selector de hora tipo rueda: por qué construirlo a mano en vez de usar `<input type="time">`
+## (Histórico) Selector de hora tipo rueda — REEMPLAZADO por el duration-picker gooey
+
+> Ya no existe: Angel pidió cambiarlo por el efecto `duration-picker` de rare-ui ("se ve más
+> pro"). La primera versión se escribía a mano y no le gustó ("no supe cómo poner una hora"),
+> así que quedó **híbrido**: el efecto gooey del duration-picker + una ruedita para deslizar la
+> hora y los minutos. La regla de "nada con teclado" se mantiene. Lo de abajo es el contexto
+> de la decisión anterior.
 
 Angel pidió explícitamente que ningún campo (hora de salida, presupuesto,
 horas máximas) obligara a escribir con teclado. El `<input type="time">`
@@ -337,6 +343,54 @@ entienda el proyecto antes de tocar código, sin importar quién la esté
 usando. Por eso se agregaron `AGENTS.md` y `CLAUDE.md` en la raíz del
 proyecto, que le indican a cualquier agente que lea esta carpeta primero
 y la mantenga actualizada después de cada cambio.
+
+## Efectos visuales: por qué reescritos a mano y no instalados
+
+- Los componentes de `efectos visuales rare-ui` son React + Tailwind + `motion`.
+  RutaMX no tiene React ni paso de compilación, y meterlos implicaría reestructurar
+  el frontend. Se **portó cada efecto a JS/CSS puro** (resortes con `requestAnimationFrame`,
+  transiciones CSS, canvas). Consecuencia: no hay librería `motion`.
+- Regla: los efectos **envuelven** el flujo, no lo cambian. Cada uno se engancha con una
+  llamada (`RutaEfectos.contador.set`, `.eliminar.montar`, `.orbe.montar`);
+  el PIN, el gooey y la píldora se auto-montan sobre HTML que ya existía.
+- Trampa del contador: al hacer `replaceChildren`, una columna que se saca y se vuelve a
+  poner pierde su transición en curso; por eso las columnas se reutilizan por su
+  distancia al final del número.
+- Trampa del botón de borrar: con `flex-direction: row-reverse` el primer hijo del DOM
+  queda a la derecha; el panel tiene `min-width: 0` para que no empuje el bote fuera.
+- **Gooey con hover, no con clic:** al hacer clic la página salta a otra sección y el navbar
+  (que no es fijo) sale de pantalla, así que la animación nunca se veía. Por eso se dispara al
+  pasar el cursor (`mouseenter`), y al salir vuelve a la sección real (`real` vs `activo`).
+- **Step-player eliminado** a pedido de Angel; no reintroducirlo.
+
+## Tramos automáticos y "Paradas sugeridas": por qué se igualaron en el frontend
+
+- Son dos cálculos distintos en el backend (distancia vs duración). En vez de tocar
+  `lapsos_de_la_ruta` (que también usan el chat de IA y los tests), el frontend pide
+  `tramos = paradas_estimadas` cuando está en automático. Si algún día se quiere una sola
+  fuente de verdad, la opción es hacer que `routes.py` use `ruta["paradas_estimadas"]` como
+  valor por defecto de `tramos`.
+- Trampa de CSS: animar `border-radius` desde `999px` a un valor chico parece retrasado, porque
+  el navegador recorta el radio a media altura y la esquina no cambia hasta que el número baja
+  de ese tope. Partir de un radio real (media altura) evita el "salto".
+
+## Recomendaciones: el filtro de intereses es principal y las 5 primeras van por franjas de horas
+
+- **Regla de Angel (2026-09-19):** lo marcado en "¿Qué buscas?" es el filtro principal y se respeta
+  por encima de todo (estrellas, propósito por hora, cercanía). Solo lo pisa un tramo que el usuario
+  personalizó a mano (comer / dormir / turismo). Implementado en `ai_service.coincide_intereses`.
+- **"Pueblos mágicos" es el `tipo`, no un interés guardado.** Ningún destino tiene ese valor en
+  `intereses` (solo naturaleza, playas, comida, descanso, cultura). Cualquier código nuevo que
+  compare intereses debe pasar por `_puntos_interes` / `coincide_intereses` (y `_coincide_proposito`).
+- **La regla vieja de "máximo 2 estrellas al frente" se abandonó:** ahora la estrella gana **dentro de
+  cada franja de horas**; en una ruta con estrellas en las 5 franjas pueden salir 5 estrellas y es a
+  propósito (pedido de Angel: "siempre prioridad a lo que tenga estrella").
+- **Por qué el frontend repone las recomendadas sin volver al servidor:** cada llamada a
+  `/api/sugerencias` recalcula la ruta con OSRM (segundos). Por eso el servidor manda 40 lugares con
+  `franja` y `rango_franja`, y `main.js` (`recomendadas()`) elige la mejor de cada franja entre los que
+  quedan. Si algún día se quiere una sola fuente de verdad, mover `recomendadas()` al backend.
+- Los estados de carga (cuadrícula del mapa, orbe) y "Ver más / Ver menos" usan animaciones en JS
+  puro; ningún cambio de hoy tocó el flujo de guardado, PDF, login ni gasto.
 
 ## Patrón de trabajo con Angel (para quien retome esto, incluido Roberto)
 

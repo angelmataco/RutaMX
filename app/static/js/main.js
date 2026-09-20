@@ -24,10 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Cuántas sugerencias se ven de entrada (igual que TAMANO_PAGINA_SUGERENCIAS en
   // ai_service.py) y cuántas se piden en cada lote. El resto se despliega con "Ver más".
   const MOSTRAR_SUGERENCIAS = 5;
-  const TAMANO_LOTE = 20;
+  const TAMANO_LOTE = 40; // margen de sobra para reponer recomendadas sin volver a pedir al servidor
 
   const elementos = {
     resultados: document.querySelector("[data-resultados]"),
+    cargandoRuta: document.querySelector("[data-cargando-ruta]"),
     mapa: document.querySelector("[data-map]"),
     stats: {
       distancia: document.querySelector('[data-stat="distancia"]'),
@@ -45,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
     tramosMas: document.querySelector("[data-tramos-mas]"),
     tramosMasNumero: document.querySelector("[data-tramos-mas-numero]"),
     tramosMasAplicar: document.querySelector("[data-tramos-mas-aplicar]"),
-    lineaTiempo: document.querySelector("[data-linea-tiempo]"),
     tramoProposito: document.querySelector("[data-tramo-proposito]"),
     tramoPropositoTitulo: document.querySelector("[data-tramo-proposito-titulo]"),
     tramoPropositoOpciones: document.querySelector("[data-tramo-proposito-opciones]"),
@@ -150,7 +150,57 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(valor);
   }
 
+  // Al pulsar "Planea mi ruta" la página se abre y baja al instante, sin esperar al
+  // servidor: mientras llegan los datos se ve un orbe de "calculando" y se puede seguir
+  // navegando. `idCalculo` descarta respuestas viejas si se vuelve a pulsar el botón.
+  let idCalculo = 0;
+  let orbeCalculando = null;
+  let gridMapa = null; // cuadrícula "grid reveal" sobre el mapa mientras se calcula
+
+  function empezarCarga() {
+    const yaHabiaResultados = !elementos.resultados.hidden;
+    elementos.resultados.hidden = false;
+    elementos.resultados.classList.add("is-cargando");
+    if (elementos.mapa) RutaMapa.invalidarTamano();
+    if (elementos.cargandoRuta) {
+      elementos.cargandoRuta.hidden = false;
+      if (orbeCalculando) orbeCalculando.destruir();
+      orbeCalculando = RutaEfectos.orbe.montar(elementos.cargandoRuta, { estado: "thinking", tamano: 120, etiqueta: "Calculando tu ruta…" });
+    }
+    if (elementos.mapa) {
+      if (gridMapa) gridMapa.quitar();
+      gridMapa = RutaEfectos.gridReveal.montar(elementos.mapa, { duracion: 4500, texto: "Trazando tu ruta…" });
+    }
+    elementos.sugerenciasContenedor.innerHTML = '<div class="cargando-orbe"></div>';
+    RutaEfectos.orbe.montar(elementos.sugerenciasContenedor.firstChild, { estado: "thinking", tamano: 120, etiqueta: "Buscando ideas para tu recorrido…" });
+    elementos.verMasBtn.hidden = true;
+    elementos.resultados.scrollIntoView({ behavior: "smooth" });
+    return yaHabiaResultados;
+  }
+
+  // `conExito`: llegaron los datos, así que la cuadrícula del mapa se disuelve en ola;
+  // si no, se quita de golpe.
+  function terminarCarga(conExito = false) {
+    elementos.resultados.classList.remove("is-cargando");
+    if (gridMapa) {
+      if (conExito) gridMapa.revelar();
+      else gridMapa.quitar();
+      gridMapa = null;
+    }
+    if (elementos.cargandoRuta) elementos.cargandoRuta.hidden = true;
+    if (orbeCalculando) {
+      orbeCalculando.destruir();
+      orbeCalculando = null;
+    }
+  }
+
   async function calcularRuta(valores) {
+    const miCalculo = ++idCalculo;
+    const yaHabiaResultados = empezarCarga();
+    const abortar = () => {
+      terminarCarga();
+      if (!yaHabiaResultados) elementos.resultados.hidden = true; // no había nada que mostrar todavía
+    };
     try {
       const respuesta = await fetch("/api/ruta", {
         method: "POST",
@@ -162,13 +212,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }),
       });
 
+      if (miCalculo !== idCalculo) return; // se pulsó de nuevo: manda la respuesta más reciente
       if (!respuesta.ok) {
         const error = await respuesta.json().catch(() => ({}));
+        abortar();
         alert(error.error || "No se pudo calcular la ruta. Revisa el origen y destino.");
         return;
       }
 
       const resumen = await respuesta.json();
+      if (miCalculo !== idCalculo) return;
       resumen.ajustes = RutaFormularios.obtenerAjustes(); // se guardan con la ruta
 
       const esMismoViaje =
@@ -185,13 +238,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       estado.ultimoOrigenDestino = { origen: valores.origen, destino: valores.destino };
 
-      elementos.resultados.hidden = false;
+      terminarCarga(true);
       if (elementos.mapa) RutaMapa.invalidarTamano();
 
       renderResumen(resumen);
       renderItinerarioBase(resumen);
-
-      elementos.resultados.scrollIntoView({ behavior: "smooth" });
 
       estado.lapsoActual = null; // un viaje nuevo empieza viendo todo el camino
       estado.tramosElegidos = null;
@@ -200,16 +251,20 @@ document.addEventListener("DOMContentLoaded", () => {
       await cargarSugerencias(valores);
     } catch (err) {
       console.error("Error calculando la ruta:", err);
-      alert("Ocurrió un error al calcular la ruta. Intenta de nuevo.");
+      if (miCalculo === idCalculo) {
+        abortar();
+        alert("Ocurrió un error al calcular la ruta. Intenta de nuevo.");
+      }
     }
   }
 
   function renderResumen(resumen) {
     const gasto = resumen.gasto;
-    elementos.stats.distancia.textContent = `${resumen.distancia_km} km`;
-    elementos.stats.tiempo.textContent = formatoDuracion(resumen.tiempo_h);
-    elementos.stats.costo.textContent = formatoMoneda(gasto ? gasto.total : resumen.costo_estimado);
-    elementos.stats.paradas.textContent = resumen.paradas_estimadas;
+    // Los números del resumen "ruedan" hasta su nuevo valor (efectos/contador.js).
+    RutaEfectos.contador.set(elementos.stats.distancia, `${resumen.distancia_km} km`);
+    RutaEfectos.contador.set(elementos.stats.tiempo, formatoDuracion(resumen.tiempo_h));
+    RutaEfectos.contador.set(elementos.stats.costo, formatoMoneda(gasto ? gasto.total : resumen.costo_estimado));
+    RutaEfectos.contador.set(elementos.stats.paradas, String(resumen.paradas_estimadas));
 
     if (!gasto) {
       elementos.gastoDesglose.hidden = true;
@@ -267,7 +322,10 @@ document.addEventListener("DOMContentLoaded", () => {
         limite: String(limite),
       });
       if (estado.lapsoActual !== null) query.set("lapso", String(estado.lapsoActual));
-      if (estado.tramosElegidos !== null) query.set("tramos", String(estado.tramosElegidos));
+      // En automático, los tramos son las "Paradas sugeridas" del resumen del viaje, para
+      // que ambos números coincidan. Si el usuario elige un número, manda el suyo.
+      const tramosAUsar = estado.tramosElegidos !== null ? estado.tramosElegidos : estado.resumen && estado.resumen.paradas_estimadas;
+      if (tramosAUsar) query.set("tramos", String(tramosAUsar));
       const personalizados = Object.entries(estado.propositos).map(([i, p]) => `${i}:${p}`);
       if (personalizados.length) query.set("propositos", personalizados.join(","));
       if (valores.horaSalida) query.set("hora_salida", valores.horaSalida);
@@ -292,7 +350,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // nuevo como sugerencia (evita agregarlas dos veces al refrescar
     // filtros sobre el mismo viaje).
     estado.sugerenciasVistosIds = new Set(estado.itinerario.map((parada) => parada.id));
-    elementos.sugerenciasContenedor.innerHTML = '<p class="empty-state">Buscando ideas para tu recorrido…</p>';
+    elementos.sugerenciasContenedor.innerHTML = '<div class="cargando-orbe"></div>';
+    RutaEfectos.orbe.montar(elementos.sugerenciasContenedor.firstChild, {
+      estado: "thinking",
+      tamano: 120,
+      etiqueta: "Buscando ideas para tu recorrido…",
+    });
     elementos.verMasBtn.hidden = true;
 
     // Se pide un lote de una vez; ya viene ordenado como línea de tiempo.
@@ -415,7 +478,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className = "chip" + (cuantos === estado.tramosElegidos ? " is-active" : "");
-      boton.textContent = cuantos === null ? "Automático" : String(cuantos);
+      // En automático se ve cuántos tramos salen (igual que "Paradas sugeridas" del resumen).
+      boton.textContent = cuantos === null ? (estado.lapsos.length ? `Automático · ${estado.lapsos.length}` : "Automático") : String(cuantos);
       if (cuantos === null) boton.classList.add("chip--automatico");
       boton.addEventListener("click", () => {
         estado.tramosMasAbierto = false;
@@ -456,9 +520,44 @@ document.addEventListener("DOMContentLoaded", () => {
     renderControlDeTramos();
   }
 
-  // Todas las sugerencias del lote se dibujan en orden de línea de tiempo; se ven
-  // las primeras MOSTRAR_SUGERENCIAS y el resto queda plegado hasta que el usuario
-  // toca "Ver todas" (y puede volver a ocultarlas).
+  // ---- Recomendadas (primera vista) y lista completa ("Ver más") ----
+  // El servidor manda todas las sugerencias en orden de hora y marca a cada una con su
+  // franja de horas del viaje (0-4) y su rango dentro de ella. La primera vista son
+  // MOSTRAR_SUGERENCIAS recomendadas: la mejor de cada franja (con prioridad a las de
+  // estrella), en orden de hora. "Ver más" muestra todas por hora; "Ver menos" vuelve a
+  // las recomendadas, ya sin las que se agregaron o descartaron (entran las siguientes
+  // mejores de su misma franja).
+  const porRango = (a, b) =>
+    (a.rango_franja ?? 99) - (b.rango_franja ?? 99) || (a.rango_global ?? 999) - (b.rango_global ?? 999);
+  const porHora = (a, b) => (a.horas_estimadas ?? 0) - (b.horas_estimadas ?? 0);
+
+  function recomendadas() {
+    const lista = estado.sugerenciasLista;
+    // Sin franjas (respaldo del servidor sin ruta real): las primeras de siempre.
+    if (!lista.some((l) => typeof l.franja === "number")) return lista.slice(0, MOSTRAR_SUGERENCIAS);
+
+    const porFranja = new Map();
+    lista.forEach((l) => {
+      const franja = typeof l.franja === "number" ? l.franja : 0;
+      if (!porFranja.has(franja)) porFranja.set(franja, []);
+      porFranja.get(franja).push(l);
+    });
+    const elegidas = [...porFranja.keys()]
+      .sort((a, b) => a - b)
+      .map((franja) => porFranja.get(franja).slice().sort(porRango)[0]);
+
+    // Si alguna franja se quedó sin lugares, se completa con los siguientes mejores del resto.
+    if (elegidas.length < MOSTRAR_SUGERENCIAS) {
+      const resto = lista.filter((l) => !elegidas.includes(l)).sort(porRango);
+      while (elegidas.length < MOSTRAR_SUGERENCIAS && resto.length) elegidas.push(resto.shift());
+    }
+    return elegidas.slice(0, MOSTRAR_SUGERENCIAS).sort(porHora);
+  }
+
+  function lugaresVisibles() {
+    return estado.sugerenciasExpandido ? estado.sugerenciasLista.slice().sort(porHora) : recomendadas();
+  }
+
   async function ampliarLista() {
     if (!estado.sugerenciasValores) return;
     const yaVistos = new Set([...estado.sugerenciasVistosIds, ...estado.sugerenciasLista.map((l) => l.id)]);
@@ -466,8 +565,35 @@ document.addEventListener("DOMContentLoaded", () => {
     estado.sugerenciasLista.push(...nuevoLote);
   }
 
-  function renderSugerencias() {
+  // Animación al reacomodar (Ver más / Ver menos / agregar o descartar): las tarjetas que ya
+  // estaban viajan hasta su nuevo lugar y las nuevas entran con un fundido.
+  function animarReacomodo(antes) {
+    if (!antes || RutaEfectos.reducirMovimiento()) return;
+    elementos.sugerenciasContenedor.querySelectorAll("[data-lugar-card]").forEach((card) => {
+      const previo = antes.get(card.dataset.lugarId);
+      const ahora = card.getBoundingClientRect();
+      if (previo) {
+        const dx = previo.left - ahora.left;
+        const dy = previo.top - ahora.top;
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        card.animate(
+          [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
+          { duration: 700, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        );
+      } else {
+        card.animate(
+          [{ opacity: 0, transform: "translateY(14px) scale(0.96)" }, { opacity: 1, transform: "none" }],
+          { duration: 500, easing: "cubic-bezier(0.22, 1, 0.36, 1)", delay: 120, fill: "backwards" }
+        );
+      }
+    });
+  }
+
+  function renderSugerencias(animar = false) {
     const contenedor = elementos.sugerenciasContenedor;
+    const antes = animar
+      ? new Map([...contenedor.querySelectorAll("[data-lugar-card]")].map((c) => [c.dataset.lugarId, c.getBoundingClientRect()]))
+      : null;
     contenedor.innerHTML = "";
     contenedor.classList.toggle("is-expandido", estado.sugerenciasExpandido);
 
@@ -477,40 +603,18 @@ document.addEventListener("DOMContentLoaded", () => {
           ? '<p class="empty-state">No encontramos sugerencias para estos intereses todavía.</p>'
           : `<p class="empty-state">${mensajeSinLugaresEnTramo()}</p>`;
       elementos.verMasBtn.hidden = true;
-      elementos.lineaTiempo.hidden = true;
       return;
     }
 
-    estado.sugerenciasLista.forEach((lugar, indice) => {
-      const card = agregarCardSugerencia(lugar);
-      card.classList.toggle("card--extra", indice >= MOSTRAR_SUGERENCIAS);
-    });
-    actualizarLineaDeTiempo();
+    lugaresVisibles().forEach((lugar) => agregarCardSugerencia(lugar));
+    actualizarBotonVerMas();
+    animarReacomodo(antes);
   }
 
-  // Las sugerencias van como línea de tiempo: primero los destacados (★) y luego
-  // todo en orden de camino. Esta etiqueta dice qué horas se están viendo y el
-  // botón despliega (o vuelve a plegar) el resto.
-  function actualizarLineaDeTiempo() {
-    const lista = estado.sugerenciasLista;
-    const visibles = estado.sugerenciasExpandido ? lista : lista.slice(0, MOSTRAR_SUGERENCIAS);
-    const destacados = visibles.filter((l) => l.gastronomia_destacada && (l.distancia_a_ruta_km ?? 0) <= 40);
-    const horas = (grupo) => grupo.filter((l) => !destacados.includes(l) && typeof l.horas_estimadas === "number").map((l) => l.horas_estimadas);
-    const enOrden = horas(visibles);
-
-    const partes = [];
-    if (destacados.length) partes.push(`★ ${destacados.length} ${destacados.length === 1 ? "destacado" : "destacados"} cerca de tu ruta`);
-    if (enOrden.length) {
-      const desde = Math.min(...enOrden);
-      const hasta = Math.max(...enOrden);
-      partes.push(desde === hasta ? `a ${formatoDuracion(hasta)} del inicio` : `de ${formatoDuracion(desde)} a ${formatoDuracion(hasta)} del inicio`);
-    }
-    elementos.lineaTiempo.textContent = partes.join(" · ");
-    elementos.lineaTiempo.hidden = !partes.length;
-
-    // "Ver más" (con flechita) despliega el resto; "Ver menos" lo vuelve a plegar.
-    const extras = lista.slice(MOSTRAR_SUGERENCIAS);
-    elementos.verMasBtn.hidden = extras.length === 0;
+  // "Ver más" (con flechita) muestra todas por hora; "Ver menos" vuelve a las recomendadas.
+  function actualizarBotonVerMas() {
+    const hayMas = estado.sugerenciasLista.length > recomendadas().length;
+    elementos.verMasBtn.hidden = !hayMas && !estado.sugerenciasExpandido;
     elementos.verMasBtn.setAttribute("aria-expanded", String(estado.sugerenciasExpandido));
     elementos.verMasBtn.classList.toggle("is-abierto", estado.sugerenciasExpandido);
     elementos.verMasBtn.querySelector("[data-ver-mas-texto]").textContent = estado.sugerenciasExpandido ? "Ver menos" : "Ver más";
@@ -535,6 +639,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return `Gastronomía recomendada por ${lista}`;
   }
 
+  const NOMBRES_DE_INTERES = {
+    naturaleza: "Naturaleza",
+    playas: "Playas",
+    comida: "Comida",
+    descanso: "Descanso",
+    cultura: "Cultura",
+    pueblos_magicos: "Pueblos mágicos",
+  };
+
   function agregarCardSugerencia(lugar) {
     const nodo = tplSugerencia.content.cloneNode(true);
     const card = nodo.querySelector("[data-lugar-card]");
@@ -544,11 +657,25 @@ document.addEventListener("DOMContentLoaded", () => {
     nodo.querySelector("[data-lugar-descripcion]").textContent = lugar.descripcion;
 
     if (typeof lugar.horas_estimadas === "number") {
-      const horasEl = nodo.querySelector("[data-lugar-horas]");
-      horasEl.textContent =
-        `≈${formatoDuracion(lugar.horas_estimadas)} de camino` + (lugar.hora_llegada ? ` · llegas ${lugar.hora_llegada}` : "");
-      horasEl.hidden = false;
+      nodo.querySelector("[data-lugar-camino]").textContent = `🚗 ≈${formatoDuracion(lugar.horas_estimadas)} de camino`;
+      if (lugar.hora_llegada) {
+        const llegada = nodo.querySelector("[data-lugar-llegada]");
+        llegada.textContent = `🕘 Llegas ${lugar.hora_llegada}`;
+        llegada.hidden = false;
+      }
+      nodo.querySelector("[data-lugar-horas]").hidden = false;
     }
+
+    // Los intereses del lugar (los del filtro "¿Qué buscas?" que cumple), para que la franja
+    // de abajo nunca quede vacía y se vea por qué se recomienda.
+    const contIntereses = nodo.querySelector("[data-lugar-intereses]");
+    (lugar.intereses || []).slice(0, 3).forEach((interes) => {
+      const chip = document.createElement("span");
+      chip.className = "card__interes";
+      chip.textContent = NOMBRES_DE_INTERES[interes] || interes;
+      contIntereses.appendChild(chip);
+    });
+    if (!contIntereses.children.length) contIntereses.hidden = true;
 
     if (lugar.gastronomia_destacada) {
       // Estrellita en la esquina + una línea que dice quién lo recomienda.
@@ -592,13 +719,12 @@ document.addEventListener("DOMContentLoaded", () => {
     estado.sugerenciasVistosIds.add(lugar.id);
     estado.sugerenciasLista = estado.sugerenciasLista.filter((l) => l.id !== lugar.id);
     if (estado.sugerenciasLista.length < MOSTRAR_SUGERENCIAS) await ampliarLista();
-    renderSugerencias();
+    renderSugerencias(true);
   }
 
   function alternarSugerencias() {
     estado.sugerenciasExpandido = !estado.sugerenciasExpandido;
-    elementos.sugerenciasContenedor.classList.toggle("is-expandido", estado.sugerenciasExpandido);
-    actualizarLineaDeTiempo();
+    renderSugerencias(true);
   }
 
   function agregarParada(lugar) {
@@ -646,7 +772,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (parada.gastronomia_destacada && parada.reconocimiento_gastronomico) nombreEl.title = parada.reconocimiento_gastronomico;
       nodo.querySelector("[data-mover-arriba]").addEventListener("click", () => moverParada(indice, -1));
       nodo.querySelector("[data-mover-abajo]").addEventListener("click", () => moverParada(indice, 1));
-      nodo.querySelector("[data-eliminar-parada]").addEventListener("click", () => eliminarParada(indice));
+      // Confirmación en el mismo botón (efectos/eliminar.js). Se borra por
+      // identidad, no por posición, por si otra parada se mueve mientras tanto.
+      RutaEfectos.eliminar.montar(nodo.querySelector("[data-eliminar-parada]"), () => {
+        const posicion = estado.itinerario.indexOf(parada);
+        if (posicion !== -1) eliminarParada(posicion);
+      });
       elementos.itinerarioLista.insertBefore(nodo, elementos.itemDestino);
     });
 
@@ -667,15 +798,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderResumenAventura() {
-    elementos.aventuraParadas.textContent = estado.itinerario.length;
+    RutaEfectos.contador.set(elementos.aventuraParadas, String(estado.itinerario.length));
 
     if (estado.resumen) {
-      elementos.aventuraDistancia.textContent = `${estado.resumen.distancia_km} km`;
+      RutaEfectos.contador.set(elementos.aventuraDistancia, `${estado.resumen.distancia_km} km`);
       elementos.aventuraTexto.textContent = estado.itinerario.length
         ? `Tu recorrido incluye ${estado.itinerario.length} parada${estado.itinerario.length === 1 ? "" : "s"} intermedia${estado.itinerario.length === 1 ? "" : "s"} y está listo para ajustarlas.`
         : "Agrega paradas desde \"Descubre en el camino\" para completar tu aventura.";
     } else {
-      elementos.aventuraDistancia.textContent = "—";
+      RutaEfectos.contador.set(elementos.aventuraDistancia, "—");
       elementos.aventuraTexto.textContent = "Calcula una ruta y agrega paradas para ver el resumen de tu aventura.";
     }
   }
@@ -925,8 +1056,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     RutaFormularios.actualizarBotonAjustes();
     const hora = ajustes.hora_salida || "";
-    form.querySelector("[data-time-hidden]").value = hora;
-    form.querySelector("[data-time-display]").textContent = hora || "Elegir hora";
+    RutaEfectos.horaSalida.poner(hora); // selector de hora (efectos/duracion.js)
   }
 
   // Restaura una ruta guardada: rellena el formulario y muestra mapa,

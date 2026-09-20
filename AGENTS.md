@@ -27,6 +27,12 @@ vas a tocar etiquetas, destinos, restaurantes u hoteles):
    comer/dormir, síguelo o dile al usuario qué cambia y por qué. Si lo
    implementas por fases, actualiza su checklist.
 
+5. **`bitacora_proyecto/05_EFECTOS_VISUALES_PROTEGIDOS.md`** — los 8 efectos
+   visuales de rare-ui que **nunca se quitan ni se reemplazan**. Léelo siempre
+   que vayas a tocar HTML, CSS o JS del frontend, y en especial si vas a
+   rediseñar la interfaz (por ejemplo con una skill de diseño): se puede
+   cambiar cómo se ven, pero los efectos y sus ganchos se conservan.
+
 Esto evita que dos IAs trabajando en paralelo (Claude y Codex) se
 contradigan, dupliquen trabajo, o reintroduzcan un bug que ya se arregló
 por una razón específica documentada ahí.

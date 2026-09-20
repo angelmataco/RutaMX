@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-09-19
+Última actualización: 2026-09-19 (noche)
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -8,19 +8,6 @@ se borra de aquí — nunca queda un "✅ Ya implementado" aquí adentro. Ver
 la regla completa en `AGENTS.md`.
 
 ## Por planear / decidir con Angel (pedido explícito)
-
-- **Esfera animada tipo "modo de voz" para "Planear con IA" (idea de Angel,
-  2026-09-19).** Inspirada en el componente `fluid-orb` de Rare UI
-  ([repo](https://github.com/swamimalode07/rare-ui), MIT; es de React + Tailwind +
-  WebGL, así que NO se instala tal cual en RutaMX, que usa Flask + JS simple). Ya
-  se descargó el repositorio en una carpeta aparte de Angel
-  (`.../Más/efectos visuales rare-ui`); se va a trabajar en una sesión nueva
-  apuntando a esa carpeta. Plan: leer el código de `fluid-orb`, portarlo a JS/CSS
-  sin React (versión ligera en CSS o versión fiel en `<canvas>` WebGL, por
-  decidir) y usarlo en el encabezado del chat de IA (en vez del 🤖) y como
-  indicador de "pensando" (en vez de los tres puntitos), con los colores de la
-  marca (terracota / verde oscuro) y respetando `prefers-reduced-motion`. No
-  correr `npm install` ni `npx shadcn` dentro de RutaMX. Citar la licencia MIT.
 
 - **Re-etiquetar la base y agregar restaurantes y hoteles (siguiente paso
   grande, pedido de Angel, sin pagar nada).** Plan completo en
@@ -129,6 +116,32 @@ real por hacer, no porque la feature esté incompleta.
   tokens en cada `pytest`), pero por lo mismo no prueban el prompt real
   contra un modelo de verdad — si el modelo devuelve algo fuera de lo
   esperado en producción, revisar primero el prompt en `llm_provider.py`.
+
+## Recomendaciones y tarjetas: pendientes que salieron hoy
+
+- **Pocos destinos a lo largo de algunas carreteras.** En CDMX → Oaxaca casi no hay lugares entre
+  Tehuacán (3 h) y Oaxaca, así que de las 5 franjas de horas solo se llenan ~3. Se resuelve con más
+  destinos en la base (plan `04`), no con código.
+- **El chat de "Planear con IA" no aplica el filtro estricto de intereses** (`planificador_ia_service.py`
+  llama a `obtener_pool_con_horas` sin `intereses`; los intereses salen de la conversación). Decidir con
+  Angel si debe respetarlo igual que el formulario.
+- **Código sin uso:** `_linea_de_tiempo`, `_elegir_con_distinguidos` y `MAX_DISTINGUIDOS_AL_FRENTE` en
+  `ai_service.py` ya no los usa el flujo principal (quedan con sus tests). Borrarlos cuando Angel confirme
+  que la regla nueva de franjas es la definitiva.
+- **Fallback demo** (`_sugerir_desde_demo`, solo si la base de datos no responde) no aplica el filtro
+  estricto de intereses.
+- El grafo de conocimiento (`graphify-out/`, ignorado por git) está desactualizado: correr `/graphify update`.
+
+## Efectos visuales: detalles por revisar (quedan 6; el step-player se quitó)
+
+- El orbe de "Planear con IA" (`planificador_ia.js`) se probó solo en el estado de
+  carga de sugerencias; falta verlo en el chat con una API key real conectada.
+- Los efectos no se han probado con lector de pantalla ni con teclado en todos los
+  flujos (el contador expone su texto real y el PIN tiene etiquetas por casilla, pero
+  falta una pasada de accesibilidad).
+- El menú gooey y la píldora comparten las secciones fijas de `secciones.js`
+  (Inicio, Ruta, Descubre, Itinerario); si se agrega otra sección a la página, hay que
+  añadirla ahí.
 
 ## Ideas guardadas para después (todavía sin planear a detalle)
 

@@ -1,4 +1,4 @@
-<section class="hero">
+<section class="hero" id="inicio">
   <div class="container">
     <p class="kicker kicker--center">ROAD TRIPS POR MÉXICO</p>
     <h1 class="hero__headline">
@@ -43,10 +43,7 @@
 
         <div class="field">
           <label id="hero-hora-salida-label">Hora de salida (opcional)</label>
-          <button type="button" class="time-picker-trigger" data-time-trigger aria-labelledby="hero-hora-salida-label">
-            <span data-time-display>Elegir hora</span>
-            <span aria-hidden="true">🕐</span>
-          </button>
+          <div data-hora-salida aria-labelledby="hero-hora-salida-label"></div>
           <input type="hidden" name="hora_salida" data-time-hidden />
         </div>
 
@@ -83,34 +80,6 @@
     </div>
   </div>
 </section>
-
-<dialog class="modal-time-picker" data-modal-time>
-  <p class="field__label time-wheel-picker__titulo">Hora de salida</p>
-  <div class="time-wheel-picker">
-    <div class="time-wheel-picker__highlight" aria-hidden="true"></div>
-    <div class="time-wheel-picker__col" data-wheel="hora">
-      <ul data-wheel-list>
-        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-        {% for h in range(0, 24) %}
-        <li data-value="{{ '%02d' % h }}">{{ '%02d' % h }}</li>
-        {% endfor %}
-        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-      </ul>
-    </div>
-    <div class="time-wheel-picker__separador" aria-hidden="true">:</div>
-    <div class="time-wheel-picker__col" data-wheel="minuto">
-      <ul data-wheel-list>
-        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-        {% for m in range(0, 60) %}
-        <li data-value="{{ '%02d' % m }}">{{ '%02d' % m }}</li>
-        {% endfor %}
-        <li class="time-wheel-picker__pad" aria-hidden="true"></li>
-      </ul>
-    </div>
-  </div>
-  <button type="button" class="btn btn--primary btn--block" data-time-confirmar>Listo</button>
-  <button type="button" class="btn btn--ghost btn--block" data-time-limpiar>Sin hora definida</button>
-</dialog>
 
 <dialog class="modal-rutas" data-modal-rutas>
   <form method="dialog" class="modal-auth__cerrar">

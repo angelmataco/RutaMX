@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-09-19
+Última actualización: 2026-09-19 (noche)
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -66,24 +66,20 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (cae a Nominatim directo, solo que ese lugar no se guarda para
   siempre).
 
-## Campos del formulario sin teclado (selector de hora tipo rueda + burbujas)
+## Campos del formulario sin teclado (burbujas; la hora ahora es el duration-picker)
 
-- **Hora de salida**: ya no es el `<input type="time">` nativo (en
-  escritorio obliga a escribir con teclado) — ahora es un botón que abre
-  un selector tipo rueda (como el de iOS) con **dos** columnas, hora
-  (00-23) y minuto (00-59), en **formato 24 horas** (sin AM/PM — pedido
-  explícito), cada una con scroll-snap. Construido con HTML/CSS nativos
-  (`<dialog>` + `scroll-snap-type`), sin ninguna librería. Guarda el
-  valor en el mismo formato `HH:MM` de siempre, así que no hizo falta
-  tocar `form.js` ni `main.js`.
+- **Hora de salida**: hoy es el selector gooey `duration-picker` de rare-ui
+  (`efectos/duracion.js`, ver sección de efectos visuales). Antes fue una rueda tipo iOS
+  en un `<dialog>` (`time_picker.js`, ya eliminado). Sigue guardando `HH:MM` (24 h) en
+  `[data-time-hidden]`, así que `form.js` y `main.js` casi no cambiaron.
 - **Presupuesto** (hoy ya no existe, ver "Gasto máximo recomendado") y **Horas máximas de manejo**: en vez de una lista
   plana de `<datalist>` (se veía sosa), ahora son una fila de "burbujas"
   deslizable — mismo estilo que los chips de "¿Qué buscas?" — con montos
   predefinidos (presupuesto: $1,000, $3,000, $5,000, $7,000, $9,000; horas:
   1 a 16) más una burbuja "Otro" que revela un campo normal para escribir
   un valor exacto distinto.
-- `app/static/js/time_picker.js` y `app/static/js/bubble_picker.js`
-  (nuevos) manejan cada uno.
+- `app/static/js/bubble_picker.js` maneja las burbujas (el selector de hora ahora es
+  `efectos/duracion.js`).
 
 ## "Planear con IA" — chat que arma el itinerario completo
 
@@ -463,6 +459,12 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Sugerencias como línea de tiempo (5 visibles, "Ver más" y máximo 2 estrellas)
 
+> **REEMPLAZADO (2026-09-19 noche):** la primera vista ya no son "los 5 primeros por hora
+> con máx. 2 estrellas" sino **5 recomendadas repartidas por franjas de horas** (ver la sección
+> "Recomendaciones por franjas de horas" más abajo). `_linea_de_tiempo` y
+> `_elegir_con_distinguidos` siguen en `ai_service.py` (y con sus tests) pero **ya no se usan**
+> en el flujo principal. Lo demás de esta sección (5 columnas, botón "Ver más ▸") sigue igual.
+
 - **Pedido de Angel:** que las recomendaciones no salgan "desfasadas" (una a 6 h,
   luego a 1 h, luego a 4 h) sino como una **línea de tiempo del viaje**, para ver
   rápido qué hay disponible en las primeras horas.
@@ -485,8 +487,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   scroll de la página. El botón pasa a "Ver menos" (flecha girada) y las vuelve a
   plegar, dejando solo las primeras 5. Agregar o descartar una tarjeta la quita de
   la lista y la vuelve a dibujar (si quedan pocas, trae otro lote).
-- **Etiqueta** sobre las tarjetas: "★ 2 destacados cerca de tu ruta · de 54 min a
-  1 h 18 min del inicio" (cambia al desplegar).
+- ~~**Etiqueta** sobre las tarjetas: "★ 2 destacados cerca de tu ruta · de 54 min a
+  1 h 18 min del inicio"~~ — **eliminada** a pedido de Angel (ver sección de "Descubre en el camino").
 - **Hallazgo:** en CDMX → Oaxaca casi todos los candidatos caen en la primera mitad
   del viaje y entre las 3 h y la llegada solo hay uno (Tehuacán): la base tiene
   pocos lugares a lo largo de esa carretera. Se resuelve agregando más lugares
@@ -507,9 +509,151 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Ojo: cuando un elemento con `hidden` tenga un `display` propio en CSS, hay que
   agregar la regla `[hidden] { display: none }` (pasó también con la estrella).
 
+## Efectos visuales (solo frontend) tomados de rare-ui
+
+- Pedido de Angel: usar 7 efectos (el step-player se quitó y después se sumó el duration-picker; hoy son 7) de la carpeta `efectos visuales rare-ui` (que
+  **no se modificó**; es una librería de componentes React/Tailwind/Motion). Como
+  RutaMX es Flask + JS/CSS puro, cada uno se **reescribió sin librerías** en
+  `app/static/js/efectos/` + `app/static/css/efectos.css`. **No se tocó nada del
+  backend ni del flujo**: solo se agregaron llamadas donde antes se escribía
+  `textContent`, y una plantilla/ancla mínima.
+- **Contador tipo odómetro** (`contador.js`): los números del "Resumen del viaje"
+  (distancia, tiempo, gasto, paradas) y del "Resumen de aventura" ruedan dígito por
+  dígito hasta su nuevo valor. Funciona con cualquier texto ("$2,077", "5 h 47 min").
+  Uso: `RutaEfectos.contador.set(elemento, texto)`; el texto real queda para
+  lectores de pantalla.
+- **Borrar con confirmación en el mismo botón** (`eliminar.js`): el 🗑 de cada parada
+  del itinerario abre la tapa y muestra ✓ / ✕ (Esc y clic afuera cancelan). Ojo: antes
+  borraba al primer clic; ahora hace falta confirmar. Se borra por identidad del objeto,
+  no por posición, para que un borrado pendiente no elimine la parada equivocada.
+- **PIN por casillas** (`pin.js`): en login y registro el PIN son 4 casillas a todo lo ancho de la ventana, con el
+  dígito rodando y un cursor que se desliza; pegar el código completo funciona; si el
+  servidor rechaza el PIN, se sacuden. El `<input name="pin">` original sigue existiendo
+  (oculto) con el valor, así que `auth.js` no cambió.
+- **Menú gooey en el navbar** (`gooey.js`): Ruta / Descubre / Itinerario; la opción se
+  separa con un cuello elástico **al pasar el cursor** (al salir vuelve a la sección
+  actual, que sigue el scroll); también al hacer clic, con scroll suave. En pantallas ≤640 px el menú pasa a su propia fila.
+- **Píldora de progreso** (`pildora.js`): flotante abajo a la **derecha**, grande, con un anillo que
+  se llena al bajar y el nombre de la sección; al tocarla se despliega para saltar a
+  Inicio / Ruta / Descubre / Itinerario. Solo aparece cuando ya hay ruta calculada
+  (≥ 2 secciones visibles). `secciones.js` es el módulo compartido de "sección activa".
+- **Selector de hora gooey** (`duracion.js`, efecto `duration-picker` de rare-ui): la hora
+  de salida es una píldora `[ HH Hr. ][ MM Min. ][ ✎ ]`; al tocar el lápiz (o la hora/los
+  minutos) se separa en tres piezas con resorte y el lápiz pasa a palomita. **No se escribe**:
+  al tocar la hora o los minutos se abre una **ruedita** (scroll-snap, como la de iOS) para
+  deslizar y escoger (una a la vez, cada campo la suya); también sirven las flechas ↑↓ del
+  teclado. Botón "Sin hora definida" dentro de la rueda. Al abrir sin hora se propone 08:00.
+  Enter o ✓ guardan, Esc descarta; tocar fuera guarda solo si se cambió algo; enviar el
+  formulario guarda lo elegido. Vacío = sin hora. Reemplazó a la rueda en `<dialog>` anterior
+  (`time_picker.js`, borrado). `main.js` la restaura con `RutaEfectos.horaSalida.poner("HH:MM")`.
+  (Primera versión: se escribía a mano; a Angel no le gustó teclear y se cambió a ruedita.)
+- **Ajustes posteriores del selector de hora y del contador (2026-09-19):** el fondo del selector de
+  hora ahora es el **naranja de la app** (`--color-terracota`, texto blanco, ruedita con banda naranja
+  clarita) en vez del verde pálido; y el **contador** rueda **más lento** (1.6 s con rebote suave, y los
+  dígitos arrancan en cascada de derecha a izquierda, `transition-delay` por columna en `contador.js`).
+- **Botones de sesión del navbar** (Iniciar/Cerrar sesión): al pasar el cursor se resaltan en
+  su lugar con el mismo efecto del menú gooey (terracota, esquinas más cuadradas, rebote suave).
+  Arreglo: la primera versión animaba el radio desde `999px` y la esquina no se notaba hasta el
+  final (se veía como un salto raro al segundo); ahora parte de `18px` y todo cambia a la par en ~0.35 s.
+- **Orbe de puntos** (`orbe.js`, grande: 120 px en sugerencias y 92 px en el chat): reemplaza el texto "Buscando ideas para tu
+  recorrido…" y los tres puntitos de "Planear con IA" mientras piensa.
+- Todo respeta `prefers-reduced-motion`. Ancla nueva `id="inicio"` en el hero (para la
+  píldora).
+- **Step-player quitado** a pedido de Angel (no le gustó): se borraron `stepplayer.js`, su
+  CSS y sus enganchos. Ajustes posteriores: PIN a lo ancho, gooey animado con el cursor,
+  píldora a la esquina derecha y más grande, orbe más grande.
+- Probado en vivo (desktop y móvil 375 px): cálculo de ruta, cambio de tramos,
+  reproducción, agregar/borrar parada, login con PIN incorrecto, píldora, menú;
+  sin errores de consola y sin desborde horizontal. 123 tests siguen pasando.
+
+## Filtro principal: lo que se marca en "¿Qué buscas?" manda
+
+- **Bug encontrado (pedido de Angel):** al marcar Naturaleza + Cultura salían lugares de otras
+  cosas. Los intereses solo *ordenaban* (después de las estrellas Michelin y del propósito por
+  hora) y nunca filtraban. Además **"Pueblos mágicos" no coincidía con nada**: no existe como
+  interés guardado en los 374 destinos; es su `tipo` (`pueblo_magico`).
+- **Regla nueva** (`ai_service.coincide_intereses` / `_puntos_interes`): un lugar solo se
+  recomienda si cumple **al menos uno** de los intereses marcados (sin ninguno marcado, todos
+  valen); "pueblos_magicos" se compara contra el `tipo`. Es un **filtro estricto** que se aplica
+  antes que estrellas, propósito por hora o cercanía. Entre los que pasan, los que cumplen más
+  intereses van primero.
+- **Única excepción:** un tramo que el usuario personalizó a mano (Comer / Dormir / Turismo) manda
+  sobre los intereses de ese tramo (`_encaja_con_lo_pedido`).
+- El radio de búsqueda alrededor de la carretera (20 → 60 → 150 km) ahora se amplía hasta juntar
+  suficientes lugares **que sí cumplen los intereses** (`_candidatos_en_el_corredor(..., intereses)`).
+- Verificado con datos reales (CDMX → Oaxaca): Naturaleza+Cultura, Pueblos mágicos, Playas (solo 1
+  lugar cerca de esa ruta: la base es honesta) y Comida cumplen el 100 %.
+- Ojo: el chat de "Planear con IA" (`planificador_ia_service.py`) no usa este filtro (ver 02).
+
+## Recomendaciones por franjas de horas (5 recomendadas, "Ver más", "Ver menos")
+
+- **Pedido de Angel:** que la primera vista de 5 tarjetas sean **5 recomendaciones repartidas por las
+  horas del viaje** (ej. viaje de 10 h: una entre la hora 1 y 2, otra entre la 2 y 4…), que cumplan
+  el filtro de intereses y con **prioridad siempre a lo que tenga estrella**.
+- **Backend (`ai_service._repartir_por_franjas`, usado por `_sugerir_por_lapsos`):** la ventana del
+  viaje (o del tramo elegido; de 30 min después de salir a 20 min antes de llegar) se parte en 5
+  franjas iguales. Dentro de cada franja se ordena por: 1) distinguido (★ cerca de la ruta),
+  2) que encaje con el propósito de la hora (comer/dormir), 3) que cumpla más intereses, 4) que
+  quede más cerca de la carretera. Cada lugar sale con `franja`, `rango_franja`, `rango_global` y
+  `recomendada` (las 5 mejores: una por franja). La lista completa va en orden de hora.
+  Si una franja queda vacía, se completa con los siguientes mejores del resto.
+- **Frontend (`main.js`):** `recomendadas()` toma la mejor de cada franja (en orden de hora).
+  **"Ver más"** muestra todas ordenadas por hora del viaje desde la primera; **"Ver menos"** vuelve a las
+  recomendadas. Si se agregó o descartó una recomendada, entra la siguiente mejor **de su misma franja**
+  (o, si no hay, otra) — sin pedir nada al servidor (por eso se piden 40 por lote: `TAMANO_LOTE`).
+  Al cambiar de vista las tarjetas **se mueven** hasta su nuevo lugar (animación FLIP con la Web
+  Animations API, `animarReacomodo`); las nuevas entran con fundido.
+- **Hallazgo de datos:** en CDMX → Oaxaca casi no hay destinos entre Tehuacán (3 h) y Oaxaca, así que
+  solo se llenan ~3 de las 5 franjas y el resto se completa con los siguientes mejores. Solución de
+  fondo: más lugares en la base (plan 04).
+- Tests nuevos: franjas, una recomendada por franja con estrella al frente, y completar hasta 5.
+
+## Tarjetas de recomendación simétricas
+
+- **Pedido de Angel:** la información se veía "encimada" y no rellenaba la tarjeta. Ahora cada tarjeta
+  es la misma estructura de franjas fijas (`discover_section.html`, `#tpl-sugerencia`; `styles.css`):
+  cabecera (categoría + estrella en su propio espacio, sin `position:absolute`) · título (2 renglones
+  de alto mínimo) · descripción (3 renglones) · caja de camino (🚗 ≈X de camino / 🕘 Llegas HH:MM) ·
+  **franja que se estira y rellena** (notas de gastronomía / comer / dormir y los **intereses del
+  lugar** como etiquetas, así nunca queda hueca) · botones. Medido: las 5 tarjetas quedan con la misma
+  altura y títulos y botones a la misma altura.
+- Trampa: `.card__nota { display:flex }` le ganaba al atributo `hidden` (barras vacías); ahora hay
+  `.card__nota[hidden] { display:none }`.
+
+## Descubre en el camino: se quitó la etiqueta de horas
+
+- Se eliminó por completo la línea de arriba de las tarjetas ("★ 2 destacados cerca de tu
+  ruta · de 48 min a 1 h 30 min del inicio"): Angel dijo que no servía y se veía mal.
+  Se borró `<p data-linea-tiempo>`, su CSS y su lógica; `actualizarLineaDeTiempo` quedó como
+  `actualizarBotonVerMas` (solo maneja "Ver más / Ver menos"). Las tarjetas conservan su
+  "≈ X de camino · llegas HH:MM" y la ★.
+
+## "Planea mi ruta" abre al instante + grid reveal en el mapa
+
+- Antes la página se quedaba congelada hasta que el servidor respondía. Ahora, en cuanto se
+  pulsa el botón (`calcularRuta` en `main.js`): se muestran ya los resultados, se baja hasta
+  ellos y se puede seguir deslizando mientras carga. El scroll se hace **solo al pulsar**, no
+  al llegar los datos (para no arrastrar al usuario). Si se pulsa otra vez, manda solo la
+  respuesta más reciente (`idCalculo`); si falla y no había resultados antes, se vuelven a ocultar.
+- Mientras carga: **grid reveal** (`gridreveal.js`, efecto `grid-reveal` de rare-ui) sobre el
+  mapa: cuadrícula gris cálida que se parte en cuadritos al ritmo de ~4.5 s estimados; cuando
+  llega la ruta se deshace en una ola diagonal y deja ver el mapa (pastilla "Trazando tu
+  ruta…"). No se agregó espera artificial: si el servidor responde rápido, la cuadrícula
+  acelera y se disuelve antes. Además, orbe grande "Calculando tu ruta…" arriba y "Buscando
+  ideas…" en las sugerencias, y el panel de resumen se atenúa.
+
+## Tramos en automático = "Paradas sugeridas" del resumen
+
+- El panel "Paradas sugeridas" sale de la distancia (`max(1, min(4, round(km/250)))` en
+  `route_service.py`) y los tramos automáticos salían de la duración (~3 h por tramo), así que
+  no coincidían. Ahora, **en automático, el frontend manda `tramos = paradas_estimadas`** a
+  `/api/sugerencias` (solo `main.js`; el backend no cambió). Si el usuario elige un número, manda
+  el suyo. El botón ahora dice "Automático · N" para que se vea cuántos tramos salen.
+  Verificado: CDMX→Oaxaca 2 y 2; CDMX→Monterrey (897 km) 4 y 4.
+
 ## Calidad / pruebas
 
-- 115 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 123 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el

@@ -28,10 +28,20 @@ sugerencias → itinerario → guardar):
 - **Sugerencias de paradas**: `app/services/ai_service.py` consulta la
   tabla `destinos` y las filtra por cercanía real a la carretera (no en
   línea recta) usando la geometría de OSRM — solo sugiere lugares que de
-  verdad quedan en el camino o a una desviación razonable. Si el usuario
-  indica cuántas horas máximo quiere manejar seguido, prioriza destinos
-  cerca de ese punto del viaje como sugerencia de descanso. Si la base de
-  datos no responde, cae a un catálogo fijo de respaldo (`LUGARES_DEMO`).
+  verdad quedan en el camino o a una desviación razonable. **Lo marcado en
+  "¿Qué buscas?" es el filtro principal** (solo se recomiendan lugares que
+  cumplen esos intereses). La primera vista son **5 recomendadas repartidas
+  por franjas de horas del viaje** (con prioridad a lugares con estrella);
+  "Ver más" muestra todas por hora y "Ver menos" vuelve a las recomendadas.
+  El viaje se divide en tramos (en automático, tantos como las "paradas
+  sugeridas" del resumen). Si la base de datos no responde, cae a un
+  catálogo fijo de respaldo (`LUGARES_DEMO`).
+- **Efectos visuales** (`app/static/js/efectos/` + `app/static/css/efectos.css`,
+  adaptados de rare-ui a JS/CSS puro, sin librerías): contador tipo odómetro,
+  borrar con confirmación, PIN por casillas, menú gooey, píldora de progreso,
+  selector de hora gooey con ruedita, cuadrícula "grid reveal" sobre el mapa y
+  orbe de puntos al cargar. **No se pueden quitar ni reemplazar**: ver
+  `bitacora_proyecto/05_EFECTOS_VISUALES_PROTEGIDOS.md`.
 - **Cuentas de usuario**: nombre + apellido + PIN de 4 dígitos, sin correo
   (proyecto escolar — ver `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`).
   `app/services/auth_service.py` maneja registro/login, sesión con la
@@ -158,7 +168,7 @@ RutaMX/
 │   │   ├── llm_provider.py             # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
 │   │   ├── planificador_ia_service.py  # Orquesta el chat "Planear con IA"
 │   │   └── auth_service.py             # Registro/login (nombre + apellido + PIN de 4 dígitos)
-│   ├── static/               # CSS, JS, imágenes
+│   ├── static/               # CSS, JS (js/efectos/ = efectos visuales protegidos), imágenes
 │   └── templates/            # HTML (base + partials por sección)
 ├── scripts/
 │   ├── agregar_usuario_id.py  # Migración: agrega usuario_id a rutas_guardadas
@@ -170,6 +180,7 @@ RutaMX/
 │   ├── fix_intereses_v3.py    # Corrección 3 (mismo mínimo, para el lote 2)
 │   ├── fix_poblacion.py       # Carga población lote 1 (Censo INEGI 2020)
 │   └── fix_poblacion_v2.py    # Carga población lote 2 (Censo INEGI 2020)
+├── bitacora_proyecto/        # Qué está hecho, qué falta, decisiones y efectos protegidos (leer AGENTS.md)
 ├── tests/                    # Pruebas de rutas y servicios
 ├── instance/config.py        # Configuración local (no se sube a git)
 ├── config.py                  # Configuración general (Dev/Prod)

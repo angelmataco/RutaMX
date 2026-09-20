@@ -69,9 +69,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Los tres puntitos mientras la IA "piensa" (esperando al servidor).
   function mostrarPensando() {
     const burbuja = document.createElement("div");
-    burbuja.className = "chat-burbuja chat-burbuja--ia chat-burbuja--pensando";
-    burbuja.innerHTML = "<span></span><span></span><span></span>";
+    burbuja.className = "chat-burbuja chat-burbuja--ia chat-burbuja--orbe";
     transcript.appendChild(burbuja);
+    RutaEfectos.orbe.montar(burbuja, { estado: "thinking", tamano: 92, etiqueta: "Pensando…" });
     transcript.scrollTop = transcript.scrollHeight;
     return burbuja;
   }

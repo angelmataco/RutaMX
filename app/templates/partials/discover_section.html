@@ -27,8 +27,6 @@
       <div class="tramos-control__opciones tramos-control__opciones--largas" data-tramo-proposito-opciones></div>
     </div>
 
-    <p class="linea-tiempo" data-linea-tiempo hidden></p>
-
     <div class="cards-grid" data-sugerencias>
       <p class="empty-state">Llena el formulario y calcula tu ruta para ver sugerencias de paradas.</p>
     </div>
@@ -42,15 +40,21 @@
 
 <template id="tpl-sugerencia">
   <article class="card card--lugar" data-lugar-card>
-    <span class="card__estrella" data-lugar-estrella hidden aria-label="Gastronomía reconocida" role="img">★</span>
-    <div class="card__etiquetas">
+    <div class="card__cabecera">
       <span class="tag" data-lugar-categoria></span>
-      <span class="tag tag--horas" data-lugar-horas hidden></span>
+      <span class="card__estrella" data-lugar-estrella hidden aria-label="Gastronomía reconocida" role="img">★</span>
     </div>
     <h3 class="card__title" data-lugar-nombre></h3>
     <p class="card__subtitle" data-lugar-descripcion></p>
-    <p class="card__nota-descanso" data-lugar-descanso hidden></p>
-    <p class="card__nota-gastronomia" data-lugar-gastronomia hidden></p>
+    <div class="card__meta" data-lugar-horas hidden>
+      <span class="card__meta-dato" data-lugar-camino></span>
+      <span class="card__meta-dato card__meta-dato--llegada" data-lugar-llegada hidden></span>
+    </div>
+    <div class="card__extra">
+      <p class="card__nota card__nota-descanso" data-lugar-descanso hidden></p>
+      <p class="card__nota card__nota-gastronomia" data-lugar-gastronomia hidden></p>
+      <div class="card__intereses" data-lugar-intereses></div>
+    </div>
     <div class="card__acciones">
       <button type="button" class="btn btn--secondary btn--block" data-agregar-parada>Agregar parada</button>
       <button type="button" class="btn btn--ghost btn--block" data-descartar>Descartar</button>

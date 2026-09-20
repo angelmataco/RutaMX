@@ -512,120 +512,6 @@ a {
   position: relative;
 }
 
-/* Botón que abre el selector de hora tipo rueda */
-.time-picker-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px;
-  font-size: 0.92rem;
-  font-family: inherit;
-  background: var(--color-blanco);
-  color: var(--color-texto);
-  cursor: pointer;
-  text-align: left;
-}
-
-.time-picker-trigger:hover {
-  border-color: var(--color-terracota);
-}
-
-/* Selector de hora tipo rueda (dialog nativo) */
-.modal-time-picker {
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 24px;
-  width: 100%;
-  max-width: 320px;
-}
-
-.modal-time-picker::backdrop {
-  background: rgba(31, 51, 39, 0.45);
-}
-
-.time-wheel-picker__titulo {
-  text-align: center;
-  margin: 0 0 12px;
-}
-
-.time-wheel-picker {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 180px;
-  margin-bottom: 18px;
-}
-
-.time-wheel-picker__highlight {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 36px;
-  transform: translateY(-50%);
-  background: var(--color-verde-palido);
-  border-radius: var(--radius-sm);
-  pointer-events: none;
-  /* Sin z-index, un elemento posicionado (position:absolute) pinta
-     arriba de los hijos normales aunque vaya primero en el DOM — por
-     eso las columnas de abajo necesitan su propio z-index más alto
-     para que el número seleccionado se vea encima del resaltado. */
-  z-index: 0;
-}
-
-.time-wheel-picker__separador {
-  position: relative;
-  z-index: 1;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--color-verde-oscuro);
-}
-
-.time-wheel-picker__col {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 64px;
-  height: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-}
-
-.time-wheel-picker__col::-webkit-scrollbar {
-  display: none;
-}
-
-.time-wheel-picker__col ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.time-wheel-picker__col li {
-  height: 36px;
-  line-height: 36px;
-  text-align: center;
-  scroll-snap-align: center;
-  font-size: 1.05rem;
-  color: var(--color-texto-gris);
-  cursor: pointer;
-}
-
-.time-wheel-picker__col li.is-activo {
-  color: var(--color-verde-oscuro);
-  font-weight: 700;
-  font-size: 1.15rem;
-}
-
-.time-wheel-picker__pad {
-  height: 72px !important;
-}
-
 /* Selector de burbujas (personas) */
 .bubble-picker {
   display: flex;
@@ -964,12 +850,6 @@ a {
   margin-bottom: 12px;
 }
 
-.card__etiquetas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .tag--horas {
   background: var(--color-verde-palido);
   color: var(--color-verde-oscuro);
@@ -978,11 +858,6 @@ a {
 .card__nota-descanso {
   background: var(--color-verde-palido);
   color: var(--color-verde-oscuro);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  margin: 0 0 12px;
 }
 
 .btn--ver-mas {
@@ -1511,9 +1386,7 @@ a {
 }
 
 .card__estrella {
-  position: absolute;
-  top: 14px;
-  right: 14px;
+  flex-shrink: 0;
   width: 30px;
   height: 30px;
   display: flex;
@@ -1532,27 +1405,121 @@ a {
   display: none; /* el display:flex de arriba no debe ganarle al atributo hidden */
 }
 
-.card--lugar.tiene-estrella .card__etiquetas {
-  padding-right: 38px; /* deja lugar a la estrella */
-}
-
 .card__nota-gastronomia {
-  margin: 8px 0 12px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
   background: #fbf0d4;
   color: #7a5a12;
-  font-size: 0.82rem;
-  font-weight: 600;
   cursor: help;
 }
 
-/* Etiqueta de la línea de tiempo de sugerencias */
-.linea-tiempo {
-  margin: 0 0 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
+/* Tarjeta de sugerencia en franjas fijas, para que todas queden simétricas:
+   cabecera (categoría + estrella) · título · descripción · datos de camino ·
+   franja que se estira y rellena (notas / intereses) · botones. */
+.card--lugar .card__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  margin-bottom: 12px;
+}
+
+.card--lugar .card__cabecera .tag {
+  margin-bottom: 0;
+  padding: 5px 8px;
+  font-size: 0.66rem;
+  white-space: nowrap; /* que "Pueblo mágico" no se parta y todos los títulos queden a la misma altura */
+}
+
+.card--lugar .card__title {
+  min-height: 2.5em; /* dos renglones, aunque el nombre sea corto */
+  line-height: 1.25;
+}
+
+.card--lugar .card__subtitle {
+  min-height: 4.2em; /* tres renglones */
+  line-height: 1.4;
+}
+
+.card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  min-height: 4.6em; /* cabe un dato a dos renglones + la hora de llegada, igual en todas */
+  border-radius: var(--radius-sm);
+  background: var(--color-verde-palido);
   color: var(--color-verde-oscuro);
+}
+
+.card__meta[hidden],
+.card__meta-dato[hidden] {
+  display: none;
+}
+
+.card__meta-dato {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.card__meta-dato--llegada {
+  font-weight: 600;
+  color: var(--color-texto-gris);
+}
+
+.card__extra {
+  display: flex;
+  flex: 1 1 auto; /* se estira para llenar el espacio que sobra */
+  flex-direction: column;
+  gap: 8px;
+  min-height: 78px;
+  margin-top: 10px;
+}
+
+.card__extra > :not([hidden]) {
+  flex: 1 1 auto;
+}
+
+.card__nota[hidden] {
+  display: none; /* el display:flex de abajo no debe ganarle al atributo hidden */
+}
+
+.card__nota {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.card__intereses {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: #faf6ec;
+  border: 1px dashed var(--color-borde);
+}
+
+.card__intereses[hidden] {
+  display: none;
+}
+
+.card__interes {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  color: var(--color-texto-gris);
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 /* Sugerencias: 5 visibles (en una fila) con tarjetas compactas; el resto queda
@@ -1576,26 +1543,6 @@ a {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.cards-grid[data-sugerencias] .card--extra {
-  display: none;
-}
-
-.cards-grid[data-sugerencias].is-expandido .card--extra {
-  display: flex;
-  animation: desplegar-tarjeta 0.25s ease both;
-}
-
-@keyframes desplegar-tarjeta {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 980px) {

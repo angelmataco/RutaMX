@@ -275,6 +275,26 @@ def _proposito_automatico(lapso):
     return "turismo"
 
 
+def _puntos_interes(destino, intereses):
+    """Cuántos de los intereses pedidos cumple un lugar (0 = ninguno). "Pueblos mágicos"
+    no está guardado como interés en los destinos: es su `tipo` (`pueblo_magico`)."""
+    if not intereses:
+        return 0
+    propios = set(_dato(destino, "intereses") or [])
+    puntos = len(propios & set(intereses))
+    if "pueblos_magicos" in intereses and _dato(destino, "tipo") == "pueblo_magico":
+        puntos += 1
+    return puntos
+
+
+def coincide_intereses(destino, intereses):
+    """FILTRO PRINCIPAL (Angel): lo que se marca en "¿Qué buscas?" en el inicio manda sobre
+    todo lo demás (estrellas, propósito por hora...). Un lugar solo se recomienda si cumple
+    al menos uno de esos intereses; sin ninguno marcado, todos valen. La única excepción son
+    los tramos que el usuario personalizó a mano (comer / dormir / turismo)."""
+    return not intereses or _puntos_interes(destino, intereses) > 0
+
+
 def _intereses_de_turismo(intereses_usuario):
     """Los intereses del usuario que son de "turismo" (sin comida ni descanso)."""
     return [i for i in (intereses_usuario or []) if i not in ("comida", "descanso")]
@@ -286,6 +306,8 @@ def _coincide_proposito(intereses_destino, tipo_destino, proposito):
     dormir). Otro (un interés, ej. "playas"): el lugar tiene ese interés."""
     if proposito == "descanso":
         return "descanso" in intereses_destino or tipo_destino == "ciudad_principal"
+    if proposito == "pueblos_magicos":
+        return tipo_destino == "pueblo_magico"
     return proposito in intereses_destino
 
 
@@ -298,7 +320,7 @@ def _encaja_con_lo_pedido(destino, proposito, intereses_usuario):
     if proposito in ("comida", "descanso"):
         return _coincide_proposito(intereses, destino.tipo, proposito)
     turismo = _intereses_de_turismo(intereses_usuario)
-    return not turismo or bool(set(turismo) & set(intereses))
+    return coincide_intereses(destino, turismo)
 
 
 def _indice_de_lapso(lapsos, horas_estimadas):
@@ -331,7 +353,7 @@ def _lugar_desde_destino(destino, horas_estimadas=None, horas_objetivo=None):
     return lugar
 
 
-def obtener_pool_con_horas(ruta, excluir_ids=None, limite=40):
+def obtener_pool_con_horas(ruta, excluir_ids=None, limite=40, intereses=None):
     """Envoltorio público sobre `_candidatos_en_el_corredor` con un límite
     amplio — para tener de dónde elegir varios objetivos de parada (por
     propósito y hora) sin repetir destinos. Usado tanto por el chat de IA
@@ -340,7 +362,7 @@ def obtener_pool_con_horas(ruta, excluir_ids=None, limite=40):
     """
     if not ruta:
         return []
-    candidatos = _candidatos_en_el_corredor(ruta, limite, set(excluir_ids or []))
+    candidatos = _candidatos_en_el_corredor(ruta, limite, set(excluir_ids or []), intereses)
     return candidatos or []
 
 
@@ -523,6 +545,9 @@ def asignar_paradas_a_objetivos(candidatos, objetivos):
             # Un tramo personalizado por el usuario es estricto.
             if objetivo.get("estricto") and not objetivo["encaja"](destino):
                 continue
+            # Los demás tramos respetan el filtro principal (los intereses del inicio).
+            if objetivo.get("acepta") and not objetivo["acepta"](destino):
+                continue
             coincide_proposito = 0 if _coincide_proposito(destino.intereses or [], destino.tipo, objetivo["proposito"]) else 1
             distancia_hora = abs(horas_estimadas - objetivo["hora_objetivo"])
             # Entre los que encajan, primero el más distinguido (estrella / Michelin...).
@@ -552,7 +577,7 @@ def _sugerir_con_objetivos_automaticos(intereses, limite, ruta, horas_max, hora_
     información para armar objetivos (así `sugerir_paradas` cae al
     comportamiento de siempre).
     """
-    pool = obtener_pool_con_horas(ruta, excluir_ids, limite=max(limite, 20))
+    pool = obtener_pool_con_horas(ruta, excluir_ids, limite=max(limite, 20), intereses=intereses)
     if not pool:
         return None
 
@@ -565,9 +590,39 @@ def _sugerir_con_objetivos_automaticos(intereses, limite, ruta, horas_max, hora_
         return None
 
     ids_usados = {lugar["id"] for lugar in asignadas}
-    restantes = _ordenar_candidatos([(d, h) for d, h in pool if d.id not in ids_usados], intereses, None)
+    restantes = _ordenar_candidatos(
+        [(d, h) for d, h in pool if d.id not in ids_usados and coincide_intereses(d, intereses)], intereses, None
+    )
     relleno = [_lugar_desde_destino(d, h) for d, h in restantes[: max(0, limite - len(asignadas))]]
     return (asignadas + relleno)[:limite]
+
+
+def _repartir_por_franjas(candidatos, inicio, fin, clave, franjas=TAMANO_PAGINA_SUGERENCIAS):
+    """Reparte (destino, horas) en `franjas` partes iguales de la ventana [inicio, fin]
+    del viaje y ordena cada franja por `clave` (menor = mejor).
+
+    Cada resultado trae `franja` (0..franjas-1), `rango_franja` (0 = el mejor de su franja)
+    y `rango_global`: primero el mejor de cada franja, luego el segundo de cada una, etc.
+    Así, los primeros `franjas` de la lista son UNA recomendación por franja de horas del
+    viaje, y cualquier otra tanda de "los mejores" también queda repartida en el tiempo.
+    Devuelve la lista ordenada por `rango_global`."""
+    ancho = (fin - inicio) / franjas if fin > inicio else 1
+    por_franja = {}
+    for destino, horas in candidatos:
+        indice = min(franjas - 1, max(0, int((horas - inicio) / ancho)))
+        por_franja.setdefault(indice, []).append((destino, horas))
+
+    ordenados = []
+    for indice, lista in por_franja.items():
+        random.shuffle(lista)  # los empates no salen siempre en el mismo orden
+        lista.sort(key=lambda item: clave(*item))
+        for rango, (destino, horas) in enumerate(lista):
+            ordenados.append((rango, clave(destino, horas), indice, destino, horas))
+    ordenados.sort(key=lambda t: (t[0], t[1]))
+    return [
+        {"destino": destino, "horas": horas, "franja": indice, "rango_franja": rango, "rango_global": rango_global}
+        for rango_global, (rango, _clave, indice, destino, horas) in enumerate(ordenados)
+    ]
 
 
 def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso=None, tramos=None, propositos=None):
@@ -580,11 +635,14 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
 
     - Tramo personalizado: SOLO lugares que encajan con lo pedido (si pidió
       comer, solo donde se puede comer).
-    - Tramo automático: de todo, con prioridad al propósito de la hora
+    - Tramo automático: solo lugares que cumplen los intereses marcados en
+      el inicio (filtro principal), con preferencia al propósito de la hora
       (y nunca se propone dormir donde no aplica).
-    - `lapso=None` ("todo el camino"): primero la mejor parada de cada
-      tramo y después se rellena turnando entre tramos.
-    - `lapso=N`: solo lugares de ese tramo.
+    - `lapso=None` ("todo el camino") o `lapso=N` (solo ese tramo): la ventana
+      se reparte en 5 franjas de horas y cada lugar sale con su `franja`,
+      `rango_franja`, `rango_global` y `recomendada` (las 5 mejores, una por
+      franja, con prioridad a lugares con estrella). La lista completa va en
+      orden de hora.
     - `tramos=N`: en cuántos tramos dividir el viaje (por defecto, solo).
     Cada lugar trae `lapso`, `hora_llegada` y, si encaja con lo que pide su
     tramo, `proposito`. Devuelve `None` si no se puede (sin geometría, viaje
@@ -593,7 +651,9 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
     lapsos = lapsos_de_la_ruta(ruta.get("tiempo_h"), tramos, hora_salida, propositos)
     if not lapsos:
         return None
-    pool = obtener_pool_con_horas(ruta, excluir_ids, limite=max(limite, 40))
+    # Se trae el corredor completo (sin filtrar) porque un tramo personalizado (comer, dormir)
+    # puede necesitar lugares que no cumplen los intereses; el filtro se aplica por tramo.
+    pool = obtener_pool_con_horas(ruta, excluir_ids, limite=max(limite, 40), intereses=intereses)
     if not pool:
         return None
 
@@ -602,11 +662,14 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
     por_indice = {o["indice"]: o for o in objetivos}
     for o in objetivos:
         o["encaja"] = lambda destino, tipo=o["tipo_pedido"]: _encaja_con_lo_pedido(destino, tipo, intereses_lista)
+        # Tramo personalizado: manda lo que pidió; los demás: el filtro principal de intereses.
+        o["acepta"] = o["encaja"] if o["estricto"] else (lambda destino: coincide_intereses(destino, intereses))
 
     def acepta(destino, indice):
-        """En un tramo personalizado solo entran lugares que encajan."""
+        """Tramo personalizado: solo lo que encaja con lo pedido. Los demás: solo lugares
+        que cumplen los intereses marcados en el inicio."""
         o = por_indice.get(indice)
-        return not (o and o["estricto"]) or o["encaja"](destino)
+        return o["acepta"](destino) if o else coincide_intereses(destino, intereses)
 
     def armar(destino, horas):
         lugar = _lugar_desde_destino(destino, horas)
@@ -619,41 +682,44 @@ def _sugerir_por_lapsos(intereses, limite, ruta, hora_salida, excluir_ids, lapso
                 lugar["proposito"] = objetivo["proposito"]
         return lugar
 
+    # --- Reparto por franjas de horas (pedido de Angel) ---
+    # La ventana (todo el viaje, o el tramo elegido) se parte en 5 franjas y la primera vista son
+    # 5 recomendaciones: una por franja, en orden de hora. Dentro de cada franja manda, en este
+    # orden: 1) lo distinguido (estrella / Michelin / UNESCO) cercano a la ruta, 2) que encaje con
+    # el propósito de la hora (comer / dormir), 3) que cumpla más intereses, 4) que quede más cerca.
+    # Todos ya pasaron el filtro de intereses (`acepta`).
     if lapso is not None:
-        objetivo = por_indice.get(lapso)
-        if not objetivo:
+        elegido = next((l for l in lapsos if l["indice"] == lapso), None)
+        if not elegido:
             return None
-        elegido = next(l for l in lapsos if l["indice"] == lapso)
-        dentro = [(d, h) for d, h in pool if elegido["desde_h"] <= h <= elegido["hasta_h"] and acepta(d, lapso)]
-        random.shuffle(dentro)
-        dentro.sort(
-            key=lambda item: (
-                -prioridad(item[0]),  # los distinguidos (y cercanos a la ruta) van primero
-                0 if _coincide_proposito(item[0].intereses or [], item[0].tipo, objetivo["proposito"]) else 1,
-                0 if (intereses and intereses & set(item[0].intereses or [])) else 1,
-                -(item[0].poblacion or 0) if objetivo["proposito"] == "descanso" else 0,
-            )
-        )
-        return _linea_de_tiempo([armar(d, h) for d, h in dentro[:limite]])
+        inicio, fin = elegido["desde_h"], elegido["hasta_h"]
+        candidatos = [(d, h) for d, h in pool if inicio <= h <= fin and acepta(d, lapso)]
+    else:
+        inicio, fin = lapsos[0]["desde_h"], lapsos[-1]["hasta_h"]
+        candidatos = []
+        for d, h in pool:
+            indice = _indice_de_lapso(lapsos, h)
+            if indice is not None and acepta(d, indice):
+                candidatos.append((d, h))
 
-    asignadas = []
-    for lugar in asignar_paradas_a_objetivos(pool, objetivos):
-        destino = next(d for d, _ in pool if d.id == lugar["id"])
-        asignadas.append(armar(destino, lugar["horas_estimadas"]))
+    def clave(destino, horas):
+        objetivo = por_indice.get(_indice_de_lapso(lapsos, horas))
+        pide_proposito = objetivo and objetivo["tipo_pedido"] in ("comida", "descanso")
+        encaja = 0 if pide_proposito and _coincide_proposito(destino.intereses or [], destino.tipo, objetivo["proposito"]) else 1
+        distancia = getattr(destino, "distancia_a_ruta_km", None)
+        return (-prioridad(destino), encaja, -_puntos_interes(destino, intereses), distancia if distancia is not None else 999)
 
-    ids_usados = {lugar["id"] for lugar in asignadas}
-    por_lapso = {l["indice"]: [] for l in lapsos}
-    for d, h in _ordenar_candidatos([(d, h) for d, h in pool if d.id not in ids_usados], intereses, None):
-        indice = _indice_de_lapso(lapsos, h)
-        if indice is not None and acepta(d, indice):
-            por_lapso[indice].append(armar(d, h))
-
-    relleno = []
-    while any(por_lapso.values()):
-        for indice in por_lapso:  # una por lapso en cada vuelta
-            if por_lapso[indice]:
-                relleno.append(por_lapso[indice].pop(0))
-    return _linea_de_tiempo(_elegir_con_distinguidos(asignadas + relleno, limite))
+    resultado = []
+    for r in _repartir_por_franjas(candidatos, inicio, fin, clave)[:limite]:
+        lugar = armar(r["destino"], r["horas"])
+        lugar["franja"] = r["franja"]
+        lugar["rango_franja"] = r["rango_franja"]
+        lugar["rango_global"] = r["rango_global"]
+        lugar["recomendada"] = r["rango_global"] < TAMANO_PAGINA_SUGERENCIAS
+        resultado.append(lugar)
+    # La lista completa va en orden de camino (hora); el frontend saca de ahí las recomendadas.
+    resultado.sort(key=lambda l: l["horas_estimadas"])
+    return resultado
 
 
 def _consulta_destinos(excluir_ids):
@@ -663,7 +729,7 @@ def _consulta_destinos(excluir_ids):
     return consulta.all()
 
 
-def _candidatos_en_el_corredor(ruta, limite, excluir_ids):
+def _candidatos_en_el_corredor(ruta, limite, excluir_ids, intereses=None):
     """Filtra los destinos de la base que caen cerca de la carretera real
     de `ruta` (dict con "geometria", "distancia_km", "tiempo_h", y los
     puntos de "origen"/"destino").
@@ -711,7 +777,10 @@ def _candidatos_en_el_corredor(ruta, limite, excluir_ids):
 
     for radio in RADIOS_CORREDOR_KM:
         candidatos = [(d, h) for d, h, dist in calculados if dist is not None and dist <= radio]
-        if len(candidatos) >= limite:
+        # Con intereses marcados, el radio se amplía hasta juntar `limite` lugares que
+        # SÍ cumplen esos intereses (no solo lugares cualesquiera).
+        relevantes = [c for c in candidatos if coincide_intereses(c[0], intereses)]
+        if len(relevantes) >= limite:
             return candidatos
 
     # Ni con el radio más amplio alcanzó: se regresa lo que haya (puede
@@ -727,7 +796,7 @@ def _ordenar_candidatos(candidatos, intereses, horas_objetivo):
 
     def puntaje(item):
         destino, horas_estimadas = item
-        coincide_interes = 0 if (intereses and intereses & set(destino.intereses or [])) else 1
+        coincide_interes = -_puntos_interes(destino, intereses)  # más intereses cumplidos, primero
         distancia_a_objetivo = abs(horas_estimadas - horas_objetivo) if horas_objetivo is not None else 0
         return (coincide_interes, distancia_a_objetivo)
 
@@ -735,7 +804,7 @@ def _ordenar_candidatos(candidatos, intereses, horas_objetivo):
 
 
 def _sugerir_desde_base(intereses, limite, ruta, horas_max, excluir_ids):
-    candidatos = _candidatos_en_el_corredor(ruta, limite, excluir_ids) if ruta else None
+    candidatos = _candidatos_en_el_corredor(ruta, limite, excluir_ids, intereses) if ruta else None
 
     if candidatos is None:
         # No hay geometría de ruta (ej. faltó origen/destino, u OSRM no
@@ -746,6 +815,8 @@ def _sugerir_desde_base(intereses, limite, ruta, horas_max, excluir_ids):
             return None
         candidatos = [(d, None) for d in destinos]
 
+    # Filtro principal: solo lo que cumple los intereses marcados en el inicio.
+    candidatos = [c for c in candidatos if coincide_intereses(c[0], intereses)]
     if not candidatos:
         return []
 

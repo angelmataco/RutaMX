@@ -475,3 +475,117 @@ def test_se_pueden_pedir_hasta_30_tramos_en_un_viaje_largo():
     assert len(ai_service.lapsos_de_la_ruta(30, tramos=30)) == 30   # 1 h de camino cada uno
     # un viaje corto nunca se divide en tramos de menos de 30 min
     assert len(ai_service.lapsos_de_la_ruta(4, tramos=30)) <= 7
+
+
+# ---------------------------------------------------------------------------
+# Filtro principal: lo marcado en "¿Qué buscas?" manda sobre todo lo demás
+# ---------------------------------------------------------------------------
+
+def _destino_con(id_, nombre, tipo, intereses, estrella=False):
+    from types import SimpleNamespace as D
+
+    return D(
+        id=id_, nombre=nombre, tipo=tipo, intereses=intereses, gastronomia_destacada=estrella,
+        reconocimiento_gastronomico="Guía Michelin (1 estrella)" if estrella else None,
+        lat=20.0, lon=-100.0, descripcion="", poblacion=None,
+    )
+
+
+def test_coincide_intereses_pueblos_magicos_es_el_tipo_no_un_interes_guardado():
+    pueblo = _destino_con(1, "Pueblo", "pueblo_magico", ["cultura"])
+    ciudad = _destino_con(2, "Ciudad", "ciudad_principal", ["cultura"])
+    assert ai_service.coincide_intereses(pueblo, {"pueblos_magicos"}) is True
+    assert ai_service.coincide_intereses(ciudad, {"pueblos_magicos"}) is False
+    assert ai_service.coincide_intereses(ciudad, {"cultura"}) is True
+    assert ai_service.coincide_intereses(ciudad, {"naturaleza"}) is False
+    assert ai_service.coincide_intereses(ciudad, set()) is True  # sin intereses marcados, todo vale
+
+
+def test_sugerencias_solo_de_los_intereses_marcados_aunque_haya_una_estrella_de_otro_tipo(monkeypatch):
+    naturaleza_1 = _destino_con(1, "Cascada", "sitio_turistico", ["naturaleza"])
+    naturaleza_2 = _destino_con(2, "Bosque", "sitio_turistico", ["naturaleza", "cultura"])
+    restaurante_famoso = _destino_con(3, "Famoso", "ciudad_principal", ["comida"], estrella=True)
+    pueblo = _destino_con(4, "Pueblo", "pueblo_magico", ["cultura"])
+    pool = [(naturaleza_1, 2.0), (restaurante_famoso, 2.5), (naturaleza_2, 4.0), (pueblo, 4.5)]
+    monkeypatch.setattr(ai_service, "obtener_pool_con_horas", lambda *a, **k: pool)
+    ruta = {"tiempo_h": 6.0}
+
+    # Naturaleza: la estrella de "comida" NO se cuela, aunque sea distinguida y esté cerca.
+    resultado = ai_service._sugerir_por_lapsos({"naturaleza"}, 10, ruta, "08:00", set())
+    assert {l["nombre"] for l in resultado} == {"Cascada", "Bosque"}
+
+    # Naturaleza + Cultura: cualquiera de las dos vale, pero no la de solo "comida".
+    resultado = ai_service._sugerir_por_lapsos({"naturaleza", "cultura"}, 10, ruta, "08:00", set())
+    assert {l["nombre"] for l in resultado} == {"Cascada", "Bosque", "Pueblo"}
+
+    # Pueblos mágicos: se filtra por el tipo del lugar.
+    resultado = ai_service._sugerir_por_lapsos({"pueblos_magicos"}, 10, ruta, "08:00", set())
+    assert {l["nombre"] for l in resultado} == {"Pueblo"}
+
+    # Sin intereses: entra todo, incluida la estrella.
+    resultado = ai_service._sugerir_por_lapsos(set(), 10, ruta, "08:00", set())
+    assert {l["nombre"] for l in resultado} == {"Cascada", "Bosque", "Famoso", "Pueblo"}
+
+
+def test_tramo_personalizado_de_comer_manda_sobre_los_intereses(monkeypatch):
+    naturaleza = _destino_con(1, "Cascada", "sitio_turistico", ["naturaleza"])
+    fonda = _destino_con(2, "Fonda", "pueblo_magico", ["comida"])
+    monkeypatch.setattr(ai_service, "obtener_pool_con_horas", lambda *a, **k: [(naturaleza, 1.5), (fonda, 2.0)])
+
+    # El usuario marcó Naturaleza pero pidió a mano "comer" en el tramo 0: ahí solo comida.
+    resultado = ai_service._sugerir_por_lapsos(
+        {"naturaleza"}, 10, {"tiempo_h": 6.0}, "08:00", set(), lapso=0, propositos={0: "comida"}
+    )
+    assert [l["nombre"] for l in resultado] == ["Fonda"]
+
+
+def test_asignar_paradas_respeta_el_filtro_de_intereses_de_cada_objetivo():
+    naturaleza = _destino_con(1, "Cascada", "sitio_turistico", ["naturaleza"])
+    playa = _destino_con(2, "Playa", "sitio_turistico", ["playas"])
+    solo_naturaleza = lambda d: ai_service.coincide_intereses(d, {"naturaleza"})
+    asignadas = ai_service.asignar_paradas_a_objetivos(
+        [(playa, 3.0), (naturaleza, 3.4)],
+        [{"proposito": "naturaleza", "hora_objetivo": 3.0, "acepta": solo_naturaleza}],
+    )
+    assert [l["nombre"] for l in asignadas] == ["Cascada"]
+
+
+def test_recomendadas_una_por_franja_de_horas_con_prioridad_a_la_estrella(monkeypatch):
+    # Viaje de 10 h: ventana 0.5 h – 9.67 h, 5 franjas de ~1.8 h cada una.
+    def d(id_, nombre, horas, estrella=False, intereses=("cultura",)):
+        return _destino_con(id_, nombre, "ciudad_principal", list(intereses), estrella=estrella), horas
+
+    pool = [
+        d(1, "F1 común", 1.0), d(2, "F1 estrella", 1.6, estrella=True),
+        d(3, "F2 común", 3.0),
+        d(4, "F3 común A", 5.0), d(5, "F3 común B", 5.2),
+        d(6, "F4 común", 7.0),
+        d(7, "F5 común", 9.0),
+        d(8, "F2 extra", 3.4),
+    ]
+    monkeypatch.setattr(ai_service, "obtener_pool_con_horas", lambda *a, **k: pool)
+
+    lista = ai_service._sugerir_por_lapsos({"cultura"}, 40, {"tiempo_h": 10.0}, "08:00", set())
+
+    # La lista completa va en orden de hora...
+    horas = [l["horas_estimadas"] for l in lista]
+    assert horas == sorted(horas)
+    # ...y las recomendadas son 5, una por franja, y en cada franja gana la estrella.
+    recomendadas = [l for l in lista if l["recomendada"]]
+    assert len(recomendadas) == 5
+    assert sorted(l["franja"] for l in recomendadas) == [0, 1, 2, 3, 4]
+    assert "F1 estrella" in {l["nombre"] for l in recomendadas}
+    assert "F1 común" not in {l["nombre"] for l in recomendadas}
+    # Los que sobran quedan detrás en el rango global (segundo mejor de cada franja, etc.).
+    assert all(l["rango_global"] >= 5 for l in lista if not l["recomendada"])
+
+
+def test_recomendadas_completan_hasta_cinco_si_falta_una_franja(monkeypatch):
+    # Solo hay lugares en 2 de las 5 franjas: se completa con los siguientes mejores.
+    pool = [
+        (_destino_con(i, f"L{i}", "ciudad_principal", ["cultura"]), h)
+        for i, h in enumerate([1.0, 1.2, 1.4, 8.8, 9.0, 9.2], start=1)
+    ]
+    monkeypatch.setattr(ai_service, "obtener_pool_con_horas", lambda *a, **k: pool)
+    lista = ai_service._sugerir_por_lapsos({"cultura"}, 40, {"tiempo_h": 10.0}, "08:00", set())
+    assert sum(1 for l in lista if l["recomendada"]) == 5

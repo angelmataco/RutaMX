@@ -322,22 +322,60 @@ def test_sin_horario_nocturno_no_se_sugiere_dormir(client):
     assert not any(l.get("proposito") == "descanso" for l in datos["sugerencias"])
 
 
-def test_lugares_con_estrella_van_primero_en_la_primera_pagina(client):
-    """CDMX -> Oaxaca pasa por Puebla y Atlixco (Michelin): salen antes que el resto."""
-    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&limite=16").get_json()
+def _ganadores_por_franja(sugerencias):
+    """{franja: lugar recomendado} (el de rango_franja 0 de cada franja)."""
+    return {s["franja"]: s for s in sugerencias if s.get("rango_franja") == 0}
+
+
+def test_dentro_de_cada_franja_de_horas_gana_el_lugar_con_estrella(client):
+    """Regla nueva: 5 recomendadas repartidas por franjas de horas y, en cada franja, si hay un
+    lugar con estrella cerca de la ruta (CDMX -> Oaxaca: Puebla, Atlixco), ese es el que gana."""
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&limite=40").get_json()
     sugerencias = datos["sugerencias"]
-    marcas = [bool(s["gastronomia_destacada"]) for s in sugerencias]
-    assert any(marcas)
-    assert marcas[0] is True                       # el primero ya es distinguido
-    assert marcas == sorted(marcas, reverse=True)  # todos los distinguidos antes que los demás
-    assert all(marcas[:2])                         # y entran en las primeras 4 (aquí hay al menos 2)
+    assert any(s["gastronomia_destacada"] for s in sugerencias)
+
+    ganadores = _ganadores_por_franja(sugerencias)
+    franjas_con_estrella = {
+        s["franja"] for s in sugerencias if s["gastronomia_destacada"] and (s["distancia_a_ruta_km"] or 0) <= 40
+    }
+    assert franjas_con_estrella
+    for franja in franjas_con_estrella:
+        assert ganadores[franja]["gastronomia_destacada"] is True
+
+    # Las recomendadas son a lo más 5 y ninguna franja repite ganador; la lista va por hora.
+    recomendadas = [s for s in sugerencias if s["recomendada"]]
+    assert 1 <= len(recomendadas) <= 5
+    horas = [s["horas_estimadas"] for s in sugerencias]
+    assert horas == sorted(horas)
 
 
-def test_en_un_tramo_los_distinguidos_tambien_van_primero(client):
-    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&tramos=3&lapso=0&limite=8").get_json()
-    marcas = [bool(s["gastronomia_destacada"]) for s in datos["sugerencias"]]
-    assert marcas == sorted(marcas, reverse=True)
-    assert marcas[0] is True
+def test_en_un_tramo_tambien_gana_el_distinguido_de_cada_franja(client):
+    datos = client.get("/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&tramos=3&lapso=0&limite=40").get_json()
+    sugerencias = datos["sugerencias"]
+    assert sugerencias
+    ganadores = _ganadores_por_franja(sugerencias)
+    for franja, ganador in ganadores.items():
+        estrellas = [s for s in sugerencias if s["franja"] == franja and s["gastronomia_destacada"] and (s["distancia_a_ruta_km"] or 0) <= 40]
+        if estrellas:
+            assert ganador["gastronomia_destacada"] is True
+
+
+def test_intereses_marcados_son_el_filtro_principal(client):
+    """Naturaleza + Cultura: ninguna recomendación puede ser de otra cosa (aunque tenga estrella)."""
+    datos = client.get(
+        "/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&limite=40&intereses=naturaleza,cultura"
+    ).get_json()
+    assert datos["sugerencias"]
+    for s in datos["sugerencias"]:
+        assert {"naturaleza", "cultura"} & set(s["intereses"])
+
+
+def test_pueblos_magicos_filtra_por_el_tipo_del_lugar(client):
+    datos = client.get(
+        "/api/sugerencias?origen=Ciudad de Mexico&destino=Oaxaca de Juarez&limite=40&intereses=pueblos_magicos"
+    ).get_json()
+    assert datos["sugerencias"]
+    assert all(s["categoria"] == "Pueblo Mágico" for s in datos["sugerencias"])
 
 
 def test_un_lugar_con_estrella_lejos_de_la_ruta_no_pasa_al_frente(client):
