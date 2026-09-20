@@ -68,10 +68,11 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 - **Navbar fijo** (`position: fixed`, `navbar.js` + bloque final de `styles.css`): al bajar más de
   48 px se encoge a ~53 px (51 en celular) con fondo translúcido y desenfoque; quedan el
-  logo, "RutaMX" y los botones de navegación (con su misma animación gooey y su sección activa),
-  repartidos en tercios de la pantalla (la marca centrada en el primer tercio y los botones en el
-  segundo, simétricos respecto al centro); el avatar se oculta y, si la ventana de perfil estaba abierta, se cierra. En celular no cabe el nombre
-  junto a los botones: quedan el logo y los botones juntos, centrados, en una fila. Al subir de 16 px vuelve a su tamaño completo.
+  logo y "RutaMX" (centrados en el primer tercio de la pantalla) y, en el segundo tercio, la
+  **píldora de progreso** (ver abajo). Los botones de navegación y el avatar solo están en el navbar
+  completo; si la ventana de perfil estaba abierta, se cierra al encogerse. En celular queda solo
+  el logo (sin el nombre) junto a la píldora. Al subir de 16 px vuelve a su tamaño completo y la
+  píldora desaparece.
   Un espaciador (`.navbar-espacio`) conserva la altura completa en el flujo, así el contenido
   no salta al encogerse. Queda por encima del mapa, la píldora y el grid reveal; las ventanas
   `<dialog>` lo tapan como al resto de la página. `scroll-padding-top` evita que los enlaces del
@@ -583,12 +584,17 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (oculto) con el valor, así que `auth.js` no cambió.
 - **Menú gooey en el navbar** (`gooey.js`): Ruta / Descubre / Itinerario; la opción se
   separa con un cuello elástico **al pasar el cursor** (al salir vuelve a la sección
-  actual, que sigue el scroll); también al hacer clic, con scroll suave. En pantallas ≤640 px el menú pasa a su propia fila. En el navbar compacto (al bajar) los
-  botones siguen visibles con la misma animación (ver la sección "Navbar fijo" de abajo).
-- **Píldora de progreso** (`pildora.js`): flotante abajo a la **derecha**, grande, con un anillo que
-  se llena al bajar y el nombre de la sección; al tocarla se despliega para saltar a
-  Inicio / Ruta / Descubre / Itinerario. Solo aparece cuando ya hay ruta calculada
-  (≥ 2 secciones visibles). `secciones.js` es el módulo compartido de "sección activa".
+  actual, que sigue el scroll); también al hacer clic, con scroll suave. En pantallas ≤640 px el menú pasa a su propia fila. Los botones solo están en el navbar
+  completo (arriba de la página); al bajar, la píldora de progreso ocupa su lugar.
+- **Píldora de progreso** (`pildora.js`): un anillo que se llena al bajar y el nombre de la
+  sección; al tocarla se despliega (hacia abajo) para saltar a Inicio / Ruta / Descubre /
+  Itinerario. **Vive dentro del navbar compacto**, en el segundo tercio de la pantalla (donde
+  antes estaba la píldora flotante abajo a la derecha, que ya no existe): solo se ve cuando el
+  navbar se encoge, es decir, cuando empiezas a deslizar; con el navbar completo no está en ningún
+  lado, y si estaba desplegada al volver arriba, se cierra. Se ve también sin ruta calculada (con
+  la sección "Inicio"). El resalte del menú desplegado **sigue al cursor** (y al foco del teclado)
+  con su animación de resorte y vuelve a la sección activa al salir; la sección activa se marca además
+  con un punto terracota. `secciones.js` es el módulo compartido de "sección activa".
 - **Selector de hora gooey** (`duracion.js`, efecto `duration-picker` de rare-ui): la hora
   de salida es una píldora `[ HH Hr. ][ MM Min. ][ ✎ ]`; al tocar el lápiz (o la hora/los
   minutos) se separa en tres piezas con resorte y el lápiz pasa a palomita. **No se escribe**:
@@ -693,8 +699,11 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   mapa: cuadrícula gris cálida que se parte en cuadritos al ritmo de ~4.5 s estimados; cuando
   llega la ruta se deshace en una ola diagonal y deja ver el mapa (pastilla "Trazando tu
   ruta…"). No se agregó espera artificial: si el servidor responde rápido, la cuadrícula
-  acelera y se disuelve antes. Además, orbe grande "Calculando tu ruta…" arriba y "Buscando
-  ideas…" en las sugerencias, y el panel de resumen se atenúa.
+  acelera y se disuelve antes. Además, orbe grande "Buscando ideas…" en las sugerencias, y el panel
+  de resumen se atenúa. **Ya no hay orbe "Calculando tu ruta…"** (se quitó a pedido de Angel,
+  2026-09-20): al pulsar "Emprender ruta" la página baja directo a la sección "Tu recorrido"
+  (`irASeccionRuta()` en `main.js`), alineada bajo el navbar y con su contenido centrado, mientras el
+  mapa muestra la cuadrícula. El mismo scroll se usa al aplicar un plan de "Planear con IA".
 
 ## Tramos en automático = "Paradas sugeridas" del resumen
 

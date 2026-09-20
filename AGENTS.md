@@ -99,7 +99,8 @@ inicio del archivo que edites.
 - Navbar y secciones: el navbar es `position: fixed` con un espaciador (`.navbar-espacio`) y se
   encoge al bajar (`navbar.js`); no lo vuelvas `sticky` ni cambies su alto sin actualizar
   `--tope-superior` en `styles.css`. Lo que agregues al navbar decide si se oculta en compacto
-  (`.navbar--compacto`). El tope suave entre secciones es `tope.js`, no `scroll-snap` de CSS (ver
+  (`.navbar--compacto`). La píldora de progreso vive en el navbar compacto (`[data-navbar-progreso]`),
+  no flotando abajo a la derecha. El tope suave entre secciones es `tope.js`, no `scroll-snap` de CSS (ver
   bitácora 03); las secciones nuevas son `.section` con `id` y entran solas.
 - Avatar de sesión: Blobatar 2.7 copiado en `app/static/js/vendor/` y `css/blobatar-*.css`; esas
   copias no se editan (la lógica es `avatar.js`) y se mantiene la versión 2.x. Un `gaze()` debe

@@ -94,8 +94,9 @@ real por hacer, no porque la feature esté incompleta.
   ventanas emuladas: falta probarlos en un teléfono real y con trackpad (momentum). El
   seguimiento de ojos del avatar no corre sin mouse fino ni con "reducir movimiento" (lo decide
   el paquete).
-- En el navbar compacto el perfil no se ve (pedido de Angel: solo logo, nombre y botones); para
-  abrirlo hay que subir. Si estorba, mostrar el avatar también ahí.
+- En el navbar compacto no se ve el perfil ni los botones de navegación (pedido de Angel: solo
+  logo, nombre y la píldora de progreso); para abrirlos hay que subir. Si estorba, mostrar el avatar
+  también ahí.
 - Dos medidas del CSS son aproximadas y hay que ajustarlas si cambian el formulario o el navbar:
   `--tope-superior` (54px, alto del navbar compacto) y los 760px del espacio bajo el hero sin
   resultados (recuadro ~694 + navbar + holgura), ambas en `styles.css`.

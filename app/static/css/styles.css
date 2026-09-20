@@ -2452,14 +2452,11 @@ html {
   box-shadow: 0 8px 24px -14px rgba(44, 34, 30, 0.28);
 }
 
-/* Compacto: logo + nombre + botones de navegación (sin el perfil), juntos y centrados en la
-   página. Cuánto se desplaza cada uno lo calcula navbar.js (--marca-dx / --links-dx). */
+/* Compacto: solo logo + nombre, con su centro en el primer tercio de la pantalla. Cuánto se
+   desplaza lo calcula navbar.js (--marca-dx). Los botones de navegación quedan solo en el navbar
+   completo; en su lugar (segundo tercio) va la píldora de progreso. */
 .navbar--compacto .navbar__brand {
   translate: var(--marca-dx, 0px) 0;
-}
-
-.navbar--compacto .navbar__links {
-  translate: var(--links-dx, 0px) 0;
 }
 
 .navbar--compacto .navbar__logo {
@@ -2478,6 +2475,7 @@ html {
   pointer-events: none;
 }
 
+.navbar--compacto .navbar__links,
 .navbar--compacto .navbar__auth {
   opacity: 0;
   visibility: hidden;
@@ -2489,8 +2487,13 @@ html {
   position: absolute;
 }
 
-/* Celular: no cabe el nombre junto a los botones; queda el logo + los botones en una fila. */
+/* Celular: los botones salen del flujo (su fila ya no existe) y el nombre no cabe junto a la
+   píldora: queda el logo. */
 @media (max-width: 640px) {
+  .navbar--compacto .navbar__links {
+    display: none;
+  }
+
   .navbar--compacto .navbar__marca {
     display: none;
   }
@@ -2498,11 +2501,55 @@ html {
   .navbar--compacto .navbar__inner {
     flex-wrap: nowrap;
   }
+}
 
-  .navbar--compacto .navbar__links {
-    order: 0;
-    width: auto;
-  }
+/* Píldora de progreso (efectos/pildora.js) dentro del navbar compacto. La ranura está en el
+   segundo tercio de la pantalla (2/3 del ancho del navbar, que ocupa toda la ventana) y solo se
+   ve con el navbar compacto: arriba de todo, la píldora no está en ningún lado. */
+.navbar__progreso {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(100% * 2 / 3);
+  width: 0;
+  transition: opacity 0.25s ease, visibility 0.25s;
+}
+
+.navbar:not(.navbar--compacto) .navbar__progreso {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* La píldora se ancla por su centro y, al desplegarse, crece hacia abajo (antes crecía hacia
+   arriba y a la izquierda desde la esquina inferior derecha de la página). */
+.navbar__progreso .pildora {
+  position: absolute;
+  top: calc(50% - 18px); /* mitad del alto de la píldora cerrada (36 px) */
+  left: 0;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+}
+
+.navbar__progreso .pildora__superficie {
+  top: 0;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  translate: -50% 0;
+  box-shadow: 0 6px 18px rgba(27, 67, 50, 0.14);
+}
+
+.navbar__progreso .pildora__cerrada {
+  gap: 10px;
+  padding: 6px 16px 6px 10px;
+  font-size: 0.95rem;
+}
+
+.navbar__progreso .pildora__anillo {
+  width: 24px;
+  height: 24px;
 }
 
 /* navbar.js apaga las transiciones un instante para medir la altura expandida. */

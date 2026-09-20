@@ -44,7 +44,7 @@ sugerencias → itinerario → guardar):
   se usan con `{{ icono("ruta") }}` y en JS con `RutaIconos.html("ruta")`.
 - **Efectos visuales** (`app/static/js/efectos/` + `app/static/css/efectos.css`, en JS/CSS puro, sin
   librerías): los 8 de rare-ui (contador tipo odómetro, borrar con confirmación, PIN por casillas,
-  menú gooey, píldora de progreso, selector de hora gooey con ruedita —minutos de 10 en 10—,
+  menú gooey, píldora de progreso (dentro del navbar al bajar), selector de hora gooey con ruedita —minutos de 10 en 10—,
   cuadrícula "grid reveal" sobre el mapa y orbe de puntos al cargar) más la **luz que sigue al
   cursor** en tarjetas y ventanas y el **fondo de líneas que fluyen** (background-paths, con los
   colores de la paleta). **No se pueden quitar ni reemplazar**: ver
@@ -58,7 +58,7 @@ sugerencias → itinerario → guardar):
   monito generado con [Blobatar](https://blobatar.dev) (MIT) a partir del nombre (siempre el mismo
   para la misma cuenta, sin guardar nada); sus ojos siguen al mouse, se enoja al picarle y abre
   una ventana de perfil con su propio monito. El navbar es fijo y se encoge al bajar (logo,
-  nombre y botones, con fondo translúcido), y la página hace un tope suave al llegar a cada
+  nombre y la píldora de progreso, con fondo translúcido), y la página hace un tope suave al llegar a cada
   sección o al recuadro del formulario. Ver `bitacora_proyecto/01_LO_QUE_YA_ESTA_HECHO.md`.
 - **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`app/models.py`,
   modelo `RutaGuardada`), ligadas a la cuenta que las guardó — ya no se

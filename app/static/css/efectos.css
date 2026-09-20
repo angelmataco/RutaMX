@@ -577,7 +577,7 @@
 
 .pildora__resalte {
   position: absolute;
-  top: 0;
+  top: 8px; /* = el padding de .pildora__abierta: pildora.js lo coloca con el offsetTop de cada <li>, medido desde la lista */
   left: 8px;
   right: 8px;
   border-radius: 16px;
@@ -966,17 +966,7 @@
   }
 }
 
-/* ---------- Calculando la ruta (orbe + resultados atenuados) ---------- */
-.cargando-ruta {
-  display: flex;
-  justify-content: center;
-  padding: 24px 0 0;
-}
-
-.cargando-ruta[hidden] {
-  display: none;
-}
-
+/* ---------- Calculando la ruta (resultados atenuados; el mapa lleva la cuadrícula) ---------- */
 [data-resultados].is-cargando .map-summary-grid .card--summary {
   opacity: 0.55;
   transition: opacity 0.3s ease;

@@ -525,18 +525,24 @@ con el servidor de desarrollo abierto a la vez, la suite completa puede dar
   espaciador `.navbar-espacio` guarda la altura expandida (la mide `navbar.js` con las
   transiciones apagadas, si no mediría un tamaño intermedio; se re-mide al cambiar el tamaño de la
   ventana y al cargar las fuentes). Histéresis 48/16 px para que no parpadee en el límite.
-- En compacto (escritorio) el centro de la marca queda en 1/3 del ancho de la pantalla y el de los
-  botones en 2/3; en celular (<= 640 px) quedan juntos y centrados, porque no caben en tercios. Cuánto se
-  desplaza cada uno (`--marca-dx` y `--links-dx`) lo calcula `navbar.js` en `medir()`: mide dónde
-  caen "naturalmente" en compacto (con desplazamiento 0 y transiciones apagadas) y los mueve
-  desde ahí, por eso sirve igual con la cuadrícula de escritorio que con el flex de celular. Se
-  recalcula al cambiar el tamaño de la ventana y al cargar las fuentes. El lema sale del flujo
-  (`position: absolute`) para que la marca mida solo logo + nombre; por lo mismo `.navbar__auth`
-  también sale del flujo en compacto (si no, el avatar oculto mantiene la altura). El hueco
-  en celular es `SEPARACION_MOVIL_PX` (36 px) al inicio de `navbar.js`; en escritorio no hay
-  constante: sale de los tercios. Se probó
-  antes un centrado solo con CSS (`cqw`), pero no alcanza cuando hay que centrar el conjunto
-  marca + botones, porque el ancho de los botones no se puede leer desde CSS.
+- En compacto el centro de la marca queda en 1/3 del ancho de la pantalla y el de la píldora de
+  progreso en 2/3 (en todos los anchos, celular incluido). Cuánto se desplaza la marca (`--marca-dx`)
+  lo calcula `navbar.js` en `medir()`: mide dónde cae "naturalmente" en compacto (con desplazamiento
+  0 y transiciones apagadas) y la mueve desde ahí, por eso sirve igual con la cuadrícula de
+  escritorio que con el flex de celular. Se recalcula al cambiar el tamaño de la ventana y al cargar
+  las fuentes. El lema sale del flujo (`position: absolute`) para que la marca mida solo logo +
+  nombre; por lo mismo `.navbar__auth` también sale del flujo en compacto (si no, el avatar oculto
+  mantiene la altura). En celular los botones se quitan con `display: none` (su fila ya no existe).
+- **Píldora de progreso dentro del navbar:** `pildora.js` monta su HTML en la ranura
+  `[data-navbar-progreso]` del navbar (posicionada en `left: 66.67%` del navbar, que ocupa toda la
+  ventana, así que no necesita JS para quedar en el segundo tercio). El CSS de la ranura la muestra
+  solo con `.navbar--compacto` (`visibility` + `opacity`, no `hidden`/`display`: la píldora mide
+  su ancho con `offsetWidth` y eso falla con `display: none`). Se ancla por su centro
+  (`translate: -50% 0`) y crece hacia abajo, no hacia arriba/izquierda como cuando estaba en la
+  esquina. `navbar.js` avisa con el evento `navbar:compacto` para cerrarla al volver al navbar
+  completo. Se quitó su regla de "≥ 2 secciones visibles": ahora aparece siempre que el navbar está
+  compacto. Si la página no tiene la ranura, `pildora.js` cae a la esquina inferior derecha de antes.
+  El alto cerrado (36 px) está repetido en `top: calc(50% - 18px)` de `styles.css`.
 - Si se cambia el alto del navbar compacto, hay que actualizar `--tope-superior`
   (54px, en `styles.css`): lo usan `scroll-padding-top` y la altura mínima de las secciones.
 
@@ -557,3 +563,25 @@ grande; un giro de rueda de 100 px desde el inicio de una sección regresaba sol
 punto, y en secciones altas no dejaba pararse a leer. `tope.js` reemplaza eso con un imán corto
 (`FRACCION`/`MAX_PX`/`MIN_PX` al inicio del archivo). No actúa con `prefers-reduced-motion`, con
 una ventana abierta ni mientras se mantiene un clic o toque.
+
+## Menú de la píldora: el resalte sigue al cursor
+
+`pildora.js` solo colocaba el resalte (`.pildora__resalte`) en la sección activa; al pasar el mouse
+solo cambiaba el color del texto, así que se veía "trabado" (con "Inicio" activo, arriba del todo).
+Ahora `colocarResalte(li)` lo lleva al `<li>` bajo el cursor (`pointerenter`) o con foco (`focusin`) y lo
+regresa a la sección activa al salir (`pointerleave` / `focusout`). Al abrir el menú con el cursor
+encima, el resalte cae en la opción que queda bajo el puntero (normal en un resalte que sigue al cursor).
+
+**Resalte descentrado (bug corregido):** `.pildora__resalte` está dentro de `.pildora__abierta`
+(padding 8 px) pero `pildora.js` lo coloca con el `offsetTop` de cada `<li>`, que se mide desde la
+lista (`.pildora__items`), 8 px más abajo. Con `top: 0` la sombra quedaba 8 px más arriba que el
+texto; ahora es `top: 8px` (igual al padding). Si cambia el padding de `.pildora__abierta`, hay
+que cambiar ese `top` también.
+
+## Al generar una ruta: bajar directo a "Ruta", sin orbe en medio
+
+El scroll apuntaba al contenedor `[data-resultados]`, cuyo primer hijo era el orbe "Calculando tu
+ruta…", así que la pantalla se quedaba en medio de esa animación. Se quitó el orbe (`data-cargando-ruta`,
+`.cargando-ruta`) y el scroll va a `#ruta` con `RutaEfectos.secciones.irA("ruta")`, que respeta
+`scroll-padding-top`: la sección queda bajo el navbar y, como llena la pantalla y centra su contenido,
+se ve "centrada". La cuadrícula del mapa (grid reveal) y el orbe de las sugerencias siguen.

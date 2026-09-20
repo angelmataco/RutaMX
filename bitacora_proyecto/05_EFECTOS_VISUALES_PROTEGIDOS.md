@@ -40,7 +40,7 @@ a JS/CSS puro** porque RutaMX no tiene React ni build. La carpeta original no se
 | 2 | delete-button | `eliminar.js` | Borrar parada con confirmación ✓/✕ en el mismo botón. | `[data-eliminar-parada]` dentro de `#tpl-parada-itinerario`; `main.js` lo monta con `RutaEfectos.eliminar.montar(...)` |
 | 3 | otp-input | `pin.js` | PIN en 4 casillas (a todo lo ancho de la ventana) con dígito rodando, cursor deslizante y sacudida al error. | `.modal-auth` con `input[name="pin"]` (login y registro) y `.empty-state` de error en cada formulario |
 | 4 | gooey-nav | `gooey.js` | Menú del navbar; la opción se separa con un cuello elástico al pasar el cursor por encima. | `<nav class="navbar__links">` con enlaces `<a href="#ruta">`, `#descubre`, `#itinerario` |
-| 5 | scroll-progress | `pildora.js` + `secciones.js` | Píldora flotante (esquina inferior derecha) con anillo de progreso y menú de secciones. | Ids de sección `#inicio` (hero), `#ruta`, `#descubre`, `#itinerario`; contenedor `[data-resultados]` |
+| 5 | scroll-progress | `pildora.js` + `secciones.js` | Píldora con anillo de progreso y menú de secciones, **dentro del navbar compacto** (segundo tercio; solo se ve al empezar a deslizar). | Ids de sección `#inicio` (hero), `#ruta`, `#descubre`, `#itinerario`; contenedor `[data-resultados]`; ranura `[data-navbar-progreso]` en `navbar.html` |
 | 6 | duration-picker | `duracion.js` | Selector de **Hora de salida**: píldora `[HH Hr.][MM Min.][✎]` que se separa con resorte al editar; al tocar hora o minutos se abre una **ruedita** para deslizar (no se escribe). | `[data-hora-salida]` (contenedor) y `[data-time-hidden]` (`<input type="hidden" name="hora_salida">`) en `hero.html`; `main.js` usa `RutaEfectos.horaSalida.poner(...)` |
 | 8 | grid-reveal | `gridreveal.js` | Cuadrícula que se parte mientras carga la ruta y se disuelve en ola sobre el **mapa**. | `[data-map]` (`#mapa`) y el flujo `empezarCarga`/`terminarCarga` de `calcularRuta` en `main.js` |
 | 7 | matrix-orb | `orbe.js` | Orbe de puntos animado como indicador de "pensando". | `[data-sugerencias]` (carga de sugerencias) y `[data-chat-transcript]` del chat de IA (`mostrarPensando` en `planificador_ia.js`) |
@@ -70,12 +70,17 @@ estructura nueva, no eliminarlo.
 - **Gooey:** la animación se ve al **pasar el cursor** (al salir vuelve a la sección real
   de la página); el clic también la dispara. Pedido explícito de Angel: no depender del clic,
   porque al hacer clic la página salta de sección y la animación no se alcanza a ver. Las variables `--gooey-barra` y `--gooey-activo` definen sus colores.
-  En ≤640 px el menú pasa a su propia fila (evita desborde horizontal). **En el navbar compacto
-  (fijo, al bajar) los botones se quedan visibles con este mismo efecto**: `navbar.js` los reubica
-  con `translate` (`--links-dx`), así que no les pongas otro `transform` ni los saques del `<nav>`.
-- **Píldora:** vive abajo a la **derecha** y es grande (pedido de Angel); crece hacia
-  arriba/izquierda al abrirse. Solo aparece con ≥ 2 secciones visibles (o sea, con ruta calculada). Si se
-  agrega otra sección a la página, hay que sumarla a la lista de `secciones.js`.
+  En ≤640 px el menú pasa a su propia fila (evita desborde horizontal). **Los botones solo están en
+  el navbar completo** (arriba de la página); al bajar, el navbar compacto los oculta y en su lugar
+  va la píldora. Con el navbar completo tienen este efecto tal cual.
+- **Píldora:** vive **dentro del navbar compacto**, en el segundo tercio de la pantalla, y solo se
+  ve cuando el navbar está compacto (al empezar a deslizar); con el navbar completo no está en ningún
+  lado (pedido de Angel, 2026-09-20; antes era flotante abajo a la derecha, y esa versión ya no
+  existe). Se ancla por su centro y crece **hacia abajo** al abrirse. Al abrir el menú, el resalte
+  **sigue al cursor** entre las opciones (resorte) y vuelve a la sección activa al salir; no debe quedarse
+  fijo arriba. Ya no depende de tener ≥ 2
+  secciones visibles. Si se agrega otra sección a la página, hay que sumarla a la lista de
+  `secciones.js`.
 - **Hora de salida:** la ruedita de minutos va de **10 en 10** (00 a 50; pedido de Angel), no de uno en uno. El fondo es el **naranja de la app** (pedido de Angel; no volver al verde). Guarda `HH:MM` (24 h) en el input oculto y dispara `change` en él (así
   `main.js` recalcula gasto y sugerencias). No volver a la rueda anterior ni a un `<input type="time">`.
   Enter debe guardar sin enviar el formulario de la ruta. **No se escribe a mano** (pedido de Angel):
@@ -88,7 +93,9 @@ estructura nueva, no eliminarlo.
   lo fuerza, porque `.btn` le ganaba con `display`) y aparece el monito; "Cerrar sesión" vive en la
   ventana de perfil y conserva el resalte gooey.
 - **Botones de sesión:** el radio base es `18px`, no `999px` (ver bug corregido en la bitácora 01).
-- **Orbe:** también se muestra como "Calculando tu ruta…" arriba de los resultados. Tamaño grande a propósito (120 px en sugerencias, 92 px en el chat de IA): es el
+- **Orbe:** se muestra en las sugerencias y en el chat de IA. **Ya no se muestra como "Calculando tu
+  ruta…" arriba de los resultados** (Angel lo quitó, 2026-09-20: al generar la ruta la página baja directo
+  a la sección "Ruta"; no reintroducirlo). Tamaño grande a propósito (120 px en sugerencias, 92 px en el chat de IA): es el
   efecto favorito de Angel, no se achica. Se apaga solo si su contenedor sale del DOM; usa `--color-terracota`.
 
 ## Cómo comprobar que un rediseño no los rompió
@@ -99,11 +106,14 @@ estructura nueva, no eliminarlo.
 4. **PIN:** "Iniciar sesión" → 4 casillas del ancho del campo; escribir dígitos los hace rodar; un PIN
    incorrecto sacude las casillas.
 5. **Gooey:** al pasar el cursor por una opción se separa del resto; sin cursor, marca la sección actual.
-6. **Píldora:** aparece abajo a la derecha tras calcular; al tocarla se despliega y salta.
+6. **Píldora:** no está en ningún lado con el navbar completo; al bajar aparece en el navbar compacto
+   (segundo tercio), el anillo avanza y la etiqueta sigue la sección; al tocarla se despliega hacia abajo
+   y salta; al volver arriba se cierra y desaparece. Nada queda abajo a la derecha.
 7. **Hora de salida:** tocar el lápiz separa las piezas y abre la ruedita de horas; deslizar, tocar los
    minutos (otra ruedita) y la palomita deja `HH:MM`.
 8. **Botón Iniciar sesión:** al pasar el cursor se pinta de terracota con rebote.
-9. **Orbe:** se ve mientras cargan las sugerencias y la ruta.
+9. **Orbe:** se ve mientras cargan las sugerencias (y en el chat de IA); al generar la ruta no hay orbe en medio:
+   la página baja directo a la sección Ruta.
 10. **Grid reveal:** al pulsar "Planea mi ruta" la página baja de inmediato y el mapa muestra la cuadrícula
     hasta que llega la ruta; se puede deslizar mientras carga.
 11. Consola del navegador sin errores y sin scroll horizontal en 375 px.
@@ -111,8 +121,8 @@ estructura nueva, no eliminarlo.
 13. **Luz de tarjetas:** al mover el cursor cerca del borde de una tarjeta o ventana se ilumina el aro; con una ventana abierta solo brilla la ventana, no las tarjetas de atrás.
 14. **Fondo:** líneas que crecen y se desplazan como el original, cambiando entre los tonos de la paleta; con una ventana abierta se pausan.
 15. Ninguna tarjeta ni ventana pierde su fondo blanco (si pasa, revisar el fondo animado y la máscara del aro).
-16. **Navbar compacto:** al bajar se encoge (logo, RutaMX y botones, sin perfil) y los botones conservan
-    el gooey y la sección activa; al subir vuelve al tamaño completo.
+16. **Navbar compacto:** al bajar se encoge (logo, RutaMX y la píldora, sin botones ni perfil); al subir
+    vuelve al tamaño completo, con los botones gooey y el perfil de siempre.
 
 **Step-player: quitado a propósito (2026-09-19).** A Angel no le gustó; se eliminó
 (`stepplayer.js`, su CSS y sus enganchos en `main.js`). No volver a agregarlo.

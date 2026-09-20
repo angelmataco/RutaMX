@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const elementos = {
     resultados: document.querySelector("[data-resultados]"),
-    cargandoRuta: document.querySelector("[data-cargando-ruta]"),
     mapa: document.querySelector("[data-map]"),
     stats: {
       distancia: document.querySelector('[data-stat="distancia"]'),
@@ -159,19 +158,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // servidor: mientras llegan los datos se ve un orbe de "calculando" y se puede seguir
   // navegando. `idCalculo` descarta respuestas viejas si se vuelve a pulsar el botón.
   let idCalculo = 0;
-  let orbeCalculando = null;
   let gridMapa = null; // cuadrícula "grid reveal" sobre el mapa mientras se calcula
+
+  // Al generar una ruta se baja a la sección "Tu recorrido" (mapa y resumen), alineada bajo el
+  // navbar y con el contenido centrado; ya no se queda en medio de una animación de carga.
+  function irASeccionRuta() {
+    if (RutaEfectos.secciones && RutaEfectos.secciones.irA("ruta")) return;
+    const seccion = document.getElementById("ruta") || elementos.resultados;
+    seccion.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function empezarCarga() {
     const yaHabiaResultados = !elementos.resultados.hidden;
     elementos.resultados.hidden = false;
     elementos.resultados.classList.add("is-cargando");
     if (elementos.mapa) RutaMapa.invalidarTamano();
-    if (elementos.cargandoRuta) {
-      elementos.cargandoRuta.hidden = false;
-      if (orbeCalculando) orbeCalculando.destruir();
-      orbeCalculando = RutaEfectos.orbe.montar(elementos.cargandoRuta, { estado: "thinking", tamano: 120, etiqueta: "Calculando tu ruta…" });
-    }
     if (elementos.mapa) {
       if (gridMapa) gridMapa.quitar();
       gridMapa = RutaEfectos.gridReveal.montar(elementos.mapa, { duracion: 4500, texto: "Trazando tu ruta…" });
@@ -179,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.sugerenciasContenedor.innerHTML = '<div class="cargando-orbe"></div>';
     RutaEfectos.orbe.montar(elementos.sugerenciasContenedor.firstChild, { estado: "thinking", tamano: 120, etiqueta: "Buscando ideas para tu recorrido…" });
     elementos.verMasBtn.hidden = true;
-    elementos.resultados.scrollIntoView({ behavior: "smooth" });
+    irASeccionRuta();
     return yaHabiaResultados;
   }
 
@@ -191,11 +192,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (conExito) gridMapa.revelar();
       else gridMapa.quitar();
       gridMapa = null;
-    }
-    if (elementos.cargandoRuta) elementos.cargandoRuta.hidden = true;
-    if (orbeCalculando) {
-      orbeCalculando.destruir();
-      orbeCalculando = null;
     }
   }
 
@@ -1308,7 +1304,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderResumen(estado.resumen);
       renderItinerarioBase(estado.resumen);
 
-      elementos.resultados.scrollIntoView({ behavior: "smooth" });
+      irASeccionRuta();
 
       // Las sugerencias y los tramos se arman con los datos de este plan.
       estado.lapsoActual = null;

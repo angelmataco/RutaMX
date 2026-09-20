@@ -1,7 +1,9 @@
 // Píldora flotante de progreso: un anillo que se llena al bajar por la página y
 // el nombre de la sección actual; al tocarla se despliega en un menú para
 // saltar a otra sección. Adaptado del componente scroll-progress (rare-ui).
-// Solo aparece cuando hay al menos 2 secciones visibles (o sea, ya hay ruta).
+// Vive dentro del navbar compacto, en el segundo tercio de la pantalla, y solo se ve cuando
+// el navbar se encoge (al empezar a deslizar); en el navbar completo no está en ningún lado.
+// Si la página no tiene esa ranura, cae a la esquina inferior derecha como antes.
 
 window.RutaEfectos = window.RutaEfectos || {};
 
@@ -9,7 +11,8 @@ RutaEfectos.pildora = (() => {
   function montar() {
     const raiz = document.createElement("div");
     raiz.className = "pildora";
-    raiz.hidden = true;
+    const ranura = document.querySelector("[data-navbar-progreso]");
+    raiz.hidden = !ranura;
     raiz.innerHTML = `
       <div class="pildora__superficie">
         <button type="button" class="pildora__cerrada" aria-label="Ir a otra sección" aria-expanded="false">
@@ -24,7 +27,7 @@ RutaEfectos.pildora = (() => {
           <ul class="pildora__items"></ul>
         </div>
       </div>`;
-    document.body.appendChild(raiz);
+    (ranura || document.body).appendChild(raiz);
 
     const superficie = raiz.querySelector(".pildora__superficie");
     const cerrada = raiz.querySelector(".pildora__cerrada");
@@ -48,15 +51,17 @@ RutaEfectos.pildora = (() => {
       superficie.style.borderRadius = estaAbierta ? "26px" : `${alto / 2}px`;
     }
 
-    function colocarResalte() {
-      const li = abierta.querySelector(`li[data-id="${activaId}"]`);
-      if (!li) {
+    // El resalte marca la sección activa, y sigue al cursor (o al foco del teclado) mientras
+    // recorres las opciones; al salir vuelve a la activa.
+    function colocarResalte(li) {
+      const destino = li || abierta.querySelector(`li[data-id="${activaId}"]`);
+      if (!destino) {
         resalte.style.opacity = "0";
         return;
       }
       resalte.style.opacity = "1";
-      resalte.style.height = `${li.offsetHeight}px`;
-      resalte.style.transform = `translateY(${li.offsetTop}px)`;
+      resalte.style.height = `${destino.offsetHeight}px`;
+      resalte.style.transform = `translateY(${destino.offsetTop}px)`;
     }
 
     let etiquetaDeseada = "";
@@ -96,6 +101,8 @@ RutaEfectos.pildora = (() => {
           RutaEfectos.secciones.irA(s.id);
         });
         li.appendChild(boton);
+        li.addEventListener("pointerenter", () => colocarResalte(li));
+        li.addEventListener("focusin", () => colocarResalte(li));
         items.appendChild(li);
       });
     }
@@ -118,7 +125,7 @@ RutaEfectos.pildora = (() => {
       const nuevas = RutaEfectos.secciones.disponibles();
       const cambio = nuevas.map((s) => s.id).join() !== secciones.map((s) => s.id).join();
       secciones = nuevas;
-      raiz.hidden = secciones.length < 2;
+      raiz.hidden = ranura ? false : secciones.length < 2; // en el navbar la muestra el CSS
       if (cambio) {
         construirLista();
         if (estaAbierta && secciones.length < 2) cambiarApertura(false);
@@ -137,6 +144,10 @@ RutaEfectos.pildora = (() => {
       avance.style.strokeDashoffset = String(1 - p);
     }
 
+    items.addEventListener("pointerleave", () => colocarResalte());
+    items.addEventListener("focusout", (evento) => {
+      if (!items.contains(evento.relatedTarget)) colocarResalte();
+    });
     cerrada.addEventListener("click", () => cambiarApertura(true));
     document.addEventListener("pointerdown", (evento) => {
       if (estaAbierta && !raiz.contains(evento.target)) cambiarApertura(false);
@@ -146,6 +157,11 @@ RutaEfectos.pildora = (() => {
         cambiarApertura(false);
         cerrada.focus({ preventScroll: true });
       }
+    });
+    // Al volver al navbar completo la píldora se va: se cierra si estaba desplegada.
+    document.addEventListener("navbar:compacto", (evento) => {
+      if (!evento.detail && estaAbierta) cambiarApertura(false);
+      medir();
     });
     window.addEventListener("scroll", pintarProgreso, { passive: true });
     window.addEventListener("resize", () => {
