@@ -1,6 +1,7 @@
+{% from "partials/icons.html" import icono %}
 <section class="hero" id="inicio">
   <div class="container">
-    <p class="kicker kicker--center">ROAD TRIPS POR MÉXICO</p>
+    <p class="kicker kicker--center"><i class="puntos-tricolor" aria-hidden="true"></i>Road trips por México</p>
     <h1 class="hero__headline">
       México se disfruta mejor cuando el camino también cuenta.
     </h1>
@@ -19,7 +20,7 @@
           <p class="kicker">EMPIEZA AQUÍ</p>
           <h2 class="card__title">Planea en minutos</h2>
         </div>
-        <span class="icon-badge">🧭</span>
+        <span class="icon-badge" aria-hidden="true">{{ icono("ruta", 26) }}</span>
       </div>
 
       <form id="hero-form" class="ruta-form" data-role="hero">
@@ -71,10 +72,10 @@
           <input type="number" id="hero-personas" name="personas" min="1" max="8" step="1" data-bubble-input hidden />
         </div>
 
-        <button type="submit" class="btn btn--primary btn--block campo-completo">🗺️ Planea mi ruta</button>
+        <button type="submit" class="btn btn--primary btn--block campo-completo">{{ icono("planear_ruta") }} Emprender ruta</button>
         <div class="hero-acciones-extra campo-completo">
-          <button type="button" class="btn btn--ghost" data-abrir-planificador-ia>🤖 Planear con IA</button>
-          <button type="button" class="btn btn--ghost" data-ver-rutas-guardadas>🗂️ Mis rutas guardadas</button>
+          <button type="button" class="btn btn--ghost" data-abrir-planificador-ia>{{ icono("ia") }} Planear con IA</button>
+          <button type="button" class="btn btn--ghost" data-ver-rutas-guardadas>{{ icono("guardadas") }} Mis rutas guardadas</button>
         </div>
       </form>
     </div>
@@ -83,7 +84,7 @@
 
 <dialog class="modal-rutas" data-modal-rutas>
   <form method="dialog" class="modal-auth__cerrar">
-    <button type="submit" class="icon-btn" aria-label="Cerrar">✕</button>
+    <button type="submit" class="icon-btn" aria-label="Cerrar">{{ icono("cerrar", 16) }}</button>
   </form>
   <p class="kicker">TUS VIAJES</p>
   <h3 class="card__title">Mis rutas guardadas</h3>

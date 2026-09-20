@@ -128,7 +128,7 @@
 
 .del__tapa {
   transform-box: view-box;
-  transform-origin: 3px 6px;
+  transform-origin: 4px 6.5px; /* bisagra de la tapa del bote */
   transition: transform 0.6s cubic-bezier(0.34, 1.1, 0.64, 1);
 }
 
@@ -188,7 +188,7 @@
   justify-content: center;
   gap: 6px;
   height: 100%;
-  background: #f1ebdd;
+  background: #f1e9e0;
   opacity: 0;
   transform: translateX(6px);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -210,7 +210,7 @@
   border-radius: 50%;
   background: var(--color-blanco);
   color: var(--color-texto-gris);
-  box-shadow: 0 1px 2px rgba(31, 51, 39, 0.15);
+  box-shadow: 0 1px 2px rgba(27, 67, 50, 0.15);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -267,7 +267,7 @@
 .otp .otp__casilla:focus {
   outline: none;
   border-color: var(--color-terracota);
-  box-shadow: 0 0 0 3px rgba(199, 106, 76, 0.2);
+  box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.2);
 }
 
 .otp__marca {
@@ -400,7 +400,7 @@
 .gooey__seg {
   position: relative;
   background-color: var(--gooey-barra);
-  box-shadow: 0 1px 0 rgba(31, 51, 39, 0.05);
+  box-shadow: 0 1px 0 rgba(27, 67, 50, 0.05);
   transition: background-color 0.4s ease, border-radius 0.5s cubic-bezier(0.34, 1.16, 0.64, 1);
 }
 
@@ -480,8 +480,8 @@
   bottom: 0;
   overflow: hidden;
   border: 1px solid var(--color-borde);
-  background: rgba(247, 241, 230, 0.82);
-  box-shadow: 0 10px 28px rgba(31, 51, 39, 0.18);
+  background: rgba(250, 247, 242, 0.82);
+  box-shadow: 0 10px 28px rgba(27, 67, 50, 0.18);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   transition: width 0.5s cubic-bezier(0.34, 1.16, 0.64, 1), height 0.5s cubic-bezier(0.34, 1.16, 0.64, 1), border-radius 0.5s ease;
@@ -525,7 +525,7 @@
 }
 
 .pildora__pista {
-  stroke: rgba(31, 51, 39, 0.15);
+  stroke: rgba(27, 67, 50, 0.15);
 }
 
 .pildora__avance {
@@ -579,7 +579,7 @@
   left: 8px;
   right: 8px;
   border-radius: 16px;
-  background: rgba(31, 51, 39, 0.09);
+  background: rgba(27, 67, 50, 0.09);
   opacity: 0;
   transition: transform 0.4s cubic-bezier(0.34, 1.16, 0.64, 1), height 0.4s ease, opacity 0.2s ease;
 }
@@ -621,7 +621,7 @@
   height: 8px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(31, 51, 39, 0.3);
+  background: rgba(27, 67, 50, 0.3);
 }
 
 .pildora__items li.is-activo .pildora__punto {
@@ -742,7 +742,7 @@
   border: 1px solid var(--color-borde);
   border-radius: 16px;
   background: var(--color-blanco);
-  box-shadow: 0 14px 34px rgba(31, 51, 39, 0.18);
+  box-shadow: 0 14px 34px rgba(27, 67, 50, 0.18);
   opacity: 0;
   visibility: hidden;
   transform: translate(-50%, -6px) scale(0.92);
@@ -770,7 +770,7 @@
   height: var(--dur-item);
   transform: translateY(-50%);
   border-radius: 10px;
-  background: #f4e3dc; /* naranja clarito, a juego con el selector */
+  background: var(--color-tinte-terracota); /* naranja clarito, a juego con el selector */
   pointer-events: none;
 }
 
@@ -835,14 +835,17 @@
 
 .dur__rueda-limpiar:hover,
 .dur__rueda-limpiar:focus-visible {
-  background: #f4e3dc;
+  background: var(--color-tinte-terracota);
   color: var(--color-terracota-dark);
   outline: none;
 }
 
 .dur__pluma,
 .dur__palomita {
-  fill: var(--color-blanco);
+  fill: none;
+  stroke: var(--color-blanco);
+  stroke-linecap: round;
+  stroke-linejoin: round;
   transform-origin: 12px 12px;
   transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
@@ -887,7 +890,7 @@
   border-radius: 10px;
   background: var(--color-terracota);
   color: var(--color-blanco);
-  box-shadow: 0 6px 16px rgba(199, 106, 76, 0.28);
+  box-shadow: 0 6px 16px rgba(200, 90, 50, 0.28);
   transform: scale(1.04);
 }
 
@@ -943,7 +946,7 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: rgba(31, 51, 39, 0.55);
+  background: rgba(27, 67, 50, 0.55);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
@@ -1006,5 +1009,233 @@
   .otp--error .otp__fila,
   .del__disparador--rebote > svg:first-child {
     animation: none;
+  }
+}
+
+/* ==========================================================================
+   9. Luz que sigue al cursor (spotlight-card) — tarjetas y ventanas
+   Aro brillante en el borde + resplandor interior que se acercan al puntero.
+   Colores: terracota -> ocre según la posición horizontal (paleta de la app).
+   Las variables --mx --my --xp --spot-on las escribe efectos/spotlight.js.
+   La lista de superficies debe coincidir con SUPERFICIES en spotlight.js.
+   ========================================================================== */
+:is(.card, .ruta-burbuja, .modal-auth, .modal-ajustes, .modal-rutas, .modal-ia) {
+  --spot-color: color-mix(in srgb, var(--color-terracota) calc((1 - var(--xp, 0.5)) * 100%), var(--color-mostaza));
+  --spot-radio: 220px;
+  --spot-brillo: 16%; /* fuerza del resplandor interior */
+  background-image: radial-gradient(
+    var(--spot-radio) circle at var(--mx, -999px) var(--my, -999px),
+    color-mix(in srgb, var(--spot-color) calc(var(--spot-on, 0) * var(--spot-brillo)), transparent),
+    transparent 100%
+  );
+}
+
+:is(.card, .ruta-burbuja) {
+  position: relative; /* los <dialog> ya son fixed por el navegador */
+}
+
+:is(.card, .ruta-burbuja)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1.5px; /* grosor del aro */
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    calc(var(--spot-radio) * 0.85) circle at var(--mx, -999px) var(--my, -999px),
+    var(--spot-color),
+    color-mix(in srgb, var(--color-terracota) 0%, transparent) 100%
+  );
+  opacity: var(--spot-on, 0);
+  /* deja visible solo el borde: se resta el interior a la capa completa */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* Ventanas (<dialog>): el aro se dibuja con capas de fondo y borde transparente. Una
+   máscara en un pseudo-elemento dentro de un <dialog> hace que el navegador deje de pintar
+   el fondo de la ventana, así que aquí no se usa. El chat (translúcido) lleva solo el
+   resplandor interior: el aro se vería a través del cristal. */
+:is(.modal-auth, .modal-ajustes, .modal-rutas) {
+  border: 1.5px solid transparent;
+  box-shadow: var(--shadow-flotante), 0 0 0 1px var(--color-borde);
+  background-color: transparent;
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, border-box;
+  background-image:
+    radial-gradient(
+      var(--spot-radio) circle at var(--mx, -999px) var(--my, -999px),
+      color-mix(in srgb, var(--spot-color) calc(var(--spot-on, 0) * var(--spot-brillo)), transparent),
+      transparent 100%
+    ),
+    linear-gradient(var(--color-blanco), var(--color-blanco)),
+    radial-gradient(
+      calc(var(--spot-radio) * 0.85) circle at var(--mx, -999px) var(--my, -999px),
+      color-mix(in srgb, var(--spot-color) calc(var(--spot-on, 0) * 100%), transparent),
+      transparent 100%
+    );
+}
+
+/* La tarjeta oscura (agave) y el chat translúcido necesitan más luz para notarse */
+.card--aventura {
+  --spot-brillo: 22%;
+}
+
+.modal-ia {
+  --spot-brillo: 20%;
+}
+
+@media (hover: none) {
+  :is(.card, .ruta-burbuja) {
+    --spot-brillo: 10%;
+  }
+}
+
+/* ==========================================================================
+   10. Fondo de líneas que fluyen (background-paths)
+   Capa fija detrás de toda la página (efectos/fondo.js). Para que se vea, los fondos
+   de las secciones son transparentes o translúcidos; las tarjetas siguen opacas, así
+   que el texto nunca queda sobre las líneas.
+   ========================================================================== */
+.fondo-rutas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+
+  /* Paleta de la app (DESIGN.md): por aquí pasa el color de cada curva */
+  --fondo-c0: var(--color-terracota);
+  --fondo-c1: #d96b43; /* terracota vivo */
+  --fondo-c2: #ffb59c; /* arcilla suave */
+  --fondo-c3: var(--color-mostaza);
+  --fondo-c4: #9b6c00; /* ocre profundo */
+  --fondo-c5: var(--color-verde-oscuro);
+  --fondo-c6: #3f6653; /* agave medio */
+  --fondo-c7: #a5d0b9; /* salvia */
+  --fondo-c8: #7a5a4a; /* cuero */
+}
+
+/* <div className="absolute inset-0"><svg className="w-full h-full">: cada juego llena la pantalla.
+   Como en el original, el SVG conserva su proporción (meet) y las curvas salen del viewBox. */
+.fondo-rutas__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lo que hace <motion.path> en el original (mismas claves y valores), con ease linear y bucle:
+     initial  { pathLength: 0.3, opacity: 0.6 }
+     animate  { pathLength: 1, opacity: [0.3, 0.6, 0.3], pathOffset: [0, 1, 0] }
+   framer-motion pinta pathLength como stroke-dasharray "<largo> 1" y pathOffset como
+   stroke-dashoffset negativo, con pathLength="1" en el trazo. Aquí igual. */
+.fondo-rutas__svg path {
+  stroke: var(--fondo-c0);
+  stroke-dasharray: 0.3 1;
+  stroke-dashoffset: 0;
+  stroke-opacity: calc(var(--so, 0.4) * 0.6);
+  animation:
+    fondo-largo var(--dur, 16s) linear infinite,
+    fondo-avance var(--dur, 16s) linear infinite,
+    fondo-opacidad var(--dur, 16s) linear infinite,
+    fondo-tono var(--dur-color, 55s) linear var(--fase-color, 0s) infinite;
+}
+
+@keyframes fondo-largo {
+  from {
+    stroke-dasharray: 0.3 1;
+  }
+  to {
+    stroke-dasharray: 1 1;
+  }
+}
+
+@keyframes fondo-avance {
+  0%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes fondo-opacidad {
+  0%,
+  100% {
+    stroke-opacity: calc(var(--so, 0.4) * 0.3);
+  }
+  50% {
+    stroke-opacity: calc(var(--so, 0.4) * 0.6);
+  }
+}
+
+/* El color recorre la paleta y vuelve al inicio sin salto */
+@keyframes fondo-tono {
+  0% {
+    stroke: var(--fondo-c0);
+  }
+  12% {
+    stroke: var(--fondo-c3);
+  }
+  24% {
+    stroke: var(--fondo-c5);
+  }
+  36% {
+    stroke: var(--fondo-c2);
+  }
+  48% {
+    stroke: var(--fondo-c1);
+  }
+  60% {
+    stroke: var(--fondo-c6);
+  }
+  72% {
+    stroke: var(--fondo-c4);
+  }
+  84% {
+    stroke: var(--fondo-c7);
+  }
+  92% {
+    stroke: var(--fondo-c8);
+  }
+  100% {
+    stroke: var(--fondo-c0);
+  }
+}
+
+/* Con una ventana abierta la página de atrás está congelada: se pausa el movimiento */
+html:has(dialog[open]) .fondo-rutas__svg path {
+  animation-play-state: paused;
+}
+
+/* Secciones sobre el fondo: el lino de la página se ve a través de ellas */
+.hero {
+  background:
+    radial-gradient(60% 50% at 12% 0%, rgba(233, 168, 37, 0.16), transparent 70%),
+    radial-gradient(55% 45% at 92% 8%, rgba(200, 90, 50, 0.12), transparent 70%);
+}
+
+.section--recorrido {
+  background: rgba(245, 239, 235, 0.72);
+}
+
+.section--descubre {
+  background: transparent;
+}
+
+.section--itinerario {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fondo-rutas__svg path {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    stroke-opacity: calc(var(--so, 0.4) * 0.3);
   }
 }

@@ -4,12 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}RutaMX — Road trips por México{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo-emblema.svg') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/efectos.css') }}" />
 </head>
 <body>
+  {% include "partials/iconos_sprite.html" %}
   {% include "partials/navbar.html" %}
 
   <main>
@@ -21,6 +26,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
   <script src="{{ url_for('static', filename='js/formato.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/iconos.js') }}"></script>
   <script src="{{ url_for('static', filename='js/map.js') }}"></script>
   <script src="{{ url_for('static', filename='js/form.js') }}"></script>
   <script src="{{ url_for('static', filename='js/bubble_picker.js') }}"></script>
@@ -34,6 +40,8 @@
   <script src="{{ url_for('static', filename='js/efectos/pildora.js') }}"></script>
   <script src="{{ url_for('static', filename='js/efectos/duracion.js') }}"></script>
   <script src="{{ url_for('static', filename='js/efectos/gridreveal.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/efectos/spotlight.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/efectos/fondo.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/planificador_ia.js') }}"></script>
 </body>

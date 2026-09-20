@@ -15,18 +15,24 @@ RutaEfectos.horaSalida = (() => {
   const AMORTIGUACION = 28;
   const ABIERTO = 8; // px de separación entre piezas al editar
   const MAX = { h: 23, m: 59 };
+  const PASO = { h: 1, m: 10 }; // la rueda de minutos salta de 10 en 10 (00, 10 … 50)
+  const ULTIMO = { h: Math.floor(MAX.h / PASO.h), m: Math.floor(MAX.m / PASO.m) }; // índice más alto de cada rueda
   const ALTO_ITEM = 36; // debe coincidir con --dur-item en efectos.css
   const INICIAL = { h: 8, m: 0 }; // lo que se propone al abrir sin hora
 
-  const PLUMA =
-    "M3.78181 16.3092L3 21L7.69086 20.2182C8.50544 20.0825 9.25725 19.6956 9.84119 19.1116L20.4198 8.53288C21.1934 7.75922 21.1934 6.5049 20.4197 5.73126L18.2687 3.58024C17.495 2.80658 16.2406 2.80659 15.4669 3.58027L4.88841 14.159C4.30447 14.7429 3.91757 15.4947 3.78181 16.3092Z";
-  const PALOMITA = "M7.959 20.513L1.592 12.872L3.128 11.592L8.041 17.487L20.947 3.587L22.413 4.948L7.959 20.513Z";
+  // Lápiz y palomita a medida (trazos, no rellenos): la palomita es la de RutaIconos.
+  const LAPIZ =
+    '<path d="M14.5 3.5L19.5 8.5L8.5 19.5L3.5 19.5L3.5 14.5Z"/><path d="M12.5 5.5L17.5 10.5"/><path d="M6.5 16.5L7.5 17.5"/><path d="M11 21C13.5 20.2 15.5 21.8 18 21T22 21"/>';
+  const PALOMITA = "M4.5 12.8Q8 15.5 9.8 18.2C12.2 13.5 15.5 8.5 20 5.2";
 
   const pad2 = (n) => String(n).padStart(2, "0");
   const acotar = (n, max) => Math.min(max, Math.max(0, Math.trunc(n) || 0));
+  // Índice de la fila de la rueda (0…ULTIMO) <-> valor real (minutos o horas).
+  const indiceDe = (campo, valor) => Math.min(ULTIMO[campo], Math.max(0, Math.round(valor / PASO[campo])));
+  const valorDeIndice = (campo, indice) => indice * PASO[campo];
 
   function htmlRueda(campo) {
-    const items = Array.from({ length: MAX[campo] + 1 }, (_, i) => `<li data-v="${i}">${pad2(i)}</li>`).join("");
+    const items = Array.from({ length: ULTIMO[campo] + 1 }, (_, i) => `<li data-v="${valorDeIndice(campo, i)}">${pad2(valorDeIndice(campo, i))}</li>`).join("");
     return `
       <div class="dur__rueda" data-rueda="${campo}" inert>
         <div class="dur__rueda-vista">
@@ -54,8 +60,8 @@ RutaEfectos.horaSalida = (() => {
       </div>
       <button type="button" class="dur__seg dur__seg--boton" aria-label="Editar hora de salida">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path class="dur__pluma" d="${PLUMA}" />
-          <path class="dur__palomita" d="${PALOMITA}" />
+          <g class="dur__pluma" stroke-width="1.8">${LAPIZ}</g>
+          <path class="dur__palomita" stroke-width="3" d="${PALOMITA}" />
         </svg>
       </button>
       <span class="dur__medida" aria-hidden="true"></span>`;
@@ -151,18 +157,20 @@ RutaEfectos.horaSalida = (() => {
 
     function centrar(campo, valor, suave = false) {
       const { col } = ruedas[campo];
-      const objetivo = acotar(valor, MAX[campo]) * ALTO_ITEM;
+      const indice = indiceDe(campo, valor);
+      const objetivo = indice * ALTO_ITEM;
       if (suave && !RutaEfectos.reducirMovimiento()) col.scrollTo({ top: objetivo, behavior: "smooth" });
       else col.scrollTop = objetivo;
-      marcarActivo(campo, acotar(valor, MAX[campo]));
+      marcarActivo(campo, indice);
     }
 
     function fijarValor(campo, valor) {
-      const v = acotar(valor, MAX[campo]);
+      const indice = indiceDe(campo, acotar(valor, MAX[campo]));
+      const v = valorDeIndice(campo, indice); // los minutos se ajustan al múltiplo de 10 más cercano
       inputs[campo].value = pad2(v);
       ajustarAncho(inputs[campo]);
       sucio = true;
-      marcarActivo(campo, v);
+      marcarActivo(campo, indice);
       return v;
     }
 
@@ -190,8 +198,8 @@ RutaEfectos.horaSalida = (() => {
 
       col.addEventListener("scroll", () => {
         if (ruedaAbierta !== campo) return;
-        const indice = acotar(Math.round(col.scrollTop / ALTO_ITEM), MAX[campo]);
-        if (pad2(indice) !== inputs[campo].value) fijarValor(campo, indice);
+        const indice = acotar(Math.round(col.scrollTop / ALTO_ITEM), ULTIMO[campo]);
+        if (pad2(valorDeIndice(campo, indice)) !== inputs[campo].value) fijarValor(campo, valorDeIndice(campo, indice));
         clearTimeout(temporizador);
         // Al soltar, se acomoda justo en el número más cercano.
         temporizador = setTimeout(() => {
@@ -200,8 +208,9 @@ RutaEfectos.horaSalida = (() => {
       });
 
       items.forEach((li, i) => li.addEventListener("click", () => {
-        fijarValor(campo, i);
-        centrar(campo, i, true);
+        const valor = valorDeIndice(campo, i);
+        fijarValor(campo, valor);
+        centrar(campo, valor, true);
       }));
 
       limpiar.addEventListener("click", () => {
@@ -273,7 +282,7 @@ RutaEfectos.horaSalida = (() => {
           boton.focus();
         } else if ((evento.key === "ArrowUp" || evento.key === "ArrowDown") && editando) {
           evento.preventDefault();
-          const v = fijarValor(campo, valorDe(campo) + (evento.key === "ArrowUp" ? 1 : -1));
+          const v = fijarValor(campo, valorDe(campo) + (evento.key === "ArrowUp" ? 1 : -1) * PASO[campo]);
           if (ruedaAbierta === campo) centrar(campo, v, true);
         }
       });

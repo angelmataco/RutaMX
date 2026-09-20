@@ -1,3 +1,4 @@
+{% from "partials/icons.html" import icono %}
 <div class="map-summary-grid">
   <div class="card card--map">
     <h3 class="card__title">Tu ruta en el mapa</h3>
@@ -26,7 +27,7 @@
       </div>
     </div>
     <ul class="gasto-desglose" data-gasto-desglose hidden></ul>
-    <button type="button" class="btn-pildora" data-abrir-ajustes-gasto>⚙️ Ajustes de gasto</button>
+    <button type="button" class="btn-pildora" data-abrir-ajustes-gasto>{{ icono("ajustes", 15) }} <span data-ajustes-texto>Ajustes de gasto</span></button>
     <p class="card__note" data-gasto-incluye>
       Llena el formulario para ver el resumen de tu viaje.
     </p>
@@ -38,7 +39,7 @@
 
 <dialog class="modal-ajustes" data-modal-ajustes>
   <form method="dialog" class="modal-auth__cerrar">
-    <button type="submit" value="cancelar" class="icon-btn" aria-label="Cerrar">✕</button>
+    <button type="submit" value="cancelar" class="icon-btn" aria-label="Cerrar">{{ icono("cerrar", 16) }}</button>
   </form>
   <p class="kicker">OPCIONAL</p>
   <h3 class="card__title">Ajustes de gasto</h3>

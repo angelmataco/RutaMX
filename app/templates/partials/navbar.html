@@ -1,8 +1,12 @@
+{% from "partials/icons.html" import icono %}
 <header class="navbar">
   <div class="container navbar__inner">
-    <a href="{{ url_for('main.index') }}" class="navbar__brand">
-      <span class="navbar__logo">🧭</span>
-      <span class="navbar__title">RutaMX</span>
+    <a href="{{ url_for('main.index') }}" class="navbar__brand" aria-label="RutaMX, inicio">
+      <img class="navbar__logo" src="{{ url_for('static', filename='img/logo-emblema.svg') }}" width="48" height="48" alt="" />
+      <span class="navbar__marca">
+        <span class="navbar__title">Ruta<span class="navbar__title-mx">MX</span></span>
+        <span class="navbar__lema"><i class="puntos-tricolor" aria-hidden="true"></i>Road trips México</span>
+      </span>
     </a>
     <nav class="navbar__links">
       <a href="#ruta">Ruta</a>
@@ -21,7 +25,7 @@
 
 <dialog class="modal-auth" data-modal-auth>
   <form method="dialog" class="modal-auth__cerrar">
-    <button type="submit" class="icon-btn" aria-label="Cerrar">✕</button>
+    <button type="submit" class="icon-btn" aria-label="Cerrar">{{ icono("cerrar", 16) }}</button>
   </form>
 
   <div data-vista-login>

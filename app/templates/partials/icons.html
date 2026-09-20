@@ -1,0 +1,5 @@
+{# Iconos a medida: el dibujo vive en partials/iconos_sprite.html (id "i-<nombre>").
+   {% from "partials/icons.html" import icono %}  ->  {{ icono("ruta") }} #}
+{% macro icono(nombre, tam=20) -%}
+<svg class="icono" width="{{ tam }}" height="{{ tam }}" aria-hidden="true" focusable="false"><use href="#i-{{ nombre }}"/></svg>
+{%- endmacro %}

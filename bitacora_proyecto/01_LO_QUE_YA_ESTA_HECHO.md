@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-09-19 (noche)
+Última actualización: 2026-09-20
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -522,7 +522,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   dígito hasta su nuevo valor. Funciona con cualquier texto ("$2,077", "5 h 47 min").
   Uso: `RutaEfectos.contador.set(elemento, texto)`; el texto real queda para
   lectores de pantalla.
-- **Borrar con confirmación en el mismo botón** (`eliminar.js`): el 🗑 de cada parada
+- **Borrar con confirmación en el mismo botón** (`eliminar.js`): el bote de basura de cada parada
   del itinerario abre la tapa y muestra ✓ / ✕ (Esc y clic afuera cancelan). Ojo: antes
   borraba al primer clic; ahora hace falta confirmar. Se borra por identidad del objeto,
   no por posición, para que un borrado pendiente no elimine la parada equivocada.
@@ -650,6 +650,70 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   `/api/sugerencias` (solo `main.js`; el backend no cambió). Si el usuario elige un número, manda
   el suyo. El botón ahora dice "Automático · N" para que se vea cuántos tramos salen.
   Verificado: CDMX→Oaxaca 2 y 2; CDMX→Monterrey (897 km) 4 y 4.
+
+## Rediseño visual (base de Stitch)
+
+Se rediseñó el frontend a partir de `stitch_rutamx_road_trip_planner` (DESIGN.md,
+logo y paleta de Angel). Solo diseño: no se tocó el backend.
+
+- **Paleta y tipografía:** los tokens `--color-*` de `styles.css` conservan su
+  nombre pero cambiaron de valor (lino `#faf7f2`, terracota `#c85a32`, agave
+  `#1b4332`, ocre `#e9a825`, cuero `#2c221e`), así los 8 efectos rare-ui se
+  recolorearon solos. Fuentes: Newsreader (títulos) y Plus Jakarta Sans (texto),
+  cargadas de Google Fonts en `base.html`.
+- **Logo:** `app/static/img/logo-emblema.svg` (emblema del círculo con sol, montaña
+  y camino) junto al texto "RutaMX" y el lema con los puntos tricolor.
+- **Componentes:** bloque "Rediseño RutaMX" al final de `styles.css`: campos en
+  píldora con halo terracota, chips seleccionados en agave, botón primario terracota
+  y secundario fantasma, etiquetas tipo "luggage tag" (borde punteado ocre),
+  itinerario con línea de carretera a la izquierda, tarjeta de aventura en agave.
+- **Iconos a medida (sin emojis en toda la app):** los 26 iconos de la carpeta de Stitch
+  (`stitch_rutamx_road_trip_planner 2`) viven en **un solo sprite**,
+  `templates/partials/iconos_sprite.html` (un `<symbol id="i-nombre">` por icono, incluido
+  una vez en `base.html`). Desde plantillas se usan con la macro `{{ icono("ruta") }}`
+  (`partials/icons.html`); desde JS con `RutaIconos.html("ruta")` o
+  `RutaIconos.nodo("comer", "Comer")` (`static/js/iconos.js`, que arma el texto con
+  `textContent`, sin inyección). Nombres: ruta, planear_ruta, ia, guardadas, itinerario,
+  cerrar, mapa_pin, ver_mas, arriba, abajo, palomita, tache, lapiz, bote, estrella,
+  siguiente, comer, dormir, turismo, gasolina, casetas, mochila, noche, auto, llegada,
+  ajustes. `main.js` ya no escribe emojis (etiquetas Comer/Dormir, desglose del gasto,
+  tarjetas de sugerencias, tramos, estrella de gastronomía, enlaces por tramo).
+  Los efectos que dibujan su propio SVG (bote/✓/✕ de `eliminar.js`, lápiz/✓ de `duracion.js`)
+  usan los dibujos nuevos con sus mismas clases (`del__tapa`, `del__trazo`, `dur__pluma`,
+  `dur__palomita`). El botón de ajustes de gasto lleva su texto en `[data-ajustes-texto]`.
+- **Luz que sigue al cursor (spotlight-card, JS/CSS puro):** aro brillante en el borde y
+  resplandor interior que se acercan al puntero, terracota→ocre según la posición. Se aplica
+  solo a `.card`, `.ruta-burbuja` y las ventanas `.modal-auth/-ajustes/-rutas/-ia`
+  (`efectos/spotlight.js` + bloque 9 de `efectos.css`). **Con una ventana abierta, la luz es solo
+  de esa ventana** (y de lo que lleva dentro): la de las tarjetas de atrás se apaga al instante y
+  no se enciende aunque el cursor pase por encima; al cerrarla, todo vuelve a la normalidad. Aplica
+  a las 4 ventanas de la app (sesión, ajustes de gasto, mis rutas y chat de IA) y a cualquier
+  `<dialog>` futuro.
+- **Fondo de líneas que fluyen (background-paths, JS/SVG/CSS puros):** capa fija detrás de toda
+  la página (`efectos/fondo.js` + bloque 10 de `efectos.css`). **Respeta el código original del
+  componente, incluido su arranque (sin entrada propia):** dos juegos (position 1 y -1) de 36
+  curvas con la misma fórmula, `viewBox 0 0 696 316`, grosor `0.5 + i*0.03` y `strokeOpacity
+  0.1 + i*0.03`; cada curva anima `pathLength` 0.3→1, `pathOffset` 0→1→0 y `opacity` 0.3→0.6→0.3,
+  en linear y en bucle, con duración distinta por curva. **Solo dos cambios, pedidos por Angel:**
+  (1) velocidad: cada vuelta dura ~16.5–26 s en lugar de 20–30 s, un punto medio que Angel escogió
+  entre el original y una versión más rápida de 13–22 s (`DURACION_BASE` y `DURACION_AZAR` en
+  `fondo.js`); (2) color: el original usa un solo color y aquí cada curva recorre los 9 tonos de
+  la paleta de la app (terracota, terracota vivo, arcilla, ocre, ocre profundo, agave, agave medio,
+  salvia y cuero) con su propio ritmo y fase (`--fondo-c0..8` en `efectos.css`). En pantallas
+  ≤700 px son 18 curvas por juego en vez de 36. Las secciones de la página son transparentes o
+  translúcidas para que se vea; las tarjetas siguen opacas.
+- **Hora de salida, minutos de 10 en 10:** la ruedita de minutos ofrece 00, 10, 20, 30, 40 y 50
+  (antes 60 filas de uno en uno); las horas siguen de 1 en 1. También aplica a las flechas ↑↓ del
+  teclado y a los clics en la rueda (`PASO` en `efectos/duracion.js`). Una hora ya guardada que no
+  sea múltiplo de 10 (por ejemplo 08:25 de una ruta vieja) se conserva tal cual hasta que se cambie.
+- **"Descubre en el camino":** el título, el aviso de demostración y los selectores de tramos
+  van dentro de una tarjeta (`.card--descubre-cabecera` en `discover_section.html`) para que el
+  texto no se pierda con las líneas del fondo; las tarjetas de sugerencias quedan sueltas debajo,
+  con el fondo visible entre ellas. El botón "Ver más" está centrado (`.btn--ver-mas` al final de
+  `styles.css`: `.btn` le ganaba con `inline-flex` y el margen automático no lo centraba).
+- **Corrección móvil:** la fila del itinerario (nombre + etiqueta + botones) desbordaba a
+  375 px; ahora baja de línea y las cuadrículas usan `minmax(0, 1fr)`.
+- Verificado: 123 tests pasan, consola sin errores, sin scroll horizontal en 375 px.
 
 ## Calidad / pruebas
 

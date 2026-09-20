@@ -122,17 +122,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Etiqueta cada parada del itinerario con lo que el sistema dedujo
-  // ("🍽️ Comer · 13:10", "🛏️ Dormir · 21:00").
+  // (icono comer + "Comer · 13:10", icono dormir + "Dormir · 21:00").
   function marcarTiposDeParadas(detalle) {
     const items = elementos.itinerarioLista.querySelectorAll("[data-item-parada]");
     items.forEach((item, i) => {
       const etiqueta = item.querySelector("[data-item-tipo]");
       const d = detalle && detalle[i];
       const partes = [];
-      if (d && d.comida) partes.push("🍽️ Comer");
-      if (d && d.hospedaje) partes.push("🛏️ Dormir");
+      if (d && d.comida) partes.push(RutaIconos.nodo("comer", "Comer", 14));
+      if (d && d.hospedaje) partes.push(RutaIconos.nodo("dormir", "Dormir", 14));
       if (partes.length) {
-        etiqueta.textContent = partes.join(" + ") + (d.hora_llegada ? ` · ${d.hora_llegada}` : "");
+        etiqueta.replaceChildren();
+        partes.forEach((parte, k) => {
+          if (k) etiqueta.append(" + ");
+          etiqueta.append(parte);
+        });
+        if (d.hora_llegada) etiqueta.append(` · ${d.hora_llegada}`);
         etiqueta.hidden = false;
       } else {
         etiqueta.hidden = true;
@@ -272,20 +277,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const filas = [
-      ["⛽ Gasolina", gasto.gasolina],
-      [gasto.casetas_fuente === "ia" ? "🛣️ Casetas (estimado IA)" : "🛣️ Casetas (promedio)", gasto.casetas],
+      ["gasolina", "Gasolina", gasto.gasolina],
+      ["casetas", gasto.casetas_fuente === "ia" ? "Casetas (estimado IA)" : "Casetas (promedio)", gasto.casetas],
     ];
-    if (gasto.num_comidas) filas.push([`🍽️ Comidas (${gasto.num_comidas})`, gasto.comidas]);
+    if (gasto.num_comidas) filas.push(["comer", `Comidas (${gasto.num_comidas})`, gasto.comidas]);
     if (gasto.num_noches) {
-      filas.push([`🛏️ Hospedaje (${gasto.num_noches} ${gasto.num_noches === 1 ? "noche" : "noches"})`, gasto.hospedaje]);
+      filas.push(["dormir", `Hospedaje (${gasto.num_noches} ${gasto.num_noches === 1 ? "noche" : "noches"})`, gasto.hospedaje]);
     }
-    filas.push(["🎒 Imprevistos y snacks", gasto.imprevistos]);
+    filas.push(["mochila", "Imprevistos y snacks", gasto.imprevistos]);
 
     elementos.gastoDesglose.innerHTML = "";
-    filas.forEach(([texto, monto]) => {
+    filas.forEach(([icono, texto, monto]) => {
       const li = document.createElement("li");
-      const nombre = document.createElement("span");
-      nombre.textContent = texto;
+      const nombre = RutaIconos.nodo(icono, texto, 18);
       const valor = document.createElement("strong");
       valor.textContent = formatoMoneda(monto);
       li.append(nombre, valor);
@@ -389,10 +393,11 @@ document.addEventListener("DOMContentLoaded", () => {
       estado.lapsos.map((l) => {
         const icono = iconoDeProposito(l.proposito, l.personalizado);
         const dia = variosDias ? `Día ${l.dia} · ` : "";
-        const noche = l.cruza_noche ? " 🌙" : "";
         return {
           indice: l.indice,
-          texto: `${icono}${dia}Tramo ${l.indice + 1} · ${l.reloj_desde} – ${l.reloj_hasta}${noche}`,
+          icono,
+          noche: Boolean(l.cruza_noche),
+          texto: `${dia}Tramo ${l.indice + 1} · ${l.reloj_desde} – ${l.reloj_hasta}`,
           titulo: `${formatoDuracion(l.desde_h)} a ${formatoDuracion(l.hasta_h)} de camino`,
           personalizado: l.personalizado,
         };
@@ -400,12 +405,14 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     contenedor.innerHTML = "";
-    opciones.forEach(({ indice, texto, titulo, personalizado }) => {
+    opciones.forEach(({ indice, texto, titulo, personalizado, icono, noche }) => {
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className =
         "chip" + (indice === estado.lapsoActual ? " is-active" : "") + (personalizado ? " is-personalizado" : "");
-      boton.textContent = texto;
+      if (icono) boton.append(RutaIconos.nodo(icono, "", 16), " ");
+      boton.append(texto);
+      if (noche) boton.append(" ", RutaIconos.nodo("noche", "", 16));
       if (titulo) boton.title = titulo;
       boton.addEventListener("click", () => {
         if (indice === estado.lapsoActual) return;
@@ -418,11 +425,12 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPropositoDelTramo();
   }
 
-  // 🍽️ comer, 🛏️ dormir; el turismo solo lleva icono si el usuario lo eligió.
+  // Comer y dormir siempre llevan icono; el turismo solo si el usuario lo eligió.
+  // Devuelve el nombre del icono (o null).
   function iconoDeProposito(proposito, personalizado) {
-    if (proposito === "comida") return "🍽️ ";
-    if (proposito === "descanso") return "🛏️ ";
-    return personalizado && proposito === "turismo" ? "🏞️ " : "";
+    if (proposito === "comida") return "comer";
+    if (proposito === "descanso") return "dormir";
+    return personalizado && proposito === "turismo" ? "turismo" : null;
   }
 
   // Al tocar un tramo aparece esta fila: Automático · Comer · Turismo · Dormir.
@@ -437,18 +445,19 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.tramoPropositoTitulo.textContent = `¿Qué buscas en el tramo ${lapso.indice + 1}?`;
     const opciones = [
       { valor: null, texto: "Automático" },
-      { valor: "comida", texto: "🍽️ Comer" },
-      { valor: "turismo", texto: "🏞️ Turismo" },
+      { valor: "comida", texto: "Comer", icono: "comer" },
+      { valor: "turismo", texto: "Turismo", icono: "turismo" },
     ];
-    if (lapso.permite_dormir) opciones.push({ valor: "descanso", texto: "🛏️ Dormir" });
+    if (lapso.permite_dormir) opciones.push({ valor: "descanso", texto: "Dormir", icono: "dormir" });
 
     elementos.tramoPropositoOpciones.innerHTML = "";
-    opciones.forEach(({ valor, texto }) => {
+    opciones.forEach(({ valor, texto, icono }) => {
       const activo = valor === null ? !lapso.personalizado : lapso.personalizado && lapso.proposito === valor;
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className = "chip" + (activo ? " is-active" : "");
-      boton.textContent = texto;
+      if (icono) boton.append(RutaIconos.nodo(icono, "", 16), " ");
+      boton.append(texto);
       boton.addEventListener("click", () => {
         if (activo) return;
         if (valor === null) delete estado.propositos[lapso.indice];
@@ -657,10 +666,10 @@ document.addEventListener("DOMContentLoaded", () => {
     nodo.querySelector("[data-lugar-descripcion]").textContent = lugar.descripcion;
 
     if (typeof lugar.horas_estimadas === "number") {
-      nodo.querySelector("[data-lugar-camino]").textContent = `🚗 ≈${formatoDuracion(lugar.horas_estimadas)} de camino`;
+      nodo.querySelector("[data-lugar-camino]").replaceChildren(RutaIconos.nodo("auto", `≈${formatoDuracion(lugar.horas_estimadas)} de camino`, 16));
       if (lugar.hora_llegada) {
         const llegada = nodo.querySelector("[data-lugar-llegada]");
-        llegada.textContent = `🕘 Llegas ${lugar.hora_llegada}`;
+        llegada.replaceChildren(RutaIconos.nodo("llegada", `Llegas ${lugar.hora_llegada}`, 16));
         llegada.hidden = false;
       }
       nodo.querySelector("[data-lugar-horas]").hidden = false;
@@ -686,17 +695,17 @@ document.addEventListener("DOMContentLoaded", () => {
       card.classList.add("tiene-estrella");
 
       const nota = nodo.querySelector("[data-lugar-gastronomia]");
-      nota.textContent = `★ ${textoDeReconocimiento(lugar.reconocimiento_gastronomico)}`;
+      nota.replaceChildren(RutaIconos.nodo("estrella", textoDeReconocimiento(lugar.reconocimiento_gastronomico), 16));
       nota.title = detalle;
       nota.hidden = false;
     }
 
     const nota = nodo.querySelector("[data-lugar-descanso]");
     if (lugar.proposito === "comida") {
-      nota.textContent = "🍽️ Buen lugar para comer";
+      nota.replaceChildren(RutaIconos.nodo("comer", "Buen lugar para comer", 16));
       nota.hidden = false;
     } else if (lugar.proposito === "descanso") {
-      nota.textContent = "🛏️ Buen lugar para pasar la noche";
+      nota.replaceChildren(RutaIconos.nodo("dormir", "Buen lugar para pasar la noche", 16));
       nota.hidden = false;
     }
 
@@ -768,7 +777,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const nodo = tplParadaItinerario.content.cloneNode(true);
       nodo.querySelector("[data-item-numero]").textContent = indice + 1;
       const nombreEl = nodo.querySelector("[data-item-nombre]");
-      nombreEl.textContent = (parada.gastronomia_destacada ? "★ " : "") + parada.nombre;
+      if (parada.gastronomia_destacada) nombreEl.append(RutaIconos.nodo("estrella", "", 16), " ");
+      nombreEl.append(parada.nombre);
       if (parada.gastronomia_destacada && parada.reconocimiento_gastronomico) nombreEl.title = parada.reconocimiento_gastronomico;
       nodo.querySelector("[data-mover-arriba]").addEventListener("click", () => moverParada(indice, -1));
       nodo.querySelector("[data-mover-abajo]").addEventListener("click", () => moverParada(indice, 1));
@@ -897,7 +907,8 @@ document.addEventListener("DOMContentLoaded", () => {
         a.href = enlace;
         a.target = "_blank";
         a.rel = "noopener";
-        a.textContent = `Tramo ${i + 1} de ${enlaces.length} →`;
+        a.append(`Tramo ${i + 1} de ${enlaces.length} `);
+        a.insertAdjacentHTML("beforeend", RutaIconos.html("siguiente", 16));
         elementos.enlacesTramos.appendChild(a);
       });
       elementos.enlacesTramos.hidden = false;
@@ -987,7 +998,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <span class="ruta-burbuja__trayecto"></span>
       <span class="ruta-burbuja__datos"></span>`;
     burbuja.querySelector(".ruta-burbuja__nombre").textContent = ruta.nombre;
-    burbuja.querySelector(".ruta-burbuja__trayecto").textContent = `${ruta.origen} → ${ruta.destino}`;
+    burbuja.querySelector(".ruta-burbuja__trayecto").append(`${ruta.origen} `, RutaIconos.nodo("siguiente", "", 14), ` ${ruta.destino}`);
     burbuja.querySelector(".ruta-burbuja__datos").textContent = datos.join(" · ");
     burbuja.addEventListener("click", () => {
       elementos.modalRutas.close();

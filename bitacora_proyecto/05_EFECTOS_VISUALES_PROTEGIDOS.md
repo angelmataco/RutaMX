@@ -1,9 +1,9 @@
 # Efectos visuales protegidos (rare-ui) — NO SE TOCAN
 
-Última actualización: 2026-09-19
+Última actualización: 2026-09-20
 
-**Regla de Angel:** al final del proyecto se va a rediseñar toda la interfaz con
-una skill de diseño. Los 8 efectos de este documento, sacados de la carpeta
+**Regla de Angel:** el rediseño de toda la interfaz (base de Stitch, 2026-09-20) ya se
+hizo respetando estos efectos, y cualquier rediseño futuro también debe respetarlos. Los efectos de este documento, sacados de la carpeta
 `efectos visuales rare-ui`, **se quedan siempre**. El rediseño puede cambiar
 colores, tipografías, espaciados, layout y estilos de todo lo demás, pero **no
 puede quitar, reemplazar, simplificar ni desactivar estos efectos**.
@@ -29,7 +29,7 @@ tamaños, tipografía, bordes, sombras, posición general en la página.
   borrar, cuatro `<input>` normales en vez del PIN, etc.).
 - Quitar el soporte de `prefers-reduced-motion` (bloque al final de `efectos.css`).
 
-## Los 8 efectos
+## Los 8 efectos de rare-ui
 
 Origen: componentes de `efectos visuales rare-ui` (React/Tailwind/Motion), **reescritos
 a JS/CSS puro** porque RutaMX no tiene React ni build. La carpeta original no se modificó.
@@ -44,6 +44,17 @@ a JS/CSS puro** porque RutaMX no tiene React ni build. La carpeta original no se
 | 6 | duration-picker | `duracion.js` | Selector de **Hora de salida**: píldora `[HH Hr.][MM Min.][✎]` que se separa con resorte al editar; al tocar hora o minutos se abre una **ruedita** para deslizar (no se escribe). | `[data-hora-salida]` (contenedor) y `[data-time-hidden]` (`<input type="hidden" name="hora_salida">`) en `hero.html`; `main.js` usa `RutaEfectos.horaSalida.poner(...)` |
 | 8 | grid-reveal | `gridreveal.js` | Cuadrícula que se parte mientras carga la ruta y se disuelve en ola sobre el **mapa**. | `[data-map]` (`#mapa`) y el flujo `empezarCarga`/`terminarCarga` de `calcularRuta` en `main.js` |
 | 7 | matrix-orb | `orbe.js` | Orbe de puntos animado como indicador de "pensando". | `[data-sugerencias]` (carga de sugerencias) y `[data-chat-transcript]` del chat de IA (`mostrarPensando` en `planificador_ia.js`) |
+
+**Se sumaron dos efectos más, pedidos por Angel (también protegidos):**
+
+| # | Efecto | Archivo | Qué hace | Ganchos que NO se pueden quitar |
+|---|---|---|---|---|
+| 9 | spotlight-card | `spotlight.js` + bloque 9 de `efectos.css` | Aro y resplandor que siguen al cursor en tarjetas y ventanas, en terracota→ocre. | La lista `SUPERFICIES` de `spotlight.js` debe coincidir con el selector `:is(...)` del bloque 9 (`.card`, `.ruta-burbuja`, `.modal-auth`, `.modal-ajustes`, `.modal-rutas`, `.modal-ia`). Toda ventana nueva que se sume debe agregarse a ambas listas. |
+| 10 | background-paths | `fondo.js` + bloque 10 de `efectos.css` | Líneas que fluyen detrás de toda la página, con los colores de la app. | El script crea `.fondo-rutas` solo, con 2 SVG de 36 curvas cada uno que animan `pathLength`, `pathOffset` y `stroke-opacity` como el original. Las secciones (`.hero`, `.section--*`) deben seguir transparentes o translúcidas para que se vea. No usar `opacity` por curva ni animar `transform` de capas: ver bitácora 03. |
+
+Además, los **iconos a medida** (sprite en `partials/iconos_sprite.html`) son parte del
+diseño: nada de emojis en la app. Los dibujos de `eliminar.js` y `duracion.js` conservan
+sus clases (`del__tapa`, `del__trazo`, `dur__pluma`, `dur__palomita`).
 
 Si el rediseño cambia la estructura de una sección, hay que **mover** el gancho a la
 estructura nueva, no eliminarlo.
@@ -63,7 +74,7 @@ estructura nueva, no eliminarlo.
 - **Píldora:** vive abajo a la **derecha** y es grande (pedido de Angel); crece hacia
   arriba/izquierda al abrirse. Solo aparece con ≥ 2 secciones visibles (o sea, con ruta calculada). Si se
   agrega otra sección a la página, hay que sumarla a la lista de `secciones.js`.
-- **Hora de salida:** el fondo es el **naranja de la app** (pedido de Angel; no volver al verde). Guarda `HH:MM` (24 h) en el input oculto y dispara `change` en él (así
+- **Hora de salida:** la ruedita de minutos va de **10 en 10** (00 a 50; pedido de Angel), no de uno en uno. El fondo es el **naranja de la app** (pedido de Angel; no volver al verde). Guarda `HH:MM` (24 h) en el input oculto y dispara `change` en él (así
   `main.js` recalcula gasto y sugerencias). No volver a la rueda anterior ni a un `<input type="time">`.
   Enter debe guardar sin enviar el formulario de la ruta. **No se escribe a mano** (pedido de Angel):
   la hora y los minutos se eligen con la ruedita (`.dur__rueda`) o con las flechas ↑↓.
@@ -92,6 +103,9 @@ estructura nueva, no eliminarlo.
     hasta que llega la ruta; se puede deslizar mientras carga.
 11. Consola del navegador sin errores y sin scroll horizontal en 375 px.
 12. `pytest -q` (123 tests) sigue pasando.
+13. **Luz de tarjetas:** al mover el cursor cerca del borde de una tarjeta o ventana se ilumina el aro; con una ventana abierta solo brilla la ventana, no las tarjetas de atrás.
+14. **Fondo:** líneas que crecen y se desplazan como el original, cambiando entre los tonos de la paleta; con una ventana abierta se pausan.
+15. Ninguna tarjeta ni ventana pierde su fondo blanco (si pasa, revisar el fondo animado y la máscara del aro).
 
 **Step-player: quitado a propósito (2026-09-19).** A Angel no le gustó; se eliminó
 (`stepplayer.js`, su CSS y sus enganchos en `main.js`). No volver a agregarlo.

@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-09-19 (noche)
+Última actualización: 2026-09-20
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -37,6 +37,16 @@ la regla completa en `AGENTS.md`.
   Google Routes (exacto, pero pide cuenta con tarjeta y key); (3) otro
   servicio gratuito (mismo problema de velocidades genéricas). Se
   recomienda la 1; falta que Angel pase los tiempos de Google.
+
+## Pendientes del rediseño visual
+
+- Revisar con Angel las secciones que siguen sin rediseño fino: modal de "Mis rutas
+  guardadas", ventana del chat de IA con sus 2 opciones, y `efectos.css` (los
+  efectos ya toman la paleta nueva, pero sus radios y sombras no se afinaron).
+- Iconos opcionales que hoy no existen: los 6 intereses de "¿Qué buscas?" (Naturaleza,
+  Playas, Pueblos mágicos, Comida, Descanso, Cultura) siguen siendo solo texto.
+- El fondo de líneas y la luz de las tarjetas no se han medido en un teléfono real
+  (solo emulado a 375 px): si se siente pesado, bajar líneas en `fondo.js`.
 
 ## Pendiente marcado en el código (TODOs reales)
 

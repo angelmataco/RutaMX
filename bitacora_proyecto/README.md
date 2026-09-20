@@ -23,12 +23,16 @@ lectura obligatoria antes de cualquier cambio.
   implementar) para re-etiquetar la base de destinos y agregar restaurantes y
   hoteles con calidad, sin pagar nada, y que toda la app y la IA sigan
   fluyendo igual.
+- **`05_EFECTOS_VISUALES_PROTEGIDOS.md`** — los efectos visuales que nunca se
+  quitan ni se reemplazan (8 de rare-ui, la luz de las tarjetas y el fondo de
+  líneas), con sus ganchos HTML/CSS/JS y cómo comprobar que un cambio no los
+  rompió. También fija que en la app no hay emojis, solo los iconos a medida.
 
 ## Regla para cualquier IA (Claude, Codex, o la que sea)
 
 1. **Antes de proponer o hacer cualquier cambio**, leer los archivos de
    esta carpeta (01, 02 y 03 siempre; el 04 si tocas destinos, etiquetas,
-   restaurantes u hoteles) para tener el contexto completo del proyecto.
+   restaurantes u hoteles; el 05 si tocas HTML, CSS o JS del frontend) para tener el contexto completo del proyecto.
 2. **Después de hacer un cambio real** (funcionalidad nueva, bug
    arreglado, decisión de arquitectura, o incluso una idea nueva que
    Angel o Roberto mencionen aunque no se implemente todavía), actualizar

@@ -49,7 +49,7 @@ const RutaFormularios = (() => {
     };
   }
 
-  // "⚙️ Ajustes de gasto" o "⚙️ Ajustes de gasto · 2" según lo que se haya tocado.
+  // "Ajustes de gasto" o "Ajustes de gasto · 2" según lo que se haya tocado.
   function actualizarBotonAjustes() {
     const boton = document.querySelector("[data-abrir-ajustes-gasto]");
     if (!boton) return;
@@ -58,7 +58,7 @@ const RutaFormularios = (() => {
       document.querySelectorAll("[data-ajuste].is-active").length +
       (c.comidas.value !== "" ? 1 : 0) +
       (c.noches.value !== "" ? 1 : 0);
-    boton.textContent = activos ? `⚙️ Ajustes de gasto · ${activos}` : "⚙️ Ajustes de gasto";
+    boton.querySelector("[data-ajustes-texto]").textContent = activos ? `Ajustes de gasto · ${activos}` : "Ajustes de gasto";
     boton.classList.toggle("is-activo", activos > 0);
   }
 

@@ -13,15 +13,16 @@ RutaEfectos.eliminar = (() => {
 
   const SVG = {
     bote:
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
-      '<g class="del__tapa"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></g></svg>',
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<g class="del__tapa"><path d="M4 6.5H20"/><path d="M9.5 6.5V4.5C9.5 4 9.9 3.5 10.5 3.5H13.5C14.1 3.5 14.5 4 14.5 4.5V6.5"/></g>' +
+      '<g class="del__cuerpo"><path d="M5.5 6.5L6.8 19.2C6.9 20.2 7.7 21 8.7 21H15.3C16.3 21 17.1 20.2 17.2 19.2L18.5 6.5"/>' +
+      '<line x1="10" y1="10" x2="10" y2="17" stroke-width="1.6"/><line x1="14" y1="10" x2="14" y2="17" stroke-width="1.6"/></g></svg>',
     palomita:
-      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 7"/></svg>',
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.8Q8 15.5 9.8 18.2C12.2 13.5 15.5 8.5 20 5.2"/></svg>',
     tache:
-      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18"/></svg>',
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6L18 18M18 6L6 18"/></svg>',
     hecho:
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="del__trazo" pathLength="1" d="M4 12.5 9.5 18 20 7"/></svg>',
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="del__trazo" pathLength="1" d="M4.5 12.8Q8 15.5 9.8 18.2C12.2 13.5 15.5 8.5 20 5.2"/></svg>',
   };
 
   function crearBoton(clase, etiqueta, html) {

@@ -1,10 +1,11 @@
+{% from "partials/icons.html" import icono %}
 <dialog class="modal-ia" data-modal-ia>
   <form method="dialog" class="modal-ia__cerrar">
-    <button type="submit" class="icon-btn" aria-label="Cerrar">✕</button>
+    <button type="submit" class="icon-btn" aria-label="Cerrar">{{ icono("cerrar", 16) }}</button>
   </form>
 
   <div class="modal-ia__header">
-    <span class="icon-badge">🤖</span>
+    <span class="icon-badge" aria-hidden="true">{{ icono("ia", 26) }}</span>
     <div>
       <p class="kicker">PLANEAR CON IA</p>
       <h3 class="card__title">Cuéntame tu viaje</h3>

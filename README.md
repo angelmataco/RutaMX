@@ -36,11 +36,18 @@ sugerencias → itinerario → guardar):
   El viaje se divide en tramos (en automático, tantos como las "paradas
   sugeridas" del resumen). Si la base de datos no responde, cae a un
   catálogo fijo de respaldo (`LUGARES_DEMO`).
-- **Efectos visuales** (`app/static/js/efectos/` + `app/static/css/efectos.css`,
-  adaptados de rare-ui a JS/CSS puro, sin librerías): contador tipo odómetro,
-  borrar con confirmación, PIN por casillas, menú gooey, píldora de progreso,
-  selector de hora gooey con ruedita, cuadrícula "grid reveal" sobre el mapa y
-  orbe de puntos al cargar. **No se pueden quitar ni reemplazar**: ver
+- **Diseño** (rediseño de septiembre 2026, a partir de la carpeta de Stitch de Angel: `DESIGN.md`,
+  logo y paleta): lino `#FAF7F2`, terracota `#C85A32`, agave `#1B4332`, ocre `#E9A825` y cuero
+  `#2C221E`; títulos en **Newsreader** y texto en **Plus Jakarta Sans** (Google Fonts, hace falta
+  internet); logo del emblema en `app/static/img/`. **No hay emojis en la app**: los 26 iconos son
+  SVG a medida y viven en un solo sprite (`app/templates/partials/iconos_sprite.html`); en plantillas
+  se usan con `{{ icono("ruta") }}` y en JS con `RutaIconos.html("ruta")`.
+- **Efectos visuales** (`app/static/js/efectos/` + `app/static/css/efectos.css`, en JS/CSS puro, sin
+  librerías): los 8 de rare-ui (contador tipo odómetro, borrar con confirmación, PIN por casillas,
+  menú gooey, píldora de progreso, selector de hora gooey con ruedita —minutos de 10 en 10—,
+  cuadrícula "grid reveal" sobre el mapa y orbe de puntos al cargar) más la **luz que sigue al
+  cursor** en tarjetas y ventanas y el **fondo de líneas que fluyen** (background-paths, con los
+  colores de la paleta). **No se pueden quitar ni reemplazar**: ver
   `bitacora_proyecto/05_EFECTOS_VISUALES_PROTEGIDOS.md`.
 - **Cuentas de usuario**: nombre + apellido + PIN de 4 dígitos, sin correo
   (proyecto escolar — ver `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`).
@@ -168,8 +175,12 @@ RutaMX/
 │   │   ├── llm_provider.py             # Conexión con Claude/OpenAI/Gemini (detecta cuál está configurado)
 │   │   ├── planificador_ia_service.py  # Orquesta el chat "Planear con IA"
 │   │   └── auth_service.py             # Registro/login (nombre + apellido + PIN de 4 dígitos)
-│   ├── static/               # CSS, JS (js/efectos/ = efectos visuales protegidos), imágenes
-│   └── templates/            # HTML (base + partials por sección)
+│   ├── static/
+│   │   ├── css/              # styles.css (diseño) y efectos.css (efectos protegidos)
+│   │   ├── js/               # main.js, form.js, map.js, auth.js, iconos.js (iconos a medida) …
+│   │   │   └── efectos/      # efectos visuales protegidos (contador, gooey, spotlight, fondo …)
+│   │   └── img/              # logo-emblema.svg
+│   └── templates/            # HTML: base.html + partials por sección; partials/iconos_sprite.html = iconos
 ├── scripts/
 │   ├── agregar_usuario_id.py  # Migración: agrega usuario_id a rutas_guardadas
 │   ├── seed_destinos.py       # Carga inicial de estados y destinos (lote 1)
@@ -180,7 +191,8 @@ RutaMX/
 │   ├── fix_intereses_v3.py    # Corrección 3 (mismo mínimo, para el lote 2)
 │   ├── fix_poblacion.py       # Carga población lote 1 (Censo INEGI 2020)
 │   └── fix_poblacion_v2.py    # Carga población lote 2 (Censo INEGI 2020)
-├── bitacora_proyecto/        # Qué está hecho, qué falta, decisiones y efectos protegidos (leer AGENTS.md)
+├── bitacora_proyecto/        # Qué está hecho, qué falta, decisiones, plan 04 y efectos protegidos (leer AGENTS.md)
+├── AGENTS.md / CLAUDE.md     # Instrucciones para las IAs (Codex / Claude Code) que trabajan en el repo
 ├── tests/                    # Pruebas de rutas y servicios
 ├── instance/config.py        # Configuración local (no se sube a git)
 ├── config.py                  # Configuración general (Dev/Prod)
@@ -190,9 +202,11 @@ RutaMX/
 
 ## Próximos pasos
 
-- Desplegar la app en un hosting público (Render/Railway) para poder
-  compartirla con un link.
-- Seguir ampliando el catálogo curado de ciudades/pueblos mágicos por estado
-  (directo desde el Table Editor de Supabase).
-- Decidir si se agrega login (cuentas de usuario) para que cada quien vea
-  solo sus propias rutas guardadas.
+Lo pendiente vive en `bitacora_proyecto/02_LO_QUE_FALTA.md`; lo principal:
+
+- Re-etiquetar la base de destinos y agregar restaurantes y hoteles
+  (`bitacora_proyecto/04_PLAN_RESTAURANTES_Y_HOTELES.md`).
+- Calibrar el tiempo de la app contra Google Maps.
+- Desplegar la app en un hosting público (Render/Railway) para poder compartirla con un link.
+- Iconos para los 6 intereses de "¿Qué buscas?" (hoy solo texto) y probar el fondo animado
+  en un teléfono real.

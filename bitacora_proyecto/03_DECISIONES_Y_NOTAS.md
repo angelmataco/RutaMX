@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-09-19
+Última actualización: 2026-09-20
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
@@ -391,6 +391,47 @@ y la mantenga actualizada después de cada cambio.
   quedan. Si algún día se quiere una sola fuente de verdad, mover `recomendadas()` al backend.
 - Los estados de carga (cuadrícula del mapa, orbe) y "Ver más / Ver menos" usan animaciones en JS
   puro; ningún cambio de hoy tocó el flujo de guardado, PDF, login ni gasto.
+
+## Rediseño: se remapean los tokens en vez de renombrarlos
+
+Al aplicar el diseño de Stitch se dejaron los nombres `--color-crema`,
+`--color-terracota`, `--color-verde-oscuro`, etc. y solo cambió su valor. Motivo:
+`efectos.css` y los 8 efectos protegidos (bitácora 05) leen esas variables; renombrar
+habría obligado a tocar cada efecto. Se sumó `--color-terracota-texto` (`#9f3c16`)
+porque el terracota del diseño (`#c85a32`) sobre lino da ~4.2:1, por debajo de AA en
+texto pequeño; se usa solo en kickers y etiquetas chicas. Los botones y el resto siguen
+con el terracota original del diseño.
+
+## Rediseño: por qué el fondo animado es "barato" y por qué el aro de las ventanas no usa máscara
+
+- **Fondo de líneas (bloque 10 de `efectos.css`):** primero se intentó reinterpretarlo (capas que
+  derivan con `transform`, colores por capa, entrada propia) y Angel pidió volver al código original
+  del componente, solo con más velocidad y colores de la paleta. **Versión final = el original** (ver
+  bitácora 01). Lo que costó, para no repetirlo: animar `pathLength`/`pathOffset` en 72 curvas obliga a
+  repintar el SVG en cada cuadro, y con `opacity` por curva (72 capas de composición) el navegador
+  integrado dejaba de pintar tarjetas y ventanas. Se resolvió sin cambiar lo que se ve: la opacidad se
+  anima como `stroke-opacity = strokeOpacity × [0.3, 0.6, 0.3]` (idéntico, porque la curva solo tiene
+  trazo) y el color se anima con `@keyframes fondo-tono` sobre `stroke`. La animación se pausa mientras
+  haya un `<dialog>` abierto. No volver a usar `opacity` por curva ni animar más de lo que hace el original. **Regla de Angel: del efecto solo se cambian el color y la velocidad; no agregar entradas, capas ni otro comportamiento.** Se probó una entrada "dibujada desde la izquierda" y se quitó: las curvas entraban juntas, rápidas y encimadas.
+- **Luz de las ventanas (bloque 9):** en tarjetas el aro es un `::before` con máscara; en un
+  `<dialog>` esa máscara hacía que el navegador dejara de pintar el fondo de la ventana. Por
+  eso las ventanas dibujan el aro con capas de `background` y un borde transparente, y el
+  chat translúcido lleva solo el resplandor interior (el aro se vería a través del cristal).
+- **Al verificar en el navegador integrado:** después de abrir/cerrar ventanas con JS o de
+  `scrollIntoView`, el panel a veces no repinta y las capturas salen en blanco o a medias
+  hasta que llega un evento real de mouse o scroll. No es un bug de la app: repetir la
+  captura tras un `hover` o un scroll.
+
+## Iconos SVG: no deben capturar el mouse (bug del tooltip de la estrella)
+
+Al cambiar los emojis por iconos SVG con `<use>`, el `title` de la estrella de gastronomía
+("Guía Michelin México 2026…") dejó de mostrarse: el cursor caía sobre el `<use>` interno del SVG
+y Chrome no propaga el tooltip desde ahí hasta el elemento padre que tiene el `title`. Con el
+emoji ("★") no pasaba porque era texto. Arreglo: `.icono, .icono * { pointer-events: none }` en
+`styles.css`, así el evento llega al `<span>` con el `title` (estrella de la tarjeta, nota amarilla
+y estrella del nombre de la parada). Regla: si un icono va dentro de algo con `title`, no debe
+recibir eventos de mouse. El tooltip nativo no sale en capturas del navegador integrado; se
+verificó con `elementFromPoint` sobre la estrella y la nota.
 
 ## Patrón de trabajo con Angel (para quien retome esto, incluido Roberto)
 

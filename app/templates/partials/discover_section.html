@@ -1,30 +1,33 @@
+{% from "partials/icons.html" import icono %}
 <section class="section section--descubre" id="descubre">
   <div class="container">
-    <div class="section-header">
-      <div>
-        <p class="kicker">IDEAS PARA EL TRAYECTO</p>
-        <h2 class="section-title">Descubre en el camino</h2>
-        <p class="section-subtitle">Estas paradas son ejemplos de demostración para inspirar tu ruta con más historias y menos prisa.</p>
+    <div class="card card--descubre-cabecera">
+      <div class="section-header">
+        <div>
+          <p class="kicker">IDEAS PARA EL TRAYECTO</p>
+          <h2 class="section-title">Descubre en el camino</h2>
+          <p class="section-subtitle">Estas paradas son ejemplos de demostración para inspirar tu ruta con más historias y menos prisa.</p>
+        </div>
+        <span class="badge">DATOS DE DEMOSTRACIÓN</span>
       </div>
-      <span class="badge">DATOS DE DEMOSTRACIÓN</span>
-    </div>
 
-    <div class="tramos-control" data-tramos-control hidden>
-      <span class="tramos-control__titulo">Dividir el viaje en</span>
-      <div class="tramos-control__opciones tramos-control__opciones--ancho" data-tramos-opciones></div>
-      <div class="tramos-mas" data-tramos-mas hidden>
-        <label for="tramos-mas-numero">¿En cuántos tramos? (11 a 30)</label>
-        <input type="number" id="tramos-mas-numero" min="11" max="30" step="1" placeholder="11" data-tramos-mas-numero />
-        <button type="button" class="btn btn--primary" data-tramos-mas-aplicar>Aplicar</button>
+      <div class="tramos-control" data-tramos-control hidden>
+        <span class="tramos-control__titulo">Dividir el viaje en</span>
+        <div class="tramos-control__opciones tramos-control__opciones--ancho" data-tramos-opciones></div>
+        <div class="tramos-mas" data-tramos-mas hidden>
+          <label for="tramos-mas-numero">¿En cuántos tramos? (11 a 30)</label>
+          <input type="number" id="tramos-mas-numero" min="11" max="30" step="1" placeholder="11" data-tramos-mas-numero />
+          <button type="button" class="btn btn--primary" data-tramos-mas-aplicar>Aplicar</button>
+        </div>
+        <p class="tramos-control__nota" data-tramos-nota hidden></p>
       </div>
-      <p class="tramos-control__nota" data-tramos-nota hidden></p>
-    </div>
 
-    <div class="lapsos" data-lapsos hidden></div>
+      <div class="lapsos" data-lapsos hidden></div>
 
-    <div class="tramos-control tramos-control--tramo" data-tramo-proposito hidden>
-      <span class="tramos-control__titulo" data-tramo-proposito-titulo></span>
-      <div class="tramos-control__opciones tramos-control__opciones--largas" data-tramo-proposito-opciones></div>
+      <div class="tramos-control tramos-control--tramo" data-tramo-proposito hidden>
+        <span class="tramos-control__titulo" data-tramo-proposito-titulo></span>
+        <div class="tramos-control__opciones tramos-control__opciones--largas" data-tramo-proposito-opciones></div>
+      </div>
     </div>
 
     <div class="cards-grid" data-sugerencias>
@@ -33,7 +36,7 @@
 
     <button type="button" class="btn btn--ghost btn--ver-mas" data-ver-mas aria-expanded="false" hidden>
       <span data-ver-mas-texto>Ver más</span>
-      <span class="btn--ver-mas__flecha" aria-hidden="true">▸</span>
+      <span class="btn--ver-mas__flecha" aria-hidden="true">{{ icono("ver_mas", 16) }}</span>
     </button>
   </div>
 </section>
@@ -42,7 +45,7 @@
   <article class="card card--lugar" data-lugar-card>
     <div class="card__cabecera">
       <span class="tag" data-lugar-categoria></span>
-      <span class="card__estrella" data-lugar-estrella hidden aria-label="Gastronomía reconocida" role="img">★</span>
+      <span class="card__estrella" data-lugar-estrella hidden aria-label="Gastronomía reconocida" role="img">{{ icono("estrella", 18) }}</span>
     </div>
     <h3 class="card__title" data-lugar-nombre></h3>
     <p class="card__subtitle" data-lugar-descripcion></p>

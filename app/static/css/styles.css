@@ -1,21 +1,29 @@
 :root {
-  --color-crema: #f7f1e6;
-  --color-verde-palido: #eaf1e7;
-  --color-terracota: #c76a4c;
-  --color-terracota-dark: #b25a3e;
-  --color-verde-oscuro: #1f3327;
-  --color-verde-oscuro-2: #16241c;
-  --color-mostaza: #e0a63e;
-  --color-texto: #2b2b26;
-  --color-texto-gris: #6b6b62;
+  /* Paleta RutaMX (Stitch / DESIGN.md). Los nombres se conservan porque los
+     efectos rare-ui leen estas variables: al cambiar el valor se recolorean solos. */
+  --color-crema: #faf7f2;           /* lino: lienzo base */
+  --color-verde-palido: #f5efeb;    /* lavado de adobe: paneles hundidos */
+  --color-terracota: #c85a32;       /* primario */
+  --color-terracota-dark: #d96b43;  /* hover del primario */
+  --color-terracota-texto: #9f3c16; /* terracota para texto pequeño (contraste AA) */
+  --color-verde-oscuro: #1b4332;    /* agave profundo */
+  --color-verde-oscuro-2: #14352a;
+  --color-verde-medio: #2d5a46;
+  --color-mostaza: #e9a825;         /* ocre maíz */
+  --color-texto: #2c221e;           /* cuero tostado */
+  --color-texto-gris: #6f5f57;
   --color-blanco: #ffffff;
-  --color-borde: #e7ddc9;
-  --radius-lg: 22px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
-  --shadow-card: 0 12px 30px rgba(31, 51, 39, 0.08);
-  --font-serif: "Georgia", "Times New Roman", serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --color-borde: #e8dfd3;
+  --color-tinte-terracota: #fbe6dc;
+  --color-tinte-ocre: rgba(233, 168, 37, 0.14);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 2px 8px -2px rgba(44, 34, 30, 0.06), 0 1px 3px 0 rgba(44, 34, 30, 0.04);
+  --shadow-elevada: 0 12px 24px -6px rgba(200, 90, 50, 0.12), 0 4px 10px -2px rgba(44, 34, 30, 0.06);
+  --shadow-flotante: 0 20px 32px -8px rgba(44, 34, 30, 0.16);
+  --font-serif: "Newsreader", "Georgia", "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -124,7 +132,7 @@ a {
 }
 
 .modal-auth::backdrop {
-  background: rgba(31, 51, 39, 0.45);
+  background: rgba(27, 67, 50, 0.45);
 }
 
 .modal-auth__cerrar {
@@ -137,7 +145,7 @@ a {
 .modal-ia {
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-lg);
-  box-shadow: 0 24px 60px rgba(31, 51, 39, 0.25);
+  box-shadow: 0 24px 60px rgba(27, 67, 50, 0.25);
   padding: 24px;
   width: 100%;
   max-width: 640px;
@@ -158,7 +166,7 @@ a {
 }
 
 .modal-ia::backdrop {
-  background: rgba(31, 51, 39, 0.35);
+  background: rgba(27, 67, 50, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -455,7 +463,7 @@ a {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f4e3dc;
+  background: var(--color-tinte-terracota);
   font-size: 1.1rem;
   flex-shrink: 0;
 }
@@ -710,7 +718,7 @@ a {
 
 .badge--light {
   color: var(--color-mostaza);
-  border-color: rgba(224, 166, 62, 0.4);
+  border-color: rgba(233, 168, 37, 0.4);
 }
 
 /* Map + summary */
@@ -731,7 +739,7 @@ a {
   border-radius: var(--radius-md);
   margin-top: 16px;
   overflow: hidden;
-  background: #dbe6e0;
+  background: #dfe9e2;
 }
 
 /* Ocultamos el panel de indicaciones de Leaflet Routing Machine: ya
@@ -780,7 +788,7 @@ a {
 }
 
 .stat-tile--accent {
-  background: #f4e3dc;
+  background: var(--color-tinte-terracota);
 }
 
 .stat-tile__label {
@@ -839,7 +847,7 @@ a {
 
 .tag {
   align-self: flex-start;
-  background: #f4e3dc;
+  background: var(--color-tinte-terracota);
   color: var(--color-terracota);
   font-size: 0.7rem;
   font-weight: 700;
@@ -896,7 +904,7 @@ a {
 }
 
 .itinerary-item--destino {
-  background: #f4e3dc;
+  background: var(--color-tinte-terracota);
 }
 
 .itinerary-item--origen {
@@ -1042,7 +1050,7 @@ a {
 .modal-rutas {
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-lg);
-  box-shadow: 0 24px 60px rgba(31, 51, 39, 0.25);
+  box-shadow: 0 24px 60px rgba(27, 67, 50, 0.25);
   padding: 28px;
   width: calc(100% - 32px);
   max-width: 560px;
@@ -1051,7 +1059,7 @@ a {
 }
 
 .modal-rutas::backdrop {
-  background: rgba(31, 51, 39, 0.45);
+  background: rgba(27, 67, 50, 0.45);
   backdrop-filter: blur(3px);
 }
 
@@ -1082,7 +1090,7 @@ a {
 .ruta-burbuja:focus-visible {
   transform: translateY(-2px);
   border-color: var(--color-terracota);
-  box-shadow: 0 8px 20px rgba(31, 51, 39, 0.12);
+  box-shadow: 0 8px 20px rgba(27, 67, 50, 0.12);
 }
 
 .ruta-burbuja__nombre {
@@ -1204,7 +1212,7 @@ a {
 }
 
 .modal-ajustes::backdrop {
-  background: rgba(31, 51, 39, 0.45);
+  background: rgba(27, 67, 50, 0.45);
 }
 
 .modal-ajustes .btn {
@@ -1648,3 +1656,623 @@ a {
   padding: 8px 18px;
 }
 
+
+/* ==========================================================================
+   Rediseño RutaMX (Stitch / DESIGN.md): editorial contemporáneo + calidez táctil.
+   Va al final a propósito: refina los componentes de arriba sin tocar los
+   ganchos HTML ni los efectos rare-ui (esos viven en efectos.css).
+   ========================================================================== */
+
+body {
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .section-title, .card__title {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-terracota);
+  outline-offset: 2px;
+}
+
+.container {
+  max-width: 1280px;
+  padding: 0 clamp(16px, 4vw, 40px);
+}
+
+/* Puntitos tricolor del logo (verde · blanco · rojo) */
+.puntos-tricolor {
+  display: inline-block;
+  width: 26px;
+  height: 8px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background:
+    radial-gradient(circle at 4px 4px, #006847 3.5px, transparent 4px),
+    radial-gradient(circle at 13px 4px, #e6dad2 3px, #9a8275 3.5px, transparent 4px),
+    radial-gradient(circle at 22px 4px, #ce1126 3.5px, transparent 4px);
+}
+
+/* Kickers: etiqueta tipo señal de carretera */
+.kicker {
+  color: var(--color-terracota-texto);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+/* Navbar */
+.navbar {
+  background: rgba(250, 247, 242, 0.92);
+  border-bottom: 1px solid var(--color-borde);
+  padding: 10px 0;
+}
+
+.navbar__brand {
+  gap: 12px;
+}
+
+.navbar__logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: none;
+  flex-shrink: 0;
+}
+
+.navbar__marca {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.navbar__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.7rem;
+  letter-spacing: 0.01em;
+  color: var(--color-verde-oscuro);
+}
+
+.navbar__title-mx {
+  color: var(--color-terracota);
+}
+
+.navbar__lema {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #7c685f;
+}
+
+.navbar__lema .puntos-tricolor {
+  width: 26px;
+  margin-right: 6px;
+}
+
+.navbar__links {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Hero */
+.hero {
+  padding: clamp(28px, 5vw, 56px) 0 clamp(48px, 7vw, 88px);
+  background:
+    radial-gradient(60% 50% at 12% 0%, rgba(233, 168, 37, 0.16), transparent 70%),
+    radial-gradient(55% 45% at 92% 8%, rgba(200, 90, 50, 0.12), transparent 70%),
+    var(--color-crema);
+}
+
+.hero .kicker--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero__headline {
+  font-weight: 600;
+  font-size: clamp(2.125rem, 5vw, 3rem);
+  line-height: 1.17;
+  letter-spacing: -0.02em;
+  max-width: 820px;
+}
+
+.hero__lead {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+.hero__note {
+  font-size: 0.8rem;
+}
+
+/* Tarjetas: fondo blanco, filete cálido y sombra tintada */
+.card {
+  border: 1px solid var(--color-borde);
+  padding: 24px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card--form-hero {
+  padding: clamp(22px, 4vw, 40px) clamp(18px, 4vw, 44px);
+  box-shadow: var(--shadow-flotante);
+}
+
+.card--lugar:hover {
+  box-shadow: var(--shadow-elevada);
+  border-color: rgba(200, 90, 50, 0.35);
+}
+
+.card__title {
+  font-weight: 600;
+  font-size: 1.375rem;
+  line-height: 1.25;
+}
+
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  background: var(--color-tinte-terracota);
+  color: var(--color-terracota-texto);
+}
+
+.icono {
+  flex-shrink: 0;
+  vertical-align: -0.2em;
+}
+
+/* Campos: contenedor píldora, borde 1.5px y halo cálido al enfocar */
+.field label,
+.field__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto);
+}
+
+.field input,
+.field select {
+  border: 1.5px solid var(--color-borde);
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  min-height: 44px;
+}
+
+.field input::placeholder {
+  color: rgba(44, 34, 30, 0.55);
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--color-terracota);
+  box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.15);
+}
+
+.autocomplete-list {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-flotante);
+}
+
+/* Chips y burbujas: píldora piedra; seleccionado = agave con texto claro */
+.chip,
+.bubble {
+  background: var(--color-verde-palido);
+  border: 1.5px solid transparent;
+  color: var(--color-texto);
+  font-family: inherit;
+  font-weight: 600;
+  min-height: 40px;
+}
+
+.chip:hover,
+.bubble:hover {
+  border-color: var(--color-verde-oscuro);
+}
+
+.chip.is-active,
+.bubble.is-activa {
+  background: var(--color-verde-oscuro);
+  border-color: var(--color-verde-oscuro);
+  color: #faf7f2;
+}
+
+/* Botones: primario terracota, secundario fantasma agave */
+.btn {
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  min-height: 44px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.btn--block {
+  display: flex;
+}
+
+.btn--primary {
+  background: var(--color-terracota);
+  color: #faf7f2;
+}
+
+.btn--primary:hover {
+  background: var(--color-terracota-dark);
+  box-shadow: var(--shadow-elevada);
+  transform: translateY(-1px);
+}
+
+.btn--secondary,
+.btn--ghost {
+  background: transparent;
+  color: var(--color-verde-oscuro);
+  border: 1.5px solid var(--color-verde-oscuro);
+}
+
+.btn--secondary:hover,
+.btn--ghost:hover {
+  background: rgba(27, 67, 50, 0.08);
+}
+
+.hero-acciones-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hero-acciones-extra .btn--ghost {
+  margin-top: 0;
+}
+
+.btn-pildora {
+  border-radius: 999px;
+  min-height: 36px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  color: var(--color-texto);
+}
+
+.icon-btn:hover {
+  background: var(--color-verde-palido);
+}
+
+/* Secciones */
+.section {
+  padding: clamp(40px, 6vw, 72px) 0;
+}
+
+.section-title {
+  font-weight: 600;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  line-height: 1.2;
+}
+
+/* Etiquetas y chapitas: "luggage tag" con borde punteado ocre */
+.tag,
+.badge {
+  background: var(--color-tinte-ocre);
+  color: var(--color-texto);
+  border: 1.5px dashed var(--color-mostaza);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.tag--horas {
+  background: var(--color-verde-palido);
+  border-color: var(--color-borde);
+  border-style: solid;
+}
+
+.badge--light {
+  color: #f6d68a;
+  background: rgba(233, 168, 37, 0.12);
+  border-color: rgba(233, 168, 37, 0.6);
+}
+
+/* Cifras del resumen: se leen como tablero de ruta */
+.stat-tile {
+  background: var(--color-verde-palido);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+}
+
+.stat-tile--accent {
+  background: var(--color-tinte-terracota);
+  border-color: rgba(200, 90, 50, 0.25);
+}
+
+.stat-tile__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-texto-gris);
+}
+
+.stat-tile__value {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.stat-tile--dark {
+  background: rgba(250, 247, 242, 0.08);
+  border-color: rgba(250, 247, 242, 0.14);
+}
+
+.stat-tile--dark .stat-tile__label {
+  color: #c4d4ca;
+}
+
+.stat-tile--dark .stat-tile__value {
+  color: #faf7f2;
+}
+
+/* Itinerario: línea de carretera a la izquierda y kilómetros como marcadores */
+.itinerary-item {
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-left: 4px solid var(--color-terracota);
+  border-radius: var(--radius-md);
+}
+
+.itinerary-item--origen {
+  border-left-color: var(--color-verde-oscuro);
+  background: var(--color-verde-palido);
+}
+
+.itinerary-item--destino {
+  background: var(--color-tinte-terracota);
+}
+
+.itinerary-item__badge {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--color-borde);
+}
+
+.itinerary-item__numero {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+}
+
+/* Tarjeta de aventura: agave profundo */
+.card--aventura {
+  background: var(--color-verde-oscuro);
+  border-color: var(--color-verde-oscuro);
+}
+
+.card--aventura .btn--ghost {
+  color: #faf7f2;
+  border-color: rgba(250, 247, 242, 0.55);
+}
+
+.card--aventura .btn--ghost:hover {
+  background: rgba(250, 247, 242, 0.1);
+}
+
+.card__note--light {
+  color: #d4e2d9;
+}
+
+/* Modales: mismo lenguaje, sombra flotante */
+.modal-auth,
+.modal-ajustes,
+.modal-rutas {
+  border: 1px solid var(--color-borde);
+  box-shadow: var(--shadow-flotante);
+}
+
+.modal-auth::backdrop,
+.modal-ajustes::backdrop,
+.modal-rutas::backdrop {
+  background: rgba(44, 34, 30, 0.5);
+}
+
+.chat-burbuja--ia {
+  background: var(--color-verde-palido);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
+}
+
+.chat-burbuja--usuario {
+  background: var(--color-terracota);
+  color: #faf7f2;
+}
+
+.chat-opcion-respuesta:hover {
+  border-color: var(--color-verde-oscuro);
+}
+
+.chat-form input {
+  border-radius: 999px;
+  border-width: 1.5px;
+}
+
+@media (max-width: 600px) {
+  .navbar__lema {
+    display: none;
+  }
+
+  .navbar__title {
+    font-size: 1.4rem;
+  }
+
+  .hero-acciones-extra .btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* ==========================================================================
+   Iconos a medida (sprite en partials/iconos_sprite.html)
+   ========================================================================== */
+.icono {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -0.22em;
+}
+
+/* Icono + texto en una línea (lo arma RutaIconos.nodo desde JS) */
+.icono-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+
+.icono-texto--solo {
+  gap: 0;
+}
+
+.btn .icono,
+.btn-pildora .icono {
+  vertical-align: middle;
+}
+
+.btn-pildora {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+}
+
+.icon-badge .icono {
+  vertical-align: middle;
+}
+
+.gasto-desglose .icono-texto {
+  color: var(--color-verde-oscuro);
+  gap: 8px;
+}
+
+.gasto-desglose .icono-texto .icono {
+  color: var(--color-terracota);
+}
+
+.itinerary-item__tipo .icono-texto {
+  gap: 4px;
+}
+
+.card__meta-dato .icono,
+.card__nota .icono {
+  color: var(--color-terracota);
+}
+
+.card__nota-gastronomia .icono {
+  color: #9b6c00;
+}
+
+/* La estrella ya trae su propio relleno ocre: la insignia solo la enmarca */
+.card__estrella {
+  font-size: 0;
+}
+
+.itinerary-item__nombre .icono-texto {
+  margin-right: 2px;
+}
+
+.enlaces-tramos a .icono {
+  vertical-align: middle;
+}
+
+.ruta-burbuja__trayecto .icono-texto {
+  margin: 0 2px;
+}
+
+/* Botones de ↑ ↓ y bote dentro del itinerario */
+.icon-btn .icono {
+  vertical-align: middle;
+}
+
+.icon-btn--danger {
+  color: #ba1a1a;
+}
+
+.btn--ver-mas__flecha .icono {
+  vertical-align: middle;
+}
+
+/* Móvil: las columnas de las cuadrículas no deben crecer más que la pantalla, y la fila
+   del itinerario (nombre + etiqueta "Comer · hora" + botones) baja a otra línea si no cabe. */
+@media (max-width: 900px) {
+  .itinerary-grid,
+  .map-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .itinerary-item {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .itinerary-item__nombre {
+    min-width: 0;
+    flex: 1 1 120px;
+    overflow-wrap: anywhere;
+  }
+
+  .itinerary-item__acciones {
+    margin-left: auto;
+  }
+}
+
+/* "Descubre en el camino": título y selector de tramos van sobre una tarjeta para que el
+   texto no se pierda con las líneas del fondo; las tarjetas de sugerencias quedan sueltas
+   debajo, con el fondo visible entre ellas. */
+.card--descubre-cabecera {
+  margin-bottom: 20px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.card--descubre-cabecera .section-header {
+  margin-bottom: 20px;
+}
+
+.card--descubre-cabecera > :last-child:not([hidden]) {
+  margin-bottom: 0;
+}
+
+/* "Ver más" centrado bajo la cuadrícula. Va al final porque `.btn` (inline-flex) le ganaba a
+   su `display: flex` y, siendo inline, el margen automático no lo centraba. */
+.btn--ver-mas {
+  display: flex;
+  width: max-content;
+  margin: 24px auto 0;
+}
+
+.btn--ver-mas[hidden] {
+  display: none;
+}
+
+/* Los iconos SVG no capturan el mouse: el evento llega al elemento que los contiene. Sin esto,
+   el cursor sobre la estrella caía en el <use> interno del SVG y el navegador no mostraba el
+   `title` ("Guía Michelin…") de la estrella, la nota o el nombre de la parada. */
+.icono,
+.icono * {
+  pointer-events: none;
+}

@@ -27,8 +27,9 @@ vas a tocar etiquetas, destinos, restaurantes u hoteles):
    comer/dormir, síguelo o dile al usuario qué cambia y por qué. Si lo
    implementas por fases, actualiza su checklist.
 
-5. **`bitacora_proyecto/05_EFECTOS_VISUALES_PROTEGIDOS.md`** — los 8 efectos
-   visuales de rare-ui que **nunca se quitan ni se reemplazan**. Léelo siempre
+5. **`bitacora_proyecto/05_EFECTOS_VISUALES_PROTEGIDOS.md`** — los efectos
+   visuales protegidos (los 8 de rare-ui, la luz de las tarjetas y el fondo de
+   líneas) que **nunca se quitan ni se reemplazan**. Léelo siempre
    que vayas a tocar HTML, CSS o JS del frontend, y en especial si vas a
    rediseñar la interfaz (por ejemplo con una skill de diseño): se puede
    cambiar cómo se ven, pero los efectos y sus ganchos se conservan.
@@ -86,6 +87,15 @@ inicio del archivo que edites.
   "Planear con IA": los prompts de `app/services/llm_provider.py` y, sobre
   todo, `ai_service.preparar_objetivos_ia`, que hace cumplir las reglas en el
   servidor aunque el modelo se equivoque.
+- Diseño del frontend (ya rediseñado con la base de Stitch de Angel): **no uses
+  emojis** en la app; los iconos son SVG a medida y viven en un solo sprite
+  (`app/templates/partials/iconos_sprite.html`, se usan con `{{ icono("nombre") }}`
+  en plantillas y `RutaIconos.html("nombre")` en JS). Colores, fuentes y radios salen de
+  las variables `--color-*` / `--font-*` de `styles.css`, no de valores sueltos. Un
+  `title` (tooltip) no debe quedar dentro de un icono SVG que capture el mouse
+  (ver bitácora 03). Si agregas una tarjeta o ventana nueva, súmala a la lista de
+  `spotlight.js` y a su bloque en `efectos.css`. Del fondo de líneas solo se
+  cambian el color y la velocidad (regla de Angel; ver bitácora 05).
 - Explica el "por qué" de un bug antes o junto con el arreglo, no solo
   apliques el fix sin decir la causa.
 - Para cambios grandes o con varios pasos, plantea el plan y espera
