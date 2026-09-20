@@ -70,7 +70,9 @@ estructura nueva, no eliminarlo.
 - **Gooey:** la animación se ve al **pasar el cursor** (al salir vuelve a la sección real
   de la página); el clic también la dispara. Pedido explícito de Angel: no depender del clic,
   porque al hacer clic la página salta de sección y la animación no se alcanza a ver. Las variables `--gooey-barra` y `--gooey-activo` definen sus colores.
-  En ≤640 px el menú pasa a su propia fila (evita desborde horizontal).
+  En ≤640 px el menú pasa a su propia fila (evita desborde horizontal). **En el navbar compacto
+  (fijo, al bajar) los botones se quedan visibles con este mismo efecto**: `navbar.js` los reubica
+  con `translate` (`--links-dx`), así que no les pongas otro `transform` ni los saques del `<nav>`.
 - **Píldora:** vive abajo a la **derecha** y es grande (pedido de Angel); crece hacia
   arriba/izquierda al abrirse. Solo aparece con ≥ 2 secciones visibles (o sea, con ruta calculada). Si se
   agrega otra sección a la página, hay que sumarla a la lista de `secciones.js`.
@@ -82,6 +84,9 @@ estructura nueva, no eliminarlo.
   en `efectos.css`); se quedan en su posición, solo cambian de forma/color con rebote. Es parte del efecto gooey.
 - **Grid reveal:** cubre el mapa (~4.5 s estimados) desde que se pulsa "Planea mi ruta" hasta que llega la ruta,
   y **la página no debe congelarse** mientras: los resultados se abren y se baja al instante (pedido de Angel).
+- **Con sesión iniciada** el botón "Iniciar sesión" se oculta con `hidden` (`.navbar__auth [hidden]`
+  lo fuerza, porque `.btn` le ganaba con `display`) y aparece el monito; "Cerrar sesión" vive en la
+  ventana de perfil y conserva el resalte gooey.
 - **Botones de sesión:** el radio base es `18px`, no `999px` (ver bug corregido en la bitácora 01).
 - **Orbe:** también se muestra como "Calculando tu ruta…" arriba de los resultados. Tamaño grande a propósito (120 px en sugerencias, 92 px en el chat de IA): es el
   efecto favorito de Angel, no se achica. Se apaga solo si su contenedor sale del DOM; usa `--color-terracota`.
@@ -106,6 +111,8 @@ estructura nueva, no eliminarlo.
 13. **Luz de tarjetas:** al mover el cursor cerca del borde de una tarjeta o ventana se ilumina el aro; con una ventana abierta solo brilla la ventana, no las tarjetas de atrás.
 14. **Fondo:** líneas que crecen y se desplazan como el original, cambiando entre los tonos de la paleta; con una ventana abierta se pausan.
 15. Ninguna tarjeta ni ventana pierde su fondo blanco (si pasa, revisar el fondo animado y la máscara del aro).
+16. **Navbar compacto:** al bajar se encoge (logo, RutaMX y botones, sin perfil) y los botones conservan
+    el gooey y la sección activa; al subir vuelve al tamaño completo.
 
 **Step-player: quitado a propósito (2026-09-19).** A Angel no le gustó; se eliminó
 (`stepplayer.js`, su CSS y sus enganchos en `main.js`). No volver a agregarlo.

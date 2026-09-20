@@ -42,27 +42,27 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   se abre solo en vez de fallar con un error confuso.
 - Probado en vivo: registro → guardar ruta → cerrar sesión (ya no
   aparece en el selector) → volver a iniciar sesión (reaparece).
-- **Avatar de sesión con Blobatar** (blobatar.dev, MIT): con sesión iniciada, el
-  botón "Iniciar sesión" del navbar se cambia por un avatar redondo; al picarlo se
-  despliega un menú con el avatar grande, nombre + apellido y "Cerrar sesión" (se cierra
-  con clic fuera o con Esc). El avatar sale de `nombre + apellido`, así que es siempre
-  el mismo para la misma cuenta y no se guarda nada en la base. Sin círculo alrededor, solo el monito. Siempre se mueve poquito
-  (respira, parpadea, mira de reojo). Con el mouse a menos de 220 px sus ojos lo siguen; al
-  picarle al del navbar se enoja (rosado-rojo, ceño fruncido) 1.4 s y, al terminar, se queda quieto
-  (animaciones en pausa) mientras la ventana de perfil esté abierta. Esa ventana tiene su propio
-  monito: sigue al mouse siempre (aunque esté lejos) con los ojos mucho más exagerados que el
-  del navbar (`--mo-track-travel`: 12px contra 6.5px), y se enoja con cada clic sobre él, uno a
-  la vez (si ya está enojado, el clic no hace nada). Al cerrar la ventana (clic fuera, Esc,
-  clic en el avatar o Cerrar sesión) el del navbar vuelve a su vida normal. Probado con 14
-  nombres distintos (siluetas, acentos y ñ): enojo, quietud, seguimiento y cierre.
-  Lógica en `app/static/js/avatar.js` (`RutaAvatar`). Archivos:
-  `app/static/js/vendor/` (`blobatar.js` = dist/internal.js de blobatar 2.7.0,
-  `blobatar-gaze.js` = gaze.js, `blobatar-expresiones.js` = expression.js; sin dependencias),
-  `app/static/css/blobatar-motion.css` y `blobatar-gaze.css` (enlazados en `base.html`), `auth.js` (`pintarAvatar`, `alternarMenu`; lo carga con `import()`
-  solo al haber sesión), `partials/navbar.html` y estilos `.navbar__avatar/.navbar__menu`
-  en `styles.css`. El paquete completo está guardado en
-  `iCloud/Universidad/Más/blobatar/` (con `LEEME.md`) para usarlo en otros proyectos.
-  Probado en vivo con una sesión simulada (no había cuentas reales en la base).
+- **Avatar de sesión con Blobatar** (blobatar.dev, MIT): con sesión iniciada, el botón
+  "Iniciar sesión" del navbar se cambia por el monito (sin círculo alrededor); al picarlo se
+  despliega una ventana de perfil con el monito grande, nombre + apellido y "Cerrar sesión"
+  (se cierra con clic fuera, Esc, otro clic en el avatar o al encogerse el navbar). El monito sale
+  de `nombre + apellido`: es siempre el mismo para la misma cuenta y no se guarda nada en la base.
+  - **Navbar:** siempre respira, parpadea y mira de reojo (poquito). Con el mouse a menos de
+    220 px sus ojos lo siguen (`--mo-track-travel` 6.5px). Al picarle se enoja (rosado-rojo, ceño
+    fruncido) 1.4 s y, al terminar, se queda quieto (animaciones en pausa) mientras la ventana de
+    perfil esté abierta.
+  - **Ventana de perfil:** tiene su propio monito: sigue al mouse siempre (aunque esté lejos) con
+    los ojos mucho más exagerados (12px) y se enoja con cada clic sobre él, uno a la vez (si ya
+    está enojado, el clic no hace nada). Al cerrarla, el del navbar vuelve a su vida normal.
+  - Probado con 14 nombres distintos (siluetas, acentos y ñ): enojo, quietud, seguimiento y
+    cierre; y con una sesión simulada (al probarlo no había cuentas reales en la base).
+  - Archivos: lógica en `app/static/js/avatar.js` (`RutaAvatar`); `auth.js` (`pintarAvatar`,
+    `alternarMenu`, `cerrarMenu`); `partials/navbar.html`; estilos `.navbar__avatar/.navbar__menu`
+    en `styles.css`. Copias de blobatar 2.7 (sin dependencias, no se editan) en
+    `app/static/js/vendor/` (`blobatar.js` = dist/internal.js, `blobatar-gaze.js` = gaze.js,
+    `blobatar-expresiones.js` = expression.js) y `app/static/css/blobatar-motion.css` /
+    `blobatar-gaze.css` (enlazados en `base.html`). Angel guarda el paquete completo fuera del repo,
+    con un `LEEME.md`, para reutilizarlo en otros proyectos.
 
 ## Navbar fijo que se encoge y tope suave entre secciones
 
@@ -583,7 +583,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (oculto) con el valor, así que `auth.js` no cambió.
 - **Menú gooey en el navbar** (`gooey.js`): Ruta / Descubre / Itinerario; la opción se
   separa con un cuello elástico **al pasar el cursor** (al salir vuelve a la sección
-  actual, que sigue el scroll); también al hacer clic, con scroll suave. En pantallas ≤640 px el menú pasa a su propia fila.
+  actual, que sigue el scroll); también al hacer clic, con scroll suave. En pantallas ≤640 px el menú pasa a su propia fila. En el navbar compacto (al bajar) los
+  botones siguen visibles con la misma animación (ver la sección "Navbar fijo" de abajo).
 - **Píldora de progreso** (`pildora.js`): flotante abajo a la **derecha**, grande, con un anillo que
   se llena al bajar y el nombre de la sección; al tocarla se despliega para saltar a
   Inicio / Ruta / Descubre / Itinerario. Solo aparece cuando ya hay ruta calculada
@@ -606,6 +607,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   su lugar con el mismo efecto del menú gooey (terracota, esquinas más cuadradas, rebote suave).
   Arreglo: la primera versión animaba el radio desde `999px` y la esquina no se notaba hasta el
   final (se veía como un salto raro al segundo); ahora parte de `18px` y todo cambia a la par en ~0.35 s.
+  Con sesión iniciada "Iniciar sesión" se oculta (el monito ocupa su lugar) y "Cerrar sesión" vive en
+  la ventana de perfil, donde esta regla sigue aplicando.
 - **Orbe de puntos** (`orbe.js`, grande: 120 px en sugerencias y 92 px en el chat): reemplaza el texto "Buscando ideas para tu
   recorrido…" y los tres puntitos de "Planear con IA" mientras piensa.
 - Todo respeta `prefers-reduced-motion`. Ancla nueva `id="inicio"` en el hero (para la
@@ -734,7 +737,8 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
   `dur__palomita`). El botón de ajustes de gasto lleva su texto en `[data-ajustes-texto]`.
 - **Luz que sigue al cursor (spotlight-card, JS/CSS puro):** aro brillante en el borde y
   resplandor interior que se acercan al puntero, terracota→ocre según la posición. Se aplica
-  solo a `.card`, `.ruta-burbuja` y las ventanas `.modal-auth/-ajustes/-rutas/-ia`
+  solo a `.card`, `.ruta-burbuja`, `.navbar__menu` (ventana de perfil del avatar, solo el
+  resplandor interior) y las ventanas `.modal-auth/-ajustes/-rutas/-ia`
   (`efectos/spotlight.js` + bloque 9 de `efectos.css`). **Con una ventana abierta, la luz es solo
   de esa ventana** (y de lo que lleva dentro): la de las tarjetas de atrás se apaga al instante y
   no se enciende aunque el cursor pase por encima; al cerrarla, todo vuelve a la normalidad. Aplica
@@ -774,20 +778,21 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el
   chat de planeación con IA (asignación de objetivos, filtro de hora del
   día, orquestación del chat — todo con el proveedor mockeado).
+- Falla conocido: `test_registrar_usuario_duplicado_por_acentos_y_mayusculas` choca con la cuenta
+  real "Angel Mata" de la base (ver `02_LO_QUE_FALTA.md`). Los tests corren contra Supabase: con
+  el servidor abierto a la vez, la suite completa puede dar `EMAXCONNSESSION` en 1 o 2 tests;
+  repetidos solos pasan.
 - Grafo de conocimiento del proyecto generado con graphify
   (`graphify-out/`), se actualiza con `/graphify update`.
 
-## Commits recientes (los últimos 7, de la sesión más reciente)
+## Commits recientes (los últimos 8)
 
-1. Selector de hora tipo rueda + montos predefinidos en presupuesto/horas
-   máximas — ver sección de arriba.
-2. "Planear con IA" — chat que arma el itinerario, con reparto
-   inteligente de paradas reutilizable sin IA — ver sección de arriba.
-3. Cuentas de usuario (nombre + apellido + PIN de 4 dígitos, sin correo) —
-   ver sección de arriba.
-4. Destinos nuevos generados con IA (multi-proveedor: Claude/OpenAI/Gemini)
-   cuando el lugar no está en la base — ver sección de arriba.
-5. Autocompletado propio con Tab/Enter y sin distinguir acentos.
-6. Arreglo: las paradas ya no se borran al cambiar solo los filtros.
-7. Arreglo raíz del geocoding (tabla + Nominatim) + mapa más grande + tandas
-   de 16 + colores de origen/destino + reubicación de "Guarda tu plan".
+1. Avatar de sesión con Blobatar, navbar fijo que se encoge y tope suave entre secciones — ver
+   las secciones "Cuentas de usuario" y "Navbar fijo que se encoge…" de arriba.
+2. Rediseño del frontend con la base de Stitch, iconos a medida y efectos de fondo.
+3. Efectos visuales de rare-ui, filtro de intereses y recomendaciones por franjas de horas.
+4. Selector de tramos hasta 10 con "Más" (11 a 30) y barras a todo lo ancho.
+5. Sugerencias como línea de tiempo: prioridad a lugares con estrella, 5 visibles y "Ver más".
+6. Gastronomía destacada (UNESCO, Michelin, 50 Best) con estrella en las tarjetas.
+7. Documenta el plan para re-etiquetar la base y agregar restaurantes y hoteles.
+8. Tramos con hora y propósito, gasto que se deduce solo, ajustes en el resumen e IA al día.

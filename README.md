@@ -54,6 +54,12 @@ sugerencias → itinerario → guardar):
   `app/services/auth_service.py` maneja registro/login, sesión con la
   cookie firmada de Flask. Solo hace falta iniciar sesión para *guardar*
   una ruta — calcular rutas y ver sugerencias sigue abierto sin cuenta.
+- **Avatar y navegación**: con sesión iniciada, el botón "Iniciar sesión" se cambia por un
+  monito generado con [Blobatar](https://blobatar.dev) (MIT) a partir del nombre (siempre el mismo
+  para la misma cuenta, sin guardar nada); sus ojos siguen al mouse, se enoja al picarle y abre
+  una ventana de perfil con su propio monito. El navbar es fijo y se encoge al bajar (logo,
+  nombre y botones, con fondo translúcido), y la página hace un tope suave al llegar a cada
+  sección o al recuadro del formulario. Ver `bitacora_proyecto/01_LO_QUE_YA_ESTA_HECHO.md`.
 - **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`app/models.py`,
   modelo `RutaGuardada`), ligadas a la cuenta que las guardó — ya no se
   pierden al reiniciar el servidor, y cada quien solo ve las suyas.
@@ -176,9 +182,10 @@ RutaMX/
 │   │   ├── planificador_ia_service.py  # Orquesta el chat "Planear con IA"
 │   │   └── auth_service.py             # Registro/login (nombre + apellido + PIN de 4 dígitos)
 │   ├── static/
-│   │   ├── css/              # styles.css (diseño) y efectos.css (efectos protegidos)
-│   │   ├── js/               # main.js, form.js, map.js, auth.js, iconos.js (iconos a medida) …
-│   │   │   └── efectos/      # efectos visuales protegidos (contador, gooey, spotlight, fondo …)
+│   │   ├── css/              # styles.css (diseño), efectos.css (efectos protegidos), blobatar-*.css (avatar)
+│   │   ├── js/               # main.js, form.js, map.js, auth.js, avatar.js, navbar.js, tope.js, iconos.js …
+│   │   │   ├── efectos/      # efectos visuales protegidos (contador, gooey, spotlight, fondo …)
+│   │   │   └── vendor/       # copias de Blobatar 2.7 (MIT), no se editan
 │   │   └── img/              # logo-emblema.svg
 │   └── templates/            # HTML: base.html + partials por sección; partials/iconos_sprite.html = iconos
 ├── scripts/
@@ -208,5 +215,5 @@ Lo pendiente vive en `bitacora_proyecto/02_LO_QUE_FALTA.md`; lo principal:
   (`bitacora_proyecto/04_PLAN_RESTAURANTES_Y_HOTELES.md`).
 - Calibrar el tiempo de la app contra Google Maps.
 - Desplegar la app en un hosting público (Render/Railway) para poder compartirla con un link.
-- Iconos para los 6 intereses de "¿Qué buscas?" (hoy solo texto) y probar el fondo animado
-  en un teléfono real.
+- Iconos para los 6 intereses de "¿Qué buscas?" (hoy solo texto) y probar el fondo animado,
+  el navbar compacto y el tope entre secciones en un teléfono real.

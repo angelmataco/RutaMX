@@ -89,6 +89,17 @@ real por hacer, no porque la feature esté incompleta.
   se llaman exactamente igual, la segunda no puede registrarse con ese
   nombre. No es problema real para el grupo de prueba (Angel, Roberto).
 
+**De la interfaz (navbar, secciones y avatar):**
+- El navbar compacto, el tope entre secciones y la portada solo se probaron con mouse/rueda y
+  ventanas emuladas: falta probarlos en un teléfono real y con trackpad (momentum). El
+  seguimiento de ojos del avatar no corre sin mouse fino ni con "reducir movimiento" (lo decide
+  el paquete).
+- En el navbar compacto el perfil no se ve (pedido de Angel: solo logo, nombre y botones); para
+  abrirlo hay que subir. Si estorba, mostrar el avatar también ahí.
+- Dos medidas del CSS son aproximadas y hay que ajustarlas si cambian el formulario o el navbar:
+  `--tope-superior` (54px, alto del navbar compacto) y los 760px del espacio bajo el hero sin
+  resultados (recuadro ~694 + navbar + holgura), ambas en `styles.css`.
+
 **De destinos nuevos con IA:**
 - Nadie lo ha probado todavía con una API key real conectada (se probó
   sin ninguna key configurada, y confirmó que cae bien al comportamiento

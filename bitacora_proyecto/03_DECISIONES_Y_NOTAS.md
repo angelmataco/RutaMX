@@ -455,17 +455,20 @@ con clase `.btn` debe ocultarse con `hidden`, hay que cuidar lo mismo.
 
 ## Avatar del usuario: Blobatar y por qué un solo archivo copiado
 
-El proyecto no usa npm ni bundler, así que en vez de instalar el paquete se
-copió solo `dist/internal.js` (módulo ES autocontenido) a `app/static/js/vendor/`
-y `motion.css` a `static/css/blobatar-motion.css`. Se usa `internal` (`_parts`) porque
-el paquete no ofrece una función animada para JS puro; es la API de sus adaptadores y
-puede cambiar en una versión mayor. Con `animate: "hover"` solo se mueve al pasar el
-cursor por la silueta, así que `styles.css` fuerza `--mo-amp: 1` al hacer hover en todo el
-botón del avatar. El navbar creció de 68 a 77 px de alto por el avatar de 56 px.
-Si se cambia de versión mayor de Blobatar, todos los avatares cambian (el
-paquete lo documenta): mantener 2.x.
+El proyecto no usa npm ni bundler, así que en vez de instalar el paquete se copiaron los
+módulos autocontenidos que hacen falta a `app/static/js/vendor/` (`internal.js`, `gaze.js`,
+`expression.js` de blobatar 2.7, renombrados `blobatar.js`, `blobatar-gaze.js` y
+`blobatar-expresiones.js`) y sus dos CSS a `static/css/` (`blobatar-motion.css`,
+`blobatar-gaze.css`). Se usa `internal` (`_parts`) porque el paquete no ofrece una función animada
+para JS puro; es la API de sus adaptadores y puede cambiar en una versión mayor. El avatar corre
+siempre en `animate: "always"` (amplitud baja) y el seguimiento y el enojo se encienden desde
+`avatar.js`. Si se cambia de versión mayor de Blobatar, todos los avatares cambian (el paquete lo
+documenta): mantener 2.x. Las copias no se editan; el paquete completo lo guarda Angel fuera del
+repo.
 
 ## Navbar simétrico: grid de 3 columnas
+
+(Esto describe el navbar expandido; el compacto tiene sus reglas en "Navbar fijo…", más abajo.)
 
 `.navbar__inner` era `flex` con `space-between`: los enlaces quedaban en el hueco entre la
 marca y el botón/avatar, así que se corrían al cambiar el ancho de este último (botón
@@ -477,16 +480,16 @@ borde derecho de la página.
 
 ## Avatar: cómo se logra que siga el mouse y se enoje
 
-- Seguir el mouse es `gaze()` (blobatar/gaze) + `--mo-track-travel: 6.5px` en `.mo-eyes`
-  (`styles.css`); sin esa variable los ojos no se mueven aunque el driver corra. `gaze` por sí
-  solo sigue al cursor en toda la página: "cerca" lo decide `avatar.js` (distancia menor a 220 px
-  al centro del avatar) con `lookAt("pointer")` / `lookAt(null)`. El avatar del menú está oculto
-  al crearse, por eso se llama `remeasure()` al abrir el menú. Con el menú abierto solo el del
-  menú sigue al mouse y se enoja (`avatar.js`: `evaluar()` elige quién; `enojar()` va al visible);
-  el del navbar se pausa por CSS (`.navbar__avatar[aria-expanded="true"]` en `styles.css`).
-  En `enojar()` se fuerza un reflow antes de aplicar la pose: el del menú acaba de salir de
-  `display: none` y sin estilo calculado no hace la transición. 6.5 es marcado (los ojos cruzan
-  la silueta, que Blobatar permite); lo sutil es 1.5 a 4.
+- Seguir el mouse es `gaze()` (blobatar/gaze) + `--mo-track-travel` en `.mo-eyes` (`styles.css`:
+  6.5px en el navbar y 12px en la ventana de perfil); sin esa variable los ojos no se mueven aunque
+  el driver corra. `gaze` por sí solo sigue al cursor en toda la página: "cerca" lo decide `avatar.js`
+  (distancia menor a 220 px al centro del avatar) con `lookAt("pointer")` / `lookAt(null)`. Con la
+  ventana abierta sigue el mouse solo el monito de la ventana (`evaluar()` elige quién). El enojo lo
+  disparan `pulsarBarra()` (clic en el navbar) y `pulsarMenu()` (clic en la ventana), cada uno con su
+  temporizador; el del navbar se pausa con `.mo-quieto` solo cuando su enojo termina y la ventana
+  sigue abierta. En `enojar()` se fuerza un reflow antes de aplicar la pose: el de la ventana acaba
+  de salir de `display: none` y sin estilo calculado no hace la transición. 6.5 es marcado (los ojos
+  cruzan la silueta, que Blobatar permite); lo sutil es 1.5 a 4.
 - Enojo: expresión `mad` de blobatar. Las expresiones no cambian el SVG, solo variables CSS
   y la clase `mo-expr`, así que se aplican sobre el mismo DOM y la transición es de CSS. Al
   volver a lo normal hay que quitar (`removeProperty`) las variables de la pose, no ponerlas en 0.

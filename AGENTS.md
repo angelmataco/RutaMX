@@ -96,6 +96,15 @@ inicio del archivo que edites.
   (ver bitácora 03). Si agregas una tarjeta o ventana nueva, súmala a la lista de
   `spotlight.js` y a su bloque en `efectos.css`. Del fondo de líneas solo se
   cambian el color y la velocidad (regla de Angel; ver bitácora 05).
+- Navbar y secciones: el navbar es `position: fixed` con un espaciador (`.navbar-espacio`) y se
+  encoge al bajar (`navbar.js`); no lo vuelvas `sticky` ni cambies su alto sin actualizar
+  `--tope-superior` en `styles.css`. Lo que agregues al navbar decide si se oculta en compacto
+  (`.navbar--compacto`). El tope suave entre secciones es `tope.js`, no `scroll-snap` de CSS (ver
+  bitácora 03); las secciones nuevas son `.section` con `id` y entran solas.
+- Avatar de sesión: Blobatar 2.7 copiado en `app/static/js/vendor/` y `css/blobatar-*.css`; esas
+  copias no se editan (la lógica es `avatar.js`) y se mantiene la versión 2.x. Un `gaze()` debe
+  crearse con el elemento visible (ver bitácora 03). El menú desplegable del avatar es un menú, no
+  una ventana: no aplica la regla del `<dialog>`.
 - Explica el "por qué" de un bug antes o junto con el arreglo, no solo
   apliques el fix sin decir la causa.
 - Para cambios grandes o con varios pasos, plantea el plan y espera
@@ -104,6 +113,7 @@ inicio del archivo que edites.
 
 ## Stack del proyecto (referencia rápida)
 
-Flask + vanilla JS + Supabase (Postgres, vía SQLAlchemy). Ver
+Flask + vanilla JS + Supabase (Postgres, vía SQLAlchemy). Sin npm ni bundler: lo de terceros
+(Leaflet, Blobatar) va por CDN o copiado en `static/`. Ver
 `bitacora_proyecto/01_LO_QUE_YA_ESTA_HECHO.md` para el detalle completo de
 cómo está armado cada módulo.
