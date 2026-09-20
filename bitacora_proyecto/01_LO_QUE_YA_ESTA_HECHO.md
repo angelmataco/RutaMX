@@ -337,7 +337,10 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 ## Tramos: elegir cuántos, hora del reloj y recomendaciones según la hora
 
 - **Cuántos tramos:** en "Descubre en el camino" hay un selector
-  "Dividir el viaje en: Automático · 2 · 3 · 4 · 5 · 6". Automático = ~3 h
+  "Dividir el viaje en: Automático · 2 a 10 · Más" ("Más" abre un campo para
+  elegir de 11 a 30 tramos; el botón queda como "Más · 14"). El selector y la
+  barra de tramos ocupan todo el ancho; si hay muchos tramos pasan a otra línea,
+  sin barra de desplazamiento. Automático = ~3 h
   por tramo; si se elige un número, la ventana (30 min después de salir a
   20 min antes de llegar) se divide en esa cantidad de partes iguales (nunca
   tramos de menos de 30 min). Parámetro `tramos` de `/api/sugerencias`.
@@ -491,9 +494,22 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Tests nuevos: orden por horas, máximo 2 estrellas en la primera vista, que
   ninguna se pierda, y línea de tiempo por la API.
 
+## Selector de tramos hasta 10 + "Más", a todo lo ancho
+
+- Pedido de Angel tras probar Tijuana → Puerto Vallarta (27.5 h; en automático
+  salieron 9 tramos de 3 h cada uno). El selector manual llega hasta **10 tramos**
+  con botones y **"Más"** abre un campo (11 a 30). La fila de botones y la de
+  tramos cubren todo el ancho (`.tramos-control__opciones--ancho`, `.lapsos`
+  con `flex-wrap`).
+- Arreglo incluido: la fila "¿Qué buscas en el tramo N?" aparecía como una barra
+  vacía cuando no había tramo elegido, porque `.tramos-control { display: flex }`
+  ganaba al atributo `hidden`; ahora hay `.tramos-control[hidden] { display: none }`.
+- Ojo: cuando un elemento con `hidden` tenga un `display` propio en CSS, hay que
+  agregar la regla `[hidden] { display: none }` (pasó también con la estrella).
+
 ## Calidad / pruebas
 
-- 114 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- 115 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el

@@ -9,6 +9,19 @@ la regla completa en `AGENTS.md`.
 
 ## Por planear / decidir con Angel (pedido explícito)
 
+- **Esfera animada tipo "modo de voz" para "Planear con IA" (idea de Angel,
+  2026-09-19).** Inspirada en el componente `fluid-orb` de Rare UI
+  ([repo](https://github.com/swamimalode07/rare-ui), MIT; es de React + Tailwind +
+  WebGL, así que NO se instala tal cual en RutaMX, que usa Flask + JS simple). Ya
+  se descargó el repositorio en una carpeta aparte de Angel
+  (`.../Más/efectos visuales rare-ui`); se va a trabajar en una sesión nueva
+  apuntando a esa carpeta. Plan: leer el código de `fluid-orb`, portarlo a JS/CSS
+  sin React (versión ligera en CSS o versión fiel en `<canvas>` WebGL, por
+  decidir) y usarlo en el encabezado del chat de IA (en vez del 🤖) y como
+  indicador de "pensando" (en vez de los tres puntitos), con los colores de la
+  marca (terracota / verde oscuro) y respetando `prefers-reduced-motion`. No
+  correr `npm install` ni `npx shadcn` dentro de RutaMX. Citar la licencia MIT.
+
 - **Re-etiquetar la base y agregar restaurantes y hoteles (siguiente paso
   grande, pedido de Angel, sin pagar nada).** Plan completo en
   [`04_PLAN_RESTAURANTES_Y_HOTELES.md`](04_PLAN_RESTAURANTES_Y_HOTELES.md).

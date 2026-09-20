@@ -1424,22 +1424,22 @@ a {
   }
 }
 
-/* Fila de tramos (lapsos) en "Descubre en el camino" */
+/* Fila de tramos (lapsos): ocupa todo el ancho; si hay muchos, pasan a otra línea
+   (sin barra de desplazamiento) y los botones se reparten el espacio. */
 .lapsos {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 0 0 22px;
-  padding-bottom: 6px;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .lapsos .chip {
-  flex-shrink: 0;
+  flex: 1 1 auto;
   min-height: 42px;
   padding: 0 16px;
   border-radius: 12px;
   white-space: nowrap;
+  text-align: center;
 }
 
 /* Etiqueta de lo que el sistema dedujo de cada parada (comer / dormir) */
@@ -1636,3 +1636,68 @@ a {
 .btn--ver-mas.is-abierto .btn--ver-mas__flecha {
   transform: rotate(90deg);
 }
+
+/* Selector de cuántos tramos: a todo lo ancho (Automático, 2 a 10 y "Más") */
+.tramos-control[hidden] {
+  display: none; /* el display:flex de .tramos-control no debe ganarle al atributo hidden */
+}
+
+.tramos-control[data-tramos-control] {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tramos-control[data-tramos-control] .tramos-control__titulo {
+  flex-shrink: 0;
+}
+
+.tramos-control__opciones--ancho {
+  flex: 1 1 520px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tramos-control__opciones--ancho .chip {
+  flex: 1 1 42px;
+  min-width: 0;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.tramos-control__opciones--ancho .chip--automatico {
+  flex: 2 1 96px;
+}
+
+.tramos-control__opciones--ancho .chip--mas {
+  flex: 1.4 1 62px;
+}
+
+.tramos-mas {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tramos-mas[hidden] {
+  display: none;
+}
+
+.tramos-mas label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-verde-oscuro);
+}
+
+.tramos-mas input {
+  width: 90px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.tramos-mas .btn {
+  padding: 8px 18px;
+}
+

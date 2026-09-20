@@ -467,3 +467,11 @@ def test_con_una_sola_estrella_se_llenan_los_demas_lugares_por_hora():
     lugares = [_estrella("E1", 3.0)] + [{"nombre": f"c{i}", "horas_estimadas": 1 + i} for i in range(8)]
     primera = ai_service._linea_de_tiempo(lugares)[:ai_service.TAMANO_PAGINA_SUGERENCIAS]
     assert [l["nombre"] for l in primera] == ["E1", "c0", "c1", "c2", "c3"]
+
+
+def test_se_pueden_pedir_hasta_30_tramos_en_un_viaje_largo():
+    assert len(ai_service.lapsos_de_la_ruta(30, tramos=10)) == 10
+    assert len(ai_service.lapsos_de_la_ruta(30, tramos=12)) == 12
+    assert len(ai_service.lapsos_de_la_ruta(30, tramos=30)) == 30   # 1 h de camino cada uno
+    # un viaje corto nunca se divide en tramos de menos de 30 min
+    assert len(ai_service.lapsos_de_la_ruta(4, tramos=30)) <= 7

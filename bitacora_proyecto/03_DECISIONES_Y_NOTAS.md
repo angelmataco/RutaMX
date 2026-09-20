@@ -146,6 +146,17 @@ siguen igual). Con restaurantes el riesgo sube en ciudades con muchas estrellas
 también a restaurantes. **5 visibles** (decisión de Angel): 5 tarjetas en una
 fila en pantallas anchas; en pantallas medianas (3 columnas) quedan 3 + 2.
 
+## Por qué un viaje largo sale con ~9-10 tramos en automático
+
+En automático cada tramo mide ~3 h de camino (`LAPSO_OBJETIVO_H = 3.0` en
+`ai_service.py`), sin importar cuánto dure el viaje. Tijuana → Puerto Vallarta
+(27.5 h, 2 días) da 9 tramos de 3.0 h; un viaje de 50 h daría 16. Los tramos que
+cruzan la noche cuentan como un tramo más (ej. "20:22 – 09:20" es 3 h de camino y
+el descanso). Angel no quiso cambiar esto por ahora. Si se quiere menos tramos en
+viajes largos, se puede hacer que el largo del tramo crezca con la duración
+(p. ej. 4-5 h para viajes de más de 20 h) o poner un tope al automático (p. ej.
+8); mientras tanto el usuario puede elegir cuántos tramos (2 a 10, o hasta 30).
+
 ## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al

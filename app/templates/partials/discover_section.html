@@ -11,7 +11,12 @@
 
     <div class="tramos-control" data-tramos-control hidden>
       <span class="tramos-control__titulo">Dividir el viaje en</span>
-      <div class="tramos-control__opciones" data-tramos-opciones></div>
+      <div class="tramos-control__opciones tramos-control__opciones--ancho" data-tramos-opciones></div>
+      <div class="tramos-mas" data-tramos-mas hidden>
+        <label for="tramos-mas-numero">¿En cuántos tramos? (11 a 30)</label>
+        <input type="number" id="tramos-mas-numero" min="11" max="30" step="1" placeholder="11" data-tramos-mas-numero />
+        <button type="button" class="btn btn--primary" data-tramos-mas-aplicar>Aplicar</button>
+      </div>
       <p class="tramos-control__nota" data-tramos-nota hidden></p>
     </div>
 

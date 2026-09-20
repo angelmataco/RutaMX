@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const estado = {
     lapsoActual: null, // null = todo el camino; si no, índice del lapso elegido
     tramosElegidos: null, // null = automático; si no, en cuántos tramos dividir el viaje
+    tramosMasAbierto: false, // ¿está abierto el campo de "Más" (11 a 30 tramos)?
     propositos: {}, // { indiceDeTramo: "comida" | "turismo" | "descanso" } de los tramos personalizados
     horaSalidaAsumida: true,
     lapsos: [],
@@ -41,6 +42,9 @@ document.addEventListener("DOMContentLoaded", () => {
     tramosControl: document.querySelector("[data-tramos-control]"),
     tramosOpciones: document.querySelector("[data-tramos-opciones]"),
     tramosNota: document.querySelector("[data-tramos-nota]"),
+    tramosMas: document.querySelector("[data-tramos-mas]"),
+    tramosMasNumero: document.querySelector("[data-tramos-mas-numero]"),
+    tramosMasAplicar: document.querySelector("[data-tramos-mas-aplicar]"),
     lineaTiempo: document.querySelector("[data-linea-tiempo]"),
     tramoProposito: document.querySelector("[data-tramo-proposito]"),
     tramoPropositoTitulo: document.querySelector("[data-tramo-proposito-titulo]"),
@@ -191,6 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       estado.lapsoActual = null; // un viaje nuevo empieza viendo todo el camino
       estado.tramosElegidos = null;
+      estado.tramosMasAbierto = false;
       estado.propositos = {};
       await cargarSugerencias(valores);
     } catch (err) {
@@ -392,25 +397,63 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.tramoProposito.hidden = false;
   }
 
+  // Botones rápidos hasta 10 tramos; "Más" abre un campo para elegir de 11 a 30.
+  const TRAMOS_RAPIDOS = 10;
+
+  function elegirTramos(cuantos) {
+    if (cuantos === estado.tramosElegidos) return;
+    estado.tramosElegidos = cuantos;
+    estado.lapsoActual = null;
+    estado.propositos = {}; // los tramos cambian: se reinician las elecciones
+    cargarSugerencias(estado.sugerenciasValores);
+  }
+
   function renderControlDeTramos() {
     elementos.tramosOpciones.innerHTML = "";
-    [null, 2, 3, 4, 5, 6].forEach((cuantos) => {
+    const opciones = [null, ...Array.from({ length: TRAMOS_RAPIDOS - 1 }, (_, i) => i + 2)];
+    opciones.forEach((cuantos) => {
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className = "chip" + (cuantos === estado.tramosElegidos ? " is-active" : "");
       boton.textContent = cuantos === null ? "Automático" : String(cuantos);
+      if (cuantos === null) boton.classList.add("chip--automatico");
       boton.addEventListener("click", () => {
-        if (cuantos === estado.tramosElegidos) return;
-        estado.tramosElegidos = cuantos;
-        estado.lapsoActual = null;
-        estado.propositos = {}; // los tramos cambian: se reinician las elecciones
-        cargarSugerencias(estado.sugerenciasValores);
+        estado.tramosMasAbierto = false;
+        elegirTramos(cuantos);
+        renderControlDeTramos();
       });
       elementos.tramosOpciones.appendChild(boton);
     });
 
+    const masActivo = estado.tramosElegidos !== null && estado.tramosElegidos > TRAMOS_RAPIDOS;
+    const mas = document.createElement("button");
+    mas.type = "button";
+    mas.className = "chip chip--mas" + (masActivo || estado.tramosMasAbierto ? " is-active" : "");
+    mas.textContent = masActivo ? `Más · ${estado.tramosElegidos}` : "Más";
+    mas.addEventListener("click", () => {
+      estado.tramosMasAbierto = !estado.tramosMasAbierto;
+      renderControlDeTramos();
+      if (estado.tramosMasAbierto) elementos.tramosMasNumero.focus();
+    });
+    elementos.tramosOpciones.appendChild(mas);
+
+    elementos.tramosMas.hidden = !(masActivo || estado.tramosMasAbierto);
+    if (masActivo) elementos.tramosMasNumero.value = estado.tramosElegidos;
+
     elementos.tramosNota.hidden = !estado.horaSalidaAsumida;
     elementos.tramosNota.textContent = "Sin hora de salida, los horarios suponen que sales a las 08:00.";
+  }
+
+  function aplicarTramosMas() {
+    const valor = Math.round(Number(elementos.tramosMasNumero.value));
+    if (!Number.isFinite(valor) || valor <= TRAMOS_RAPIDOS) {
+      elementos.tramosMasNumero.value = TRAMOS_RAPIDOS + 1;
+      return;
+    }
+    const cuantos = Math.min(valor, 30);
+    elementos.tramosMasNumero.value = cuantos;
+    elegirTramos(cuantos);
+    renderControlDeTramos();
   }
 
   // Todas las sugerencias del lote se dibujan en orden de línea de tiempo; se ven
@@ -1057,6 +1100,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (elementos.verMasBtn) {
     elementos.verMasBtn.addEventListener("click", alternarSugerencias);
+  }
+
+  if (elementos.tramosMasAplicar) {
+    elementos.tramosMasAplicar.addEventListener("click", aplicarTramosMas);
+    elementos.tramosMasNumero.addEventListener("keydown", (evento) => {
+      if (evento.key === "Enter") {
+        evento.preventDefault();
+        aplicarTramosMas();
+      }
+    });
   }
 
   if (elementos.verRutasBtn) {
