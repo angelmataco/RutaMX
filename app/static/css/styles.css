@@ -2592,3 +2592,14 @@ html {
 body:has([data-resultados][hidden]) .hero {
   padding-bottom: max(clamp(48px, 7vw, 88px), calc(100dvh - 760px));
 }
+
+/* Crédito a Rare UI (lo pide su licencia: enlace visible a rareui.com) */
+.pie-creditos {
+  padding: 24px 0 32px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-texto-gris);
+}
+.pie-creditos p { margin: 0; }
+.pie-creditos a { color: var(--color-terracota-texto); text-underline-offset: 3px; }
+.pie-creditos a:focus-visible { outline: 2px solid var(--color-terracota-texto); outline-offset: 3px; }
