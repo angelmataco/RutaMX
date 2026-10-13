@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-09-20
+Última actualización: 2026-10-08
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
@@ -585,3 +585,12 @@ ruta…", así que la pantalla se quedaba en medio de esa animación. Se quitó 
 `.cargando-ruta`) y el scroll va a `#ruta` con `RutaEfectos.secciones.irA("ruta")`, que respeta
 `scroll-padding-top`: la sección queda bajo el navbar y, como llena la pantalla y centra su contenido,
 se ve "centrada". La cuadrícula del mapa (grid reveal) y el orbe de las sugerencias siguen.
+
+## Decisiones D-01 a D-14 del documento de requerimientos v2.0
+
+Se cerraron las ambigüedades del apartado 10.1 del documento v1.0 usando sus propias recomendaciones:
+filtros = duración, categoría y región; datos obligatorios = origen, destino y duración (intereses opcionales);
+solo 2 preferencias (duración y tipo de lugares); conjunto cerrado de intenciones del chat; la ruta estructurada
+es la fuente única de verdad; solo se guarda la ruta (no el chat); guardar de nuevo actualiza la misma ruta, sin
+historial; los criterios de autenticación validan solo el comportamiento de RutaMx (el sistema de login ya existe).
+Detalle y fundamento de cada una en la sección 4.2 del PDF v2.0.

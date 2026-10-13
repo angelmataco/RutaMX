@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-09-20
+Última actualización: 2026-10-08
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -181,3 +181,10 @@ _(vacío por ahora)_
   (poco conectados) y algunas relaciones marcadas como INFERRED que
   valdría la pena confirmar si son correctas — no es bloqueante, solo
   queda anotado por si se quiere revisar la arquitectura más a fondo.
+
+## Pendientes del documento de requerimientos v2.0 (confirmar con el cliente)
+
+- **P-01:** ningún RF describe cómo se marca una ruta como pública (el perfil «Creador de rutas» y RNF-15 lo suponen).
+- **P-02:** confirmar si el sitio ya tiene proveedor de mapas y credenciales; de eso depende HU-06 (RF-11 y RF-12).
+- **P-03:** definir los valores de categoría y región de los filtros (RF-05) al cargar las rutas públicas.
+- Roberto debe validar el documento v2.0 (rol de validador) antes de entregarlo.

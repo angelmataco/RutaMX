@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-09-20
+Última actualización: 2026-10-08
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -805,3 +805,11 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
 6. Gastronomía destacada (UNESCO, Michelin, 50 Best) con estrella en las tarjetas.
 7. Documenta el plan para re-etiquetar la base y agregar restaurantes y hoteles.
 8. Tramos con hora y propósito, gasto que se deduce solo, ajustes en el resumen e IA al día.
+
+## Documento de requerimientos v2.0 (práctica de historias y trazabilidad)
+
+`info_proyecto/RutaMx_Documento_Requerimientos_v2.0.pdf` (46 páginas, generado solo a partir de
+`RutaMx_Documento_Requerimientos.pdf` v1.0, que no se modificó). Incluye RF/RNF corregidos, 23 historias
+priorizadas (12 Alta, 10 Media, 1 Baja), 93 criterios Dado/Cuando/Entonces (92 originales + CA-12.5),
+matriz de trazabilidad de RF y RNF, propuesta de 11 módulos (M-01 a M-11), bitácora de IA y respuestas a las
+preguntas de revisión. La cobertura (RF sin historia, sin criterio, sin prueba) se valida por script: todo en 0.
