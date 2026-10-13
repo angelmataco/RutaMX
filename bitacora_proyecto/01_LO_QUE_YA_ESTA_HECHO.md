@@ -794,6 +794,15 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
 - Grafo de conocimiento del proyecto generado con graphify
   (`graphify-out/`), se actualiza con `/graphify update`.
 
+## Crédito a Rare UI y licencia MIT (2026-10-07)
+- **Qué:** pie de página con enlace visible a https://rareui.com (`base.html`, estilos `.pie-creditos` en
+  `styles.css`), mención en el README y archivo `LICENSE` (MIT) del proyecto.
+- **Por qué:** la licencia de Rare UI (MIT + Commons Clause + Atribución) exige un enlace visible a
+  rareui.com en todo proyecto que use sus efectos, y la convención de Angel pide `LICENSE` en repos públicos.
+- **Ojo:** esa licencia también prohíbe redistribuir los componentes, "ni siquiera portados". El repo es
+  público y trae los 8 efectos portados; queda como decisión pendiente de Angel (y Roberto) si se hace privado.
+- **Comprobado:** se revisó la plantilla; los efectos y sus `<script>` no se tocaron.
+
 ## Commits recientes (los últimos 8)
 
 1. Avatar de sesión con Blobatar, navbar fijo que se encoge y tope suave entre secciones — ver

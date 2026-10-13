@@ -49,6 +49,8 @@ sugerencias → itinerario → guardar):
   cursor** en tarjetas y ventanas y el **fondo de líneas que fluyen** (background-paths, con los
   colores de la paleta). **No se pueden quitar ni reemplazar**: ver
   `bitacora_proyecto/05_EFECTOS_VISUALES_PROTEGIDOS.md`.
+  Los efectos de rare-ui están adaptados de [Rare UI](https://rareui.com) (licencia MIT + Commons
+  Clause + Atribución), que se acredita en el pie de la página.
 - **Cuentas de usuario**: nombre + apellido + PIN de 4 dígitos, sin correo
   (proyecto escolar — ver `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`).
   `app/services/auth_service.py` maneja registro/login, sesión con la
@@ -217,3 +219,7 @@ Lo pendiente vive en `bitacora_proyecto/02_LO_QUE_FALTA.md`; lo principal:
 - Desplegar la app en un hosting público (Render/Railway) para poder compartirla con un link.
 - Iconos para los 6 intereses de "¿Qué buscas?" (hoy solo texto) y probar el fondo animado,
   el navbar compacto y el tope entre secciones en un teléfono real.
+
+## Licencia
+
+[MIT](LICENSE). Los efectos adaptados de [Rare UI](https://rareui.com) siguen su propia licencia (ver su sitio).
