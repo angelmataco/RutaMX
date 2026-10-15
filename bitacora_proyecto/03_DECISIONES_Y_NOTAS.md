@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-10-08
+Última actualización: 2026-10-15
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
@@ -594,3 +594,20 @@ solo 2 preferencias (duración y tipo de lugares); conjunto cerrado de intencion
 es la fuente única de verdad; solo se guarda la ruta (no el chat); guardar de nuevo actualiza la misma ruta, sin
 historial; los criterios de autenticación validan solo el comportamiento de RutaMx (el sistema de login ya existe).
 Detalle y fundamento de cada una en la sección 4.2 del PDF v2.0.
+
+## Persistencia del apartado nuevo: PostgreSQL reutilizado y columnas nuevas en `rutas_guardadas`
+
+Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`).
+
+- **Sí hay base de datos** (ruta B): hay cuentas con permisos, rutas que se consultan y actualizan, relación entre una
+  ruta copiada y su original, y guardar/copiar deben ser atómicos (RF-16, RF-42). Se reutiliza la PostgreSQL de Supabase
+  de la v1; no se abre una segunda base (SQLite, JSON/CSV y MongoDB se descartaron por esto).
+- **Módulo responsable: M-09 Repositorio de rutas**, llamado solo por M-05 Gestor de rutas (y M-02 para el catálogo).
+  Ninguna interfaz ni la IA tocan la base. Se ubica dentro de `paginas_nav_bar/`, no en una carpeta raíz nueva.
+- **Las paradas siguen dentro de la ruta (JSONB)**, sin tabla `paradas`: guardar es una sola escritura atómica y la ruta
+  estructurada es la fuente única de verdad (D-08). Se normaliza solo si algún RF llega a consultar paradas sueltas.
+- **Decisión de Angel:** extender `rutas_guardadas` con columnas nuevas en vez de crear una tabla ligada. La IA había
+  recomendado una tabla `rutas_publicacion` para no tocar la v1; Angel prefirió la simplicidad. Las columnas son
+  opcionales o con valor por defecto ('privada'), así las filas de la v1 siguen válidas. **El cambio real a la base y a
+  `app/models.py` no se ha hecho** y espera la aprobación explícita de Angel (la app principal está congelada).
+- No se persiste el chat (D-09) ni historial de versiones (D-11).

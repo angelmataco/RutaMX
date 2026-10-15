@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-10-08
+Última actualización: 2026-10-15
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -188,3 +188,17 @@ _(vacío por ahora)_
 - **P-02:** confirmar si el sitio ya tiene proveedor de mapas y credenciales; de eso depende HU-06 (RF-11 y RF-12).
 - **P-03:** definir los valores de categoría y región de los filtros (RF-05) al cargar las rutas públicas.
 - Roberto debe validar el documento v2.0 (rol de validador) antes de entregarlo.
+
+## Persistencia del apartado nuevo (práctica de persistencia, 2026-10-15)
+
+Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; no hay código ni cambios en la base todavía.
+
+- Roberto debe revisar el diseño de persistencia (rol de revisor técnico) y se corrige lo que encuentre.
+- **Aprobación explícita de Angel** antes de agregar las columnas nuevas a `rutas_guardadas` (`descripcion`,
+  `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`): es una tabla de la v1.
+  Hace falta un script de migración con `ALTER TABLE` (SQLAlchemy `create_all` no modifica tablas existentes),
+  probado primero en una copia y con respaldo previo.
+- Implementar M-09 Repositorio de rutas dentro de `paginas_nav_bar/`, con pruebas en simulación (datos ficticios,
+  sin tocar la base real) para guardar, copiar (la original no cambia, sin sesión no se crea nada) y listar.
+- Elegir el segundo módulo a implementar y agregar evidencia de commits (tarea de la práctica).
+- Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.
