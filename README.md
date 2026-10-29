@@ -11,21 +11,21 @@ sugerencias → itinerario → guardar):
 - **Mapa**: Leaflet + OpenStreetMap para la base, y Leaflet Routing Machine +
   OSRM (servidor demo público, gratis y sin API key) para trazar la ruta
   real por carretera pasando por origen, paradas del itinerario y destino.
-- **Gasto máximo recomendado**: `app/services/gasto_service.py` (gasolina,
+- **Gasto máximo recomendado**: `v1/services/gasto_service.py` (gasolina,
   casetas, imprevistos y, si aplican, comidas y hospedaje).
-- **Cálculo de distancia/tiempo**: `app/services/route_service.py`
+- **Cálculo de distancia/tiempo**: `v1/services/route_service.py`
   usa la ruta real de OSRM (distancia y tiempo reales de carretera, no
   línea recta); si OSRM no responde, cae a una estimación en línea recta
   para que el flujo no se rompa.
 - **Base de datos de destinos** (Postgres en Supabase, ver abajo): catálogo
-  de los 32 estados con 369 destinos verificados (`app/models.py`, tablas
+  de los 32 estados con 369 destinos verificados (`base_datos/modelos.py`, tablas
   `estados` y `destinos`): mínimo 8 ciudades/pueblos mágicos y mínimo 3
   sitios turísticos por estado, con más en los estados grandes o de
   ciudades muy conocidas.
   Sigue siendo la "plantilla": cada fila exige nombre, estado, tipo,
   coordenadas exactas (verificadas contra Nominatim/OpenStreetMap) y
   descripción.
-- **Sugerencias de paradas**: `app/services/ai_service.py` consulta la
+- **Sugerencias de paradas**: `v1/services/ai_service.py` consulta la
   tabla `destinos` y las filtra por cercanía real a la carretera (no en
   línea recta) usando la geometría de OSRM — solo sugiere lugares que de
   verdad quedan en el camino o a una desviación razonable. **Lo marcado en
@@ -39,10 +39,10 @@ sugerencias → itinerario → guardar):
 - **Diseño** (rediseño de septiembre 2026, a partir de la carpeta de Stitch de Angel: `DESIGN.md`,
   logo y paleta): lino `#FAF7F2`, terracota `#C85A32`, agave `#1B4332`, ocre `#E9A825` y cuero
   `#2C221E`; títulos en **Newsreader** y texto en **Plus Jakarta Sans** (Google Fonts, hace falta
-  internet); logo del emblema en `app/static/img/`. **No hay emojis en la app**: los 26 iconos son
-  SVG a medida y viven en un solo sprite (`app/templates/partials/iconos_sprite.html`); en plantillas
+  internet); logo del emblema en `v1/static/img/`. **No hay emojis en la app**: los 26 iconos son
+  SVG a medida y viven en un solo sprite (`v1/templates/partials/iconos_sprite.html`); en plantillas
   se usan con `{{ icono("ruta") }}` y en JS con `RutaIconos.html("ruta")`.
-- **Efectos visuales** (`app/static/js/efectos/` + `app/static/css/efectos.css`, en JS/CSS puro, sin
+- **Efectos visuales** (`v1/static/js/efectos/` + `v1/static/css/efectos.css`, en JS/CSS puro, sin
   librerías): los 8 de rare-ui (contador tipo odómetro, borrar con confirmación, PIN por casillas,
   menú gooey, píldora de progreso (dentro del navbar al bajar), selector de hora gooey con ruedita —minutos de 10 en 10—,
   cuadrícula "grid reveal" sobre el mapa y orbe de puntos al cargar) más la **luz que sigue al
@@ -53,7 +53,7 @@ sugerencias → itinerario → guardar):
   Clause + Atribución), que se acredita en el pie de la página.
 - **Cuentas de usuario**: nombre + apellido + PIN de 4 dígitos, sin correo
   (proyecto escolar — ver `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`).
-  `app/services/auth_service.py` maneja registro/login, sesión con la
+  `v1/services/auth_service.py` maneja registro/login, sesión con la
   cookie firmada de Flask. Solo hace falta iniciar sesión para *guardar*
   una ruta — calcular rutas y ver sugerencias sigue abierto sin cuenta.
 - **Avatar y navegación**: con sesión iniciada, el botón "Iniciar sesión" se cambia por un
@@ -62,12 +62,12 @@ sugerencias → itinerario → guardar):
   una ventana de perfil con su propio monito. El navbar es fijo y se encoge al bajar (logo,
   nombre y la píldora de progreso, con fondo translúcido), y la página hace un tope suave al llegar a cada
   sección o al recuadro del formulario. Ver `bitacora_proyecto/01_LO_QUE_YA_ESTA_HECHO.md`.
-- **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`app/models.py`,
+- **Rutas guardadas**: tabla `rutas_guardadas` en Supabase (`base_datos/modelos.py`,
   modelo `RutaGuardada`), ligadas a la cuenta que las guardó — ya no se
   pierden al reiniciar el servidor, y cada quien solo ve las suyas.
 - **Destinos nuevos con IA**: si alguien escribe un origen/destino que no
   está en la tabla `destinos` (ej. un pueblo pequeño, con o sin errores de
-  ortografía), `app/services/ia_destinos_service.py` le pide a la IA que
+  ortografía), `v1/services/ia_destinos_service.py` le pide a la IA que
   identifique el lugar real, busque en internet los datos que faltan, y
   lo inserte con `fuente="ia_generada"` — desde ahí funciona igual que
   cualquiera de los 369 curados (autocompletado, sugerencias, rutas). Ver
@@ -83,7 +83,7 @@ sugerencias → itinerario → guardar):
   propósito/hora también mejora las sugerencias **sin usar el botón de
   IA**: si pones horas máximas de manejo + hora de salida en el
   formulario manual, ya reparte paradas de comida/descanso en vez de
-  amontonarlas. `app/services/planificador_ia_service.py` orquesta el
+  amontonarlas. `v1/services/planificador_ia_service.py` orquesta el
   chat, endpoints `GET /api/ia/disponible` y `POST /api/ia/planear`.
 
 Los lugares donde falta una integración real están marcados con
@@ -106,16 +106,16 @@ de estados y destinos. Para correr el proyecto localmente:
    ```
 4. Crea las tablas que falten (no toca las que ya existen):
    ```bash
-   python3 -c "from app import create_app; from app.models import db; app = create_app(); app.app_context().push(); db.create_all()"
+   python3 -c "from v1 import create_app; from base_datos.modelos import db; app = create_app(); app.app_context().push(); db.create_all()"
    ```
 5. Agrega la columna de usuario a las rutas guardadas (migración,
    seguro correrla varias veces):
    ```bash
-   python scripts/agregar_usuario_id.py
+   python base_datos/migraciones/agregar_usuario_id.py
    ```
 6. Carga los datos iniciales (es seguro correrlo varias veces, no duplica filas):
    ```bash
-   python scripts/seed_destinos.py
+   python base_datos/scripts/seed_destinos.py
    ```
 
 ## Conectar tu propia IA (destinos nuevos)
@@ -142,8 +142,8 @@ IA_PROVEEDOR=anthropic   # o: openai / gemini
 IA_MODELO=claude-opus-5  # opcional, si no lo pones usa el default de cada proveedor
 ```
 
-Detalle de cómo funciona: `app/services/llm_provider.py` (conexión con el
-proveedor) y `app/services/ia_destinos_service.py` (qué hace con la
+Detalle de cómo funciona: `v1/services/llm_provider.py` (conexión con el
+proveedor) y `v1/services/ia_destinos_service.py` (qué hace con la
 respuesta).
 
 ## Cómo correrlo
@@ -171,10 +171,9 @@ conexión a internet para que pasen todas.
 
 ```
 RutaMX/
-├── app/
-│   ├── __init__.py        # Application factory
-│   ├── routes.py          # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas, /api/auth/*, /api/ia/*)
-│   ├── models.py          # Modelos: Estado, Destino, Usuario, RutaGuardada (Supabase)
+├── v1/                        # Versión 1 (terminada): solo lo de v1
+│   ├── __init__.py            # Application factory
+│   ├── routes.py              # Endpoints (/, /api/ruta, /api/sugerencias, /api/rutas, /api/auth/*, /api/ia/*)
 │   ├── services/
 │   │   ├── ai_service.py               # Sugerencias de paradas + reparto por propósito/hora
 │   │   ├── route_service.py            # Ruta real (OSRM), distancia/tiempo, corredor
@@ -189,23 +188,31 @@ RutaMX/
 │   │   │   ├── efectos/      # efectos visuales protegidos (contador, gooey, spotlight, fondo …)
 │   │   │   └── vendor/       # copias de Blobatar 2.7 (MIT), no se editan
 │   │   └── img/              # logo-emblema.svg
-│   └── templates/            # HTML: base.html + partials por sección; partials/iconos_sprite.html = iconos
-├── scripts/
-│   ├── agregar_usuario_id.py  # Migración: agrega usuario_id a rutas_guardadas
-│   ├── seed_destinos.py       # Carga inicial de estados y destinos (lote 1)
-│   ├── seed_destinos_v2.py    # Lote 2: mínimo 8 ciudades/pueblos + 3 sitios turísticos por estado
-│   ├── verify_coordenadas.py  # Verifica/corrige coordenadas contra Nominatim
-│   ├── fix_intereses.py       # Corrección 1 de etiquetas de interés
-│   ├── fix_intereses_v2.py    # Corrección 2 (mínimo 2 etiquetas por destino)
-│   ├── fix_intereses_v3.py    # Corrección 3 (mismo mínimo, para el lote 2)
-│   ├── fix_poblacion.py       # Carga población lote 1 (Censo INEGI 2020)
-│   └── fix_poblacion_v2.py    # Carga población lote 2 (Censo INEGI 2020)
+│   ├── templates/            # HTML: base.html + partials por sección; partials/iconos_sprite.html = iconos
+│   ├── scripts/              # Datos que usan el geocodificador de v1: verify_coordenadas.py (Nominatim) y marcar_gastronomia_destacada.py (UNESCO/Michelin)
+│   └── tests/                # Pruebas de v1
+├── v2/                        # Versión 2 (Descubrir y Planear con Ayuda IA): todo lo nuevo
+│   └── tests/
+├── base_datos/                # Compartida por v1 y v2; no importa nada de ninguna
+│   ├── conexion.py            # Objeto db, iniciar_base_datos(app) y crear_app_minima() para scripts
+│   ├── modelos.py             # Modelos: Estado, Destino, Usuario, RutaGuardada (Supabase)
+│   ├── repositorios/          # Acceso a datos por entidad (ahí irá M-09)
+│   ├── migraciones/
+│   │   └── agregar_usuario_id.py  # Migración: agrega usuario_id a rutas_guardadas
+│   └── scripts/
+│       ├── seed_destinos.py       # Carga inicial de estados y destinos (lote 1)
+│       ├── seed_destinos_v2.py    # Lote 2: mínimo 8 ciudades/pueblos + 3 sitios turísticos por estado
+│       ├── fix_intereses.py       # Corrección 1 de etiquetas de interés
+│       ├── fix_intereses_v2.py    # Corrección 2 (mínimo 2 etiquetas por destino)
+│       ├── fix_intereses_v3.py    # Corrección 3 (mismo mínimo, para el lote 2)
+│       ├── fix_poblacion.py       # Carga población lote 1 (Censo INEGI 2020)
+│       ├── fix_poblacion_v2.py    # Carga población lote 2 (Censo INEGI 2020)
+├── documentacion/            # PDFs de requerimientos, diseño, persistencia y planes de la clase
 ├── bitacora_proyecto/        # Qué está hecho, qué falta, decisiones, plan 04 y efectos protegidos (leer AGENTS.md)
 ├── AGENTS.md / CLAUDE.md     # Instrucciones para las IAs (Codex / Claude Code) que trabajan en el repo
-├── tests/                    # Pruebas de rutas y servicios
 ├── instance/config.py        # Configuración local (no se sube a git)
 ├── config.py                  # Configuración general (Dev/Prod)
-├── run.py                     # Punto de entrada
+├── run.py                     # Punto de entrada (una sola app para v1 y v2)
 └── requirements.txt
 ```
 

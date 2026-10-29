@@ -456,7 +456,7 @@ con clase `.btn` debe ocultarse con `hidden`, hay que cuidar lo mismo.
 ## Avatar del usuario: Blobatar y por qué un solo archivo copiado
 
 El proyecto no usa npm ni bundler, así que en vez de instalar el paquete se copiaron los
-módulos autocontenidos que hacen falta a `app/static/js/vendor/` (`internal.js`, `gaze.js`,
+módulos autocontenidos que hacen falta a `v1/static/js/vendor/` (`internal.js`, `gaze.js`,
 `expression.js` de blobatar 2.7, renombrados `blobatar.js`, `blobatar-gaze.js` y
 `blobatar-expresiones.js`) y sus dos CSS a `static/css/` (`blobatar-motion.css`,
 `blobatar-gaze.css`). Se usa `internal` (`_parts`) porque el paquete no ofrece una función animada
@@ -512,7 +512,7 @@ termina y la ventana sigue abierta; así no se corta a la mitad.
 
 ## Tests que tocan la base real
 
-`tests/test_auth_service.py::test_registrar_usuario_duplicado_por_acentos_y_mayusculas`
+`v1/tests/test_auth_service.py::test_registrar_usuario_duplicado_por_acentos_y_mayusculas`
 registra "Ángel Mata", que ahora choca con la cuenta real "Angel Mata" (mismo nombre
 normalizado) y falla; el fallo es del test, no de la app. Los tests corren contra Supabase:
 con el servidor de desarrollo abierto a la vez, la suite completa puede dar
@@ -603,11 +603,11 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
   ruta copiada y su original, y guardar/copiar deben ser atómicos (RF-16, RF-42). Se reutiliza la PostgreSQL de Supabase
   de la v1; no se abre una segunda base (SQLite, JSON/CSV y MongoDB se descartaron por esto).
 - **Módulo responsable: M-09 Repositorio de rutas**, llamado solo por M-05 Gestor de rutas (y M-02 para el catálogo).
-  Ninguna interfaz ni la IA tocan la base. Se ubica dentro de `paginas_nav_bar/`, no en una carpeta raíz nueva.
+  Ninguna interfaz ni la IA tocan la base. Se ubica dentro de `base_datos/repositorios/`, no en una carpeta raíz nueva.
 - **Las paradas siguen dentro de la ruta (JSONB)**, sin tabla `paradas`: guardar es una sola escritura atómica y la ruta
   estructurada es la fuente única de verdad (D-08). Se normaliza solo si algún RF llega a consultar paradas sueltas.
 - **Decisión de Angel:** extender `rutas_guardadas` con columnas nuevas en vez de crear una tabla ligada. La IA había
   recomendado una tabla `rutas_publicacion` para no tocar la v1; Angel prefirió la simplicidad. Las columnas son
   opcionales o con valor por defecto ('privada'), así las filas de la v1 siguen válidas. **El cambio real a la base y a
-  `app/models.py` no se ha hecho** y espera la aprobación explícita de Angel (la app principal está congelada).
+  `base_datos/modelos.py` no se ha hecho** y espera la aprobación explícita de Angel (la app principal está congelada).
 - No se persiste el chat (D-09) ni historial de versiones (D-11).

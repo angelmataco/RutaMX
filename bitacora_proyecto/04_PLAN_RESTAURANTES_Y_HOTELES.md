@@ -113,7 +113,7 @@ los hoteles trae `stars` y el 46 % sitio web.
 - ✅ Hecho: marcar gastronomía destacada con UNESCO + Guía Michelin 2026
   (estrellas y Bib Gourmand) + Latin America's 50 Best 2025: **21 lugares**, 5 de
   ellos agregados a la base (ver bitácora 01 y
-  `scripts/marcar_gastronomia_destacada.py`).
+  `v1/scripts/marcar_gastronomia_destacada.py`).
 - ⏳ Falta: revisar cultura/naturaleza/playas/descanso y **podar "comida"** de
   los lugares que no son destacados.
 
@@ -166,9 +166,9 @@ Se acordó **no podar todavía** la etiqueta "comida". Cuando llegue el momento
 
 - **Regla exacta de la poda (para no equivocarse):** quitar "comida" **solo** de
   los destinos con `gastronomia_destacada = false`. Nunca por nombre a mano. El
-  script (`scripts/podar_comida.py`, **por escribir**) debe hacer eso, avisar
+  script (`base_datos/scripts/podar_comida.py`, **por escribir**) debe hacer eso, avisar
   cuántos cambia (hoy serían 86) y no tocar las demás etiquetas.
-- **Copia de seguridad:** `scripts/datos/comida_antes_de_podar_2026-09-19.csv`
+- **Copia de seguridad:** `base_datos/scripts/datos/comida_antes_de_podar_2026-09-19.csv`
   guarda, para los 107 lugares que hoy tienen "comida", su estado, tipo,
   etiquetas actuales y si se quedan (SI/NO) y por qué. Sirve para revertir o
   revisar.
@@ -194,7 +194,7 @@ regla vieja de "2 o 3 etiquetas por lugar".
 
 ### 3.2 Cómo se hace (sin cambiar nada a ciegas)
 
-1. Script `scripts/propuesta_etiquetas.py` que, por cada destino, junta las
+1. Script `base_datos/scripts/propuesta_etiquetas.py` que, por cada destino, junta las
    señales y **genera un reporte (CSV)** con: etiquetas actuales, etiquetas
    propuestas y **por qué** (qué señal la respalda). **No modifica la base.**
 2. Angel (y Roberto) **revisan el reporte** y corrigen lo que sepan que está mal.
@@ -246,7 +246,7 @@ candidatos buenos, se queda con menos (nunca se rellena con cosas al azar).
 - **Calidad:** por reconocimiento público (Michelin, UNESCO), estrellas de
   hotel en OSM (p. ej. ≥ 3) y/o **selección del equipo**. Cada fila guarda
   `motivo_calidad`. **Nunca se ponen calificaciones inventadas.**
-- **Carga:** script `scripts/cargar_establecimientos.py`, seguro de repetir (no
+- **Carga:** script `base_datos/scripts/cargar_establecimientos.py`, seguro de repetir (no
   duplica), con un reporte previo para revisar antes de insertar.
 
 ## 5. Fase 3 — Que TODA la app siga fluyendo igual (requisito de Angel)

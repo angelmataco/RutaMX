@@ -23,7 +23,7 @@ la regla completa en `AGENTS.md`.
   Tripadvisor/Google no se pueden guardar ni son gratis). **Ya hecho:** marcar
   la gastronomía destacada por UNESCO y Michelin (ver bitácora 01). **Decidido:** la poda de "comida" espera a los restaurantes; se
   conservan los 21 lugares destacados (lista y regla en el plan `04`, copia de
-  seguridad en `scripts/datos/`). **Falta:**
+  seguridad en `base_datos/scripts/datos/`). **Falta:**
   revisar las demás etiquetas (cultura, naturaleza, playas, descanso), podar
   "comida" de los ~84 lugares que no son destacados (hacerlo cuando ya haya
   restaurantes, para que "Comer" no quede vacío) y el resto del plan.
@@ -198,7 +198,7 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; no hay 
   `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`): es una tabla de la v1.
   Hace falta un script de migración con `ALTER TABLE` (SQLAlchemy `create_all` no modifica tablas existentes),
   probado primero en una copia y con respaldo previo.
-- Implementar M-09 Repositorio de rutas dentro de `paginas_nav_bar/`, con pruebas en simulación (datos ficticios,
+- Implementar M-09 Repositorio de rutas dentro de `base_datos/repositorios/`, con pruebas en simulación (datos ficticios,
   sin tocar la base real) para guardar, copiar (la original no cambia, sin sesión no se crea nada) y listar.
 - Elegir el segundo módulo a implementar y agregar evidencia de commits (tarea de la práctica).
 - Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.

@@ -26,7 +26,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Registro e inicio de sesión con nombre + apellido + PIN de 4 dígitos —
   sin correo, decisión explícita para este proyecto escolar (ver
   `03_DECISIONES_Y_NOTAS.md`).
-- `app/services/auth_service.py` hashea el PIN (nunca se guarda en texto
+- `v1/services/auth_service.py` hashea el PIN (nunca se guarda en texto
   plano) y detecta nombre+apellido duplicados sin importar acentos o
   mayúsculas.
 - Sesión con la cookie firmada que ya trae Flask — no se instaló ninguna
@@ -56,11 +56,11 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
     está enojado, el clic no hace nada). Al cerrarla, el del navbar vuelve a su vida normal.
   - Probado con 14 nombres distintos (siluetas, acentos y ñ): enojo, quietud, seguimiento y
     cierre; y con una sesión simulada (al probarlo no había cuentas reales en la base).
-  - Archivos: lógica en `app/static/js/avatar.js` (`RutaAvatar`); `auth.js` (`pintarAvatar`,
+  - Archivos: lógica en `v1/static/js/avatar.js` (`RutaAvatar`); `auth.js` (`pintarAvatar`,
     `alternarMenu`, `cerrarMenu`); `partials/navbar.html`; estilos `.navbar__avatar/.navbar__menu`
     en `styles.css`. Copias de blobatar 2.7 (sin dependencias, no se editan) en
-    `app/static/js/vendor/` (`blobatar.js` = dist/internal.js, `blobatar-gaze.js` = gaze.js,
-    `blobatar-expresiones.js` = expression.js) y `app/static/css/blobatar-motion.css` /
+    `v1/static/js/vendor/` (`blobatar.js` = dist/internal.js, `blobatar-gaze.js` = gaze.js,
+    `blobatar-expresiones.js` = expression.js) y `v1/static/css/blobatar-motion.css` /
     `blobatar-gaze.css` (enlazados en `base.html`). Angel guarda el paquete completo fuera del repo,
     con un `LEEME.md`, para reutilizarlo en otros proyectos.
 
@@ -99,7 +99,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 - Cuando alguien escribe un origen/destino que no está en los 369
   destinos curados (ej. "Manuel Doblado", con o sin errores de
-  ortografía), `app/services/ia_destinos_service.py` le pide a la IA
+  ortografía), `v1/services/ia_destinos_service.py` le pide a la IA
   configurada que identifique el lugar real, busque en internet los datos
   necesarios (estado, tipo, descripción, intereses, población) y lo
   inserte en `destinos` con `fuente="ia_generada"`.
@@ -110,7 +110,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Desde que se inserta, funciona exactamente igual que los curados:
   aparece en el autocompletado, en sugerencias de paradas para rutas
   futuras que pasen cerca, y en el cálculo de rutas.
-- **Multi-proveedor de verdad**: `app/services/llm_provider.py` detecta
+- **Multi-proveedor de verdad**: `v1/services/llm_provider.py` detecta
   solo con qué variable de entorno esté configurada
   (`ANTHROPIC_API_KEY` → `OPENAI_API_KEY` → `GEMINI_API_KEY`) cuál usar —
   Angel puede tener la de Claude, Roberto la que tenga, sin tocar código.
@@ -130,7 +130,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   predefinidos (presupuesto: $1,000, $3,000, $5,000, $7,000, $9,000; horas:
   1 a 16) más una burbuja "Otro" que revela un campo normal para escribir
   un valor exacto distinto.
-- `app/static/js/bubble_picker.js` maneja las burbujas (el selector de hora ahora es
+- `v1/static/js/bubble_picker.js` maneja las burbujas (el selector de hora ahora es
   `efectos/duracion.js`).
 
 ## "Planear con IA" — chat que arma el itinerario completo
@@ -220,7 +220,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   desaparece al escribir) y el presupuesto arranca sin burbuja elegida
   (antes traía 6500). Origen/Destino siguen con `required`; nombre vacío
   cae a "origen a destino" y presupuesto vacío se trata como 0.
-  Archivo: `app/templates/partials/hero.html`.
+  Archivo: `v1/templates/partials/hero.html`.
 
 ## Navegación con Google Maps (enlace + QR)
 
@@ -234,7 +234,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Google admite máx. 9 paradas por enlace: si hay más, se divide en tramos
   (cada uno arranca donde terminó el anterior) y el PDF pone un QR por
   tramo. Google puede recalcular el camino entre paradas.
-- Archivos: `app/services/navegacion_service.py`, endpoint
+- Archivos: `v1/services/navegacion_service.py`, endpoint
   `POST /api/itinerario/enlaces`, `pdf_service.py`, `main.js`. El QR usa
   reportlab (sin dependencias nuevas). 4 tests nuevos (53 en total).
 
@@ -281,7 +281,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 - Se quitó el campo de presupuesto: ahora la app calcula cuánto conviene
   gastar como máximo, por el viaje completo. Código en
-  `app/services/gasto_service.py` (constantes arriba, fáciles de afinar).
+  `v1/services/gasto_service.py` (constantes arriba, fáciles de afinar).
 - **Siempre incluye:** gasolina (km ÷ rendimiento × precio del litro;
   default 13 km/l y $25.5/l), casetas (ver abajo) e imprevistos ($500 en
   viajes de ≤4 h, subiendo linealmente hasta $2,000 a las 20 h o más).
@@ -317,8 +317,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   recalcula en el servidor (`POST /api/gasto`) cada vez que cambian la
   distancia real o las paradas. La columna `presupuesto` de la base ya no
   se usa (queda sin borrar para no romper rutas viejas).
-- 15 tests nuevos (`tests/test_gasto_service.py` y `/api/gasto`); las
-  pruebas apagan la estimación de casetas por IA (`tests/conftest.py`)
+- 15 tests nuevos (`v1/tests/test_gasto_service.py` y `/api/gasto`); las
+  pruebas apagan la estimación de casetas por IA (`v1/tests/conftest.py`)
   para no gastar tokens.
 
 ## Autollenado y formulario del inicio (rediseño)
@@ -480,7 +480,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   esos lugares salen primero (también en `asignar_paradas_a_objetivos`, o sea
   en "Planear con IA"). Código: `textoDeReconocimiento` en `main.js`, plantilla
   `discover_section.html`, estilos `.card__estrella`.
-- Script: `scripts/marcar_gastronomia_destacada.py` (migración + marcado +
+- Script: `v1/scripts/marcar_gastronomia_destacada.py` (migración + marcado +
   alta de lugares nuevos; seguro de repetir).
 - Nota técnica: la columna `fuente` de `destinos` solo acepta `curada` o
   `ia_generada` (restricción de la base); los lugares nuevos quedaron `curada`.
@@ -566,7 +566,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - Pedido de Angel: usar 7 efectos (el step-player se quitó y después se sumó el duration-picker; hoy son 7) de la carpeta `efectos visuales rare-ui` (que
   **no se modificó**; es una librería de componentes React/Tailwind/Motion). Como
   RutaMX es Flask + JS/CSS puro, cada uno se **reescribió sin librerías** en
-  `app/static/js/efectos/` + `app/static/css/efectos.css`. **No se tocó nada del
+  `v1/static/js/efectos/` + `v1/static/css/efectos.css`. **No se tocó nada del
   backend ni del flujo**: solo se agregaron llamadas donde antes se escribía
   `textContent`, y una plantilla/ancla mínima.
 - **Contador tipo odómetro** (`contador.js`): los números del "Resumen del viaje"
@@ -724,7 +724,7 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
   `#1b4332`, ocre `#e9a825`, cuero `#2c221e`), así los 8 efectos rare-ui se
   recolorearon solos. Fuentes: Newsreader (títulos) y Plus Jakarta Sans (texto),
   cargadas de Google Fonts en `base.html`.
-- **Logo:** `app/static/img/logo-emblema.svg` (emblema del círculo con sol, montaña
+- **Logo:** `v1/static/img/logo-emblema.svg` (emblema del círculo con sol, montaña
   y camino) junto al texto "RutaMX" y el lema con los puntos tricolor.
 - **Componentes:** bloque "Rediseño RutaMX" al final de `styles.css`: campos en
   píldora con halo terracota, chips seleccionados en agave, botón primario terracota

@@ -20,7 +20,7 @@ Angel antes.
 tamaños, tipografía, bordes, sombras, posición general en la página.
 
 **No se puede:**
-- Borrar o reemplazar `app/static/js/efectos/` ni `app/static/css/efectos.css`.
+- Borrar o reemplazar `v1/static/js/efectos/` ni `v1/static/css/efectos.css`.
 - Quitar sus `<script>` / `<link>` de `base.html` (ni cambiar su orden: `secciones.js`
   antes que `gooey.js` y `pildora.js`; todos antes de `main.js`).
 - Renombrar o quitar los ganchos HTML de la tabla de abajo (ids, atributos `data-*`,

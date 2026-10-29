@@ -70,6 +70,37 @@ Escribe en español, directo y sin relleno — igual que el tono que ya
 tienen esos archivos. Actualiza la fecha de "Última actualización" al
 inicio del archivo que edites.
 
+## Estructura del repo y quién puede importar a quién
+
+El código está separado por versión para no mezclar lo ya terminado con lo nuevo:
+
+- `v1/` — la app de la versión 1 (terminada). Aquí no se agrega nada de v2.
+- `v2/` — todo lo nuevo (Descubrir y Planear con Ayuda IA). Es la única carpeta
+  donde se construye lo nuevo.
+- `base_datos/` — modelos, conexión, repositorios, migraciones y scripts. Es
+  compartida por v1 y v2 y no pertenece a ninguna.
+- `documentacion/`, `bitacora_proyecto/`, `config.py`, `run.py`, `instance/` y
+  `.env` se quedan en la raíz. Hay **una sola app de Flask**: `run.py` la arma y,
+  cuando exista v2, registra ahí sus blueprints.
+
+Reglas de dependencia (no se rompen sin avisar al usuario):
+
+1. `base_datos` **no importa nada** de `v1` ni de `v2`. Los scripts y migraciones
+   usan `base_datos.conexion.crear_app_minima()`, no la app de v1.
+2. `v1` importa solo de `base_datos`.
+3. `v2` importa de `base_datos` y de `v1` **solo la autenticación**
+   (`v1.services.auth_service`, módulo M-10); nunca otras partes de v1.
+4. `v1` nunca importa de `v2`.
+
+Cambios a la base de datos: solo si no afectan ni a v1 ni a v2. En la práctica,
+cambios compatibles hacia atrás (columnas nuevas opcionales o con valor por
+defecto; nunca borrar ni renombrar lo que ya usa v1). Antes de aplicar uno se
+corren las pruebas de v1 y de v2, y los scripts de `base_datos/migraciones/` se
+prueban primero en una copia de la base.
+
+Las pruebas viven junto a su código: `v1/tests/`, `v2/tests/` y, si hace falta,
+`base_datos/tests/`.
+
 ## Reglas de trabajo del proyecto (ya validadas con el usuario)
 
 - Verifica los cambios en la app corriendo de verdad (navegador), no solo
@@ -84,12 +115,12 @@ inicio del archivo que edites.
   propio ni pongas `overflow` en `body` a mano — se rompería esa regla.
 - Si cambias reglas de la app (gasto, tramos, cuándo se recomienda comer o
   dormir, qué se pregunta en el formulario), actualiza también la IA de
-  "Planear con IA": los prompts de `app/services/llm_provider.py` y, sobre
+  "Planear con IA": los prompts de `v1/services/llm_provider.py` y, sobre
   todo, `ai_service.preparar_objetivos_ia`, que hace cumplir las reglas en el
   servidor aunque el modelo se equivoque.
 - Diseño del frontend (ya rediseñado con la base de Stitch de Angel): **no uses
   emojis** en la app; los iconos son SVG a medida y viven en un solo sprite
-  (`app/templates/partials/iconos_sprite.html`, se usan con `{{ icono("nombre") }}`
+  (`v1/templates/partials/iconos_sprite.html`, se usan con `{{ icono("nombre") }}`
   en plantillas y `RutaIconos.html("nombre")` en JS). Colores, fuentes y radios salen de
   las variables `--color-*` / `--font-*` de `styles.css`, no de valores sueltos. Un
   `title` (tooltip) no debe quedar dentro de un icono SVG que capture el mouse
@@ -102,7 +133,7 @@ inicio del archivo que edites.
   (`.navbar--compacto`). La píldora de progreso vive en el navbar compacto (`[data-navbar-progreso]`),
   no flotando abajo a la derecha. El tope suave entre secciones es `tope.js`, no `scroll-snap` de CSS (ver
   bitácora 03); las secciones nuevas son `.section` con `id` y entran solas.
-- Avatar de sesión: Blobatar 2.7 copiado en `app/static/js/vendor/` y `css/blobatar-*.css`; esas
+- Avatar de sesión: Blobatar 2.7 copiado en `v1/static/js/vendor/` y `css/blobatar-*.css`; esas
   copias no se editan (la lógica es `avatar.js`) y se mantiene la versión 2.x. Un `gaze()` debe
   crearse con el elemento visible (ver bitácora 03). El menú desplegable del avatar es un menú, no
   una ventana: no aplica la regla del `<dialog>`.
