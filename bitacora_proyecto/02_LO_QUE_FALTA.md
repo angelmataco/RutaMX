@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-10-15
+Última actualización: 2026-10-29
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -202,3 +202,15 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; no hay 
   sin tocar la base real) para guardar, copiar (la original no cambia, sin sesión no se crea nada) y listar.
 - Elegir el segundo módulo a implementar y agregar evidencia de commits (tarea de la práctica).
 - Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.
+
+## Después de la reorganización y del plan de M-09 (2026-10-29)
+
+- **Supabase no responde** (`FATAL: tenant/user ... not found`): el proyecto parece pausado o la URL de
+  `instance/config.py` cambió. Hasta resolverlo, la app real y las pruebas que usan la base fallan (24 fallan y 42 con error).
+  Revisar el panel de Supabase.
+- **Decidir qué hacer con la rama `reorganizacion`**: Roberto debe hacer pull de esa rama; falta decidir cuándo se mezcla en `main`.
+- Cerrar las decisiones abiertas del plan de M-09: H-2 (M-09 convive o envuelve `guardar_ruta`/`listar_rutas`), H-6 (quién aplica D-03)
+  y H-7 (base de prueba aislada; probablemente PostgreSQL, SQLite no soporta `ARRAY`/`JSONB`). Siguen P-01 y P-03.
+- Empezar las tareas T-01 a T-12 del plan (primero T-01 y T-02). La primera demostración será guardar una ruta ficticia con la cuenta A
+  y comprobar que la cuenta B no la ve.
+

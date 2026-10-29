@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-10-08
+Última actualización: 2026-10-29
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -822,3 +822,22 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
 priorizadas (12 Alta, 10 Media, 1 Baja), 93 criterios Dado/Cuando/Entonces (92 originales + CA-12.5),
 matriz de trazabilidad de RF y RNF, propuesta de 11 módulos (M-01 a M-11), bitácora de IA y respuestas a las
 preguntas de revisión. La cobertura (RF sin historia, sin criterio, sin prueba) se valida por script: todo en 0.
+
+## Reorganización del repositorio en v1, v2 y base_datos (2026-10-29)
+
+Rama `reorganizacion` (3 commits locales, sin push; `main` sin tocar). Solo se movieron archivos y se reescribieron
+imports; no cambió ningún comportamiento (mismo resultado de la suite antes y después: 99 pasan, 24 fallan y 42 dan error
+por Supabase, ver `03`).
+
+- `app/` pasó a `v1/` (con `v1/tests/` y `v1/scripts/`); `app/models.py` pasó a `base_datos/modelos.py`.
+- `base_datos/` (compartida, no importa v1 ni v2): `conexion.py` (objeto `db`, `iniciar_base_datos(app)` y
+  `crear_app_minima()` para scripts), `modelos.py`, `repositorios/` (vacía, ahí irá M-09), `migraciones/` y `scripts/`.
+- `v2/` creada y vacía para lo nuevo. Se borró la carpeta vacía `paginas_nav_bar/`.
+- Reglas de dependencia y de cambios a la base en `AGENTS.md`.
+- README, AGENTS y bitácoras con las rutas nuevas.
+
+## Plan de implementación del módulo M-09 (entrega de clase, 2026-10-29)
+
+`documentacion/RutaMx_Plan_de_Implementacion_M09.pdf` (v1.1, revisado por Angel y Roberto) y su `.md` editable. Solo plan,
+sin código: 12 tareas (T-01 a T-12), 15 casos de prueba y riesgos para M-09 Repositorio de rutas.
+

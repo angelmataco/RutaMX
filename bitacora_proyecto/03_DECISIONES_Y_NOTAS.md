@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-10-15
+Última actualización: 2026-10-29
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
@@ -611,3 +611,18 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
   opcionales o con valor por defecto ('privada'), así las filas de la v1 siguen válidas. **El cambio real a la base y a
   `base_datos/modelos.py` no se ha hecho** y espera la aprobación explícita de Angel (la app principal está congelada).
 - No se persiste el chat (D-09) ni historial de versiones (D-11).
+
+## Reorganización en v1, v2 y base_datos (2026-10-29)
+
+- **Decisión de Angel y Roberto:** separar el repositorio para no mezclar lo terminado (v1) con lo nuevo (v2) y saber dónde está lo
+  que se va a modificar. La base de datos va aparte porque es base de las dos versiones; puede cambiar mientras no afecte a v1 ni a v2.
+  Una sola app de Flask (`run.py`). v2 puede importar de v1 solo la autenticación (M-10).
+- `verify_coordenadas.py` y `marcar_gastronomia_destacada.py` quedaron en `v1/scripts/` porque importan el geocodificador de v1;
+  en `base_datos/scripts/` romperían la regla de que `base_datos` no importa v1.
+- Los scripts de datos usan `crear_app_minima()` en vez de arrancar la app de v1.
+- El plan de M-09 menciona `paginas_nav_bar/` y `app/services/`; esas rutas ya no existen y M-09 va en `base_datos/repositorios/`
+  (H-1 resuelto, registrado en el control de cambios del plan).
+- **Nota:** el primer commit de la rama (`1b37f4b`) solo trae los movimientos; los imports están en `08c611a`. No arranca por sí solo.
+- **Nota:** las pruebas de v1 se conectan a la base real de Supabase (crean y borran un usuario "Prueba"). Sale de la regla de pruebas
+  que no tocan lo real; queda como pendiente de decidir.
+
