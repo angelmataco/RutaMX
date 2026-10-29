@@ -5,22 +5,22 @@ tablas que ya existen — por eso esta migración aparte. Es seguro
 correrla varias veces (usa IF NOT EXISTS).
 
 Uso:
-    python scripts/agregar_usuario_id.py
+    python base_datos/migraciones/agregar_usuario_id.py
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from sqlalchemy import text
 
-from app import create_app
-from app.models import db
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import db
 
 
 def migrar():
-    app = create_app()
+    app = crear_app_minima()
     with app.app_context():
         db.session.execute(
             text(

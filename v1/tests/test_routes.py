@@ -1,8 +1,8 @@
 import pytest
 
-from app import create_app
-from app.models import RutaGuardada, Usuario, db
-from app.services import llm_provider
+from v1 import create_app
+from base_datos.modelos import RutaGuardada, Usuario, db
+from v1.services import llm_provider
 
 NOMBRE_USUARIO_PRUEBA = "Prueba"
 APELLIDO_USUARIO_PRUEBA = "Bitacora"
@@ -263,7 +263,7 @@ def test_api_gasto_sin_datos(client):
 
 
 def test_nombres_de_destinos_ordenados_por_importancia(client):
-    from app.models import Destino
+    from base_datos.modelos import Destino
 
     nombres = client.get("/api/destinos/nombres").get_json()["nombres"]
     assert len(nombres) == len(set(nombres))  # sin repetidos

@@ -15,7 +15,7 @@ Respeta la política de uso de Nominatim (máx. 1 solicitud/segundo,
 User-Agent identificable).
 
 Uso:
-    python scripts/verify_coordenadas.py
+    python v1/scripts/verify_coordenadas.py
 """
 
 import math
@@ -23,11 +23,11 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app import create_app
-from app.models import Destino, Estado, db
-from app.services.maps_service import geocodificar
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, Estado, db
+from v1.services.maps_service import geocodificar
 
 UMBRAL_KM = 50
 
@@ -44,7 +44,7 @@ def _distancia_km(lat1, lon1, lat2, lon2):
 
 
 def verificar():
-    app = create_app()
+    app = crear_app_minima()
 
     with app.app_context():
         destinos = db.session.query(Destino, Estado.nombre).join(Estado).order_by(Destino.id).all()

@@ -8,8 +8,8 @@ con Flask (no es una dependencia nueva).
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app.models import Usuario, db
-from app.services import maps_service
+from base_datos.modelos import Usuario, db
+from v1.services import maps_service
 
 
 def _clave_normalizada(nombre: str, apellido: str) -> str:

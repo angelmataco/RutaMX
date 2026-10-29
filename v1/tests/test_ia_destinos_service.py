@@ -1,8 +1,8 @@
 import pytest
 
-from app import create_app
-from app.models import Destino, db
-from app.services import ia_destinos_service, llm_provider, maps_service
+from v1 import create_app
+from base_datos.modelos import Destino, db
+from v1.services import ia_destinos_service, llm_provider, maps_service
 
 NOMBRE_PRUEBA = "Manuel Doblado"
 

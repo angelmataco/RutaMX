@@ -20,7 +20,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import ParagraphStyle
 
-from app.services import navegacion_service
+from v1.services import navegacion_service
 
 TERRACOTA = colors.HexColor("#c76a4c")
 VERDE_OSCURO = colors.HexColor("#1f3327")

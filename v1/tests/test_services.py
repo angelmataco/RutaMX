@@ -1,8 +1,8 @@
 import pytest
 
-from app import create_app
-from app.models import Destino
-from app.services import ai_service, maps_service, route_service
+from v1 import create_app
+from base_datos.modelos import Destino
+from v1.services import ai_service, maps_service, route_service
 
 
 @pytest.fixture
@@ -189,7 +189,7 @@ def test_sugerir_paradas_con_hora_salida_reparte_por_proposito(app_context):
 
 
 def test_enlaces_google_maps_un_tramo():
-    from app.services import navegacion_service
+    from v1.services import navegacion_service
 
     enlaces = navegacion_service.enlaces_google_maps(
         {
@@ -206,7 +206,7 @@ def test_enlaces_google_maps_un_tramo():
 
 
 def test_enlaces_google_maps_divide_en_tramos():
-    from app.services import navegacion_service
+    from v1.services import navegacion_service
 
     paradas = [{"nombre": f"P{i}"} for i in range(12)]
     enlaces = navegacion_service.enlaces_google_maps({"origen": "A", "destino": "B", "paradas": paradas})
@@ -215,7 +215,7 @@ def test_enlaces_google_maps_divide_en_tramos():
 
 
 def test_formato_duracion():
-    from app.services.pdf_service import formato_duracion
+    from v1.services.pdf_service import formato_duracion
 
     assert formato_duracion(9.5) == "9 h 30 min"
     assert formato_duracion(9) == "9 h"

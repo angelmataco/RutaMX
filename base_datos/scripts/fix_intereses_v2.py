@@ -10,16 +10,16 @@ Reglas nuevas (pedidas por el equipo):
   algo que ver (centro histórico, museo, arquitectura, sitio arqueológico).
 
 Uso:
-    python scripts/fix_intereses_v2.py
+    python base_datos/scripts/fix_intereses_v2.py
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app import create_app
-from app.models import Destino, Estado, db
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, Estado, db
 
 # (nombre, estado) -> nueva lista de intereses (reemplaza por completo)
 CORRECCIONES = {
@@ -104,7 +104,7 @@ CORRECCIONES = {
 
 
 def fix():
-    app = create_app()
+    app = crear_app_minima()
 
     with app.app_context():
         actualizados = 0

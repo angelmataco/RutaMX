@@ -3,7 +3,7 @@ casetas por IA se apaga y se usa siempre el promedio por km."""
 
 import pytest
 
-from app.services import llm_provider
+from v1.services import llm_provider
 
 
 @pytest.fixture(autouse=True)

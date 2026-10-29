@@ -1,7 +1,7 @@
 """Carga inicial (seed) de estados y destinos curados en Supabase.
 
 Uso:
-    python scripts/seed_destinos.py
+    python base_datos/scripts/seed_destinos.py
 
 Es seguro volver a correrlo: no duplica filas, solo inserta lo que falte
 (usa nombre + estado como llave). Este es el punto de partida de la
@@ -14,10 +14,10 @@ automáticamente los pueblos más pequeños que no estén aquí.
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app import create_app
-from app.models import Destino, Estado, db
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, Estado, db
 
 ESTADOS = [
     ("Aguascalientes", "AGS"),
@@ -197,7 +197,7 @@ DESTINOS = [
 
 
 def seed():
-    app = create_app()
+    app = crear_app_minima()
 
     with app.app_context():
         estados_por_nombre = {}

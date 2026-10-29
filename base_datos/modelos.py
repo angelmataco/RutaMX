@@ -7,10 +7,9 @@ decisión explícita para este proyecto escolar); RutaGuardada guarda las
 rutas que arma cada usuario, ligadas a su cuenta.
 """
 
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
-db = SQLAlchemy()
+from base_datos.conexion import db
 
 
 class Estado(db.Model):
@@ -42,7 +41,7 @@ class Destino(db.Model):
     poblacion = db.Column(db.Integer)
     # Gastronomía reconocida públicamente (UNESCO Ciudad Creativa de la
     # Gastronomía o Guía Michelin). Solo se marca con una fuente verificable;
-    # `reconocimiento_gastronomico` dice cuál. Ver scripts/marcar_gastronomia_destacada.py.
+    # `reconocimiento_gastronomico` dice cuál. Ver v1/scripts/marcar_gastronomia_destacada.py.
     gastronomia_destacada = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     reconocimiento_gastronomico = db.Column(db.Text)
     fuente = db.Column(db.Text, nullable=False, default="curada")

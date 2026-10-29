@@ -1,8 +1,8 @@
 import pytest
 
-from app import create_app
-from app.models import Usuario, db
-from app.services import auth_service
+from v1 import create_app
+from base_datos.modelos import Usuario, db
+from v1.services import auth_service
 
 NOMBRE = "Prueba"
 APELLIDO = "AuthService"

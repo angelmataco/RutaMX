@@ -6,7 +6,7 @@ particular, por el viaje completo. Las constantes están arriba para
 poder afinarlas sin tocar la lógica.
 """
 
-from app.services import llm_provider
+from v1.services import llm_provider
 
 # --- Gasolina ---
 RENDIMIENTO_DEFAULT_KML = 13  # término medio entre autos de ~11 y ~15 km/l

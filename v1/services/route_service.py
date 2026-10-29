@@ -10,7 +10,7 @@ import math
 
 import requests
 
-from app.services import gasto_service, maps_service
+from v1.services import gasto_service, maps_service
 
 VELOCIDAD_PROMEDIO_KMH = 80
 OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving"

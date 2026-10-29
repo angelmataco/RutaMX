@@ -12,7 +12,7 @@ import unicodedata
 
 import requests
 
-from app.models import Destino
+from base_datos.modelos import Destino
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 # Nominatim exige un User-Agent identificable (política de uso justo).
@@ -97,7 +97,7 @@ def obtener_coordenadas(nombre_ciudad: str):
     try:
         # Import perezoso: ia_destinos_service importa este módulo, así
         # que importarlo arriba del archivo crearía un import circular.
-        from app.services import ia_destinos_service
+        from v1.services import ia_destinos_service
 
         destino_generado = ia_destinos_service.generar_destino_con_ia(nombre_ciudad)
         if destino_generado:

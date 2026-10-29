@@ -7,7 +7,7 @@ lugares reales verificados. La IA nunca elige el lugar exacto — solo
 propósito + momento del viaje.
 """
 
-from app.services import ai_service, gasto_service, llm_provider, route_service
+from v1.services import ai_service, gasto_service, llm_provider, route_service
 
 
 def procesar_turno(mensajes: list[dict]) -> dict:

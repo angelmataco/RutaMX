@@ -19,14 +19,11 @@ def create_app(config_name=None):
     except FileNotFoundError:
         pass
 
-    app.config.setdefault("SQLALCHEMY_DATABASE_URI", app.config.get("SUPABASE_DB_URL"))
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    from base_datos.conexion import iniciar_base_datos
 
-    from app.models import db
+    iniciar_base_datos(app)
 
-    db.init_app(app)
-
-    from app.routes import main_bp
+    from v1.routes import main_bp
 
     app.register_blueprint(main_bp)
 

@@ -1,7 +1,7 @@
 import pytest
 
-from app import create_app
-from app.services import llm_provider, planificador_ia_service
+from v1 import create_app
+from v1.services import llm_provider, planificador_ia_service
 
 
 @pytest.fixture
@@ -111,7 +111,7 @@ def test_ia_no_encuentra_origen_destino_devuelve_error(app_context, monkeypatch)
 
 
 def test_el_prompt_de_la_ia_conoce_las_reglas_de_la_app():
-    from app.services import llm_provider as lp
+    from v1.services import llm_provider as lp
 
     slots = lp._prompt_slots_viaje([{"role": "user", "content": "hola"}])
     assert "presupuesto" in slots and "hora de salida" in slots

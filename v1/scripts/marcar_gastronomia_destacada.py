@@ -24,7 +24,7 @@ Por cada lugar reconocido:
      Nominatim (regla del proyecto: no inventar datos).
 
 Es seguro repetirlo. Uso:
-    python scripts/marcar_gastronomia_destacada.py
+    python v1/scripts/marcar_gastronomia_destacada.py
 """
 
 import os
@@ -32,13 +32,13 @@ import sys
 import time
 import unicodedata
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from sqlalchemy import text
 
-from app import create_app
-from app.models import Destino, Estado, db
-from app.services.maps_service import geocodificar
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, Estado, db
+from v1.services.maps_service import geocodificar
 
 UNESCO = "https://www.unesco.org/en/creative-cities"
 MICHELIN = "https://guide.michelin.com/mx/es"
@@ -137,7 +137,7 @@ def migrar():
 
 
 def main():
-    app = create_app()
+    app = crear_app_minima()
     with app.app_context():
         migrar()
         marcados, agregados, sin_encontrar = [], [], []

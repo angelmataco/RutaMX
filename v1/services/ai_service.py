@@ -20,8 +20,8 @@ consulta `destinos` como siempre.
 import random
 import re
 
-from app.models import Destino
-from app.services import gasto_service, maps_service, route_service
+from base_datos.modelos import Destino
+from v1.services import gasto_service, maps_service, route_service
 
 ETIQUETAS_TIPO = {
     "ciudad_principal": "Ciudad",

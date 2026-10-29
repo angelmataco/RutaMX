@@ -3,8 +3,8 @@ import re
 
 from flask import Blueprint, jsonify, render_template, request, send_file, session
 
-from app.models import Destino, RutaGuardada, Usuario, guardar_ruta, listar_rutas
-from app.services import ai_service, auth_service, gasto_service, llm_provider, navegacion_service, pdf_service, planificador_ia_service, route_service
+from base_datos.modelos import Destino, RutaGuardada, Usuario, guardar_ruta, listar_rutas
+from v1.services import ai_service, auth_service, gasto_service, llm_provider, navegacion_service, pdf_service, planificador_ia_service, route_service
 
 main_bp = Blueprint("main", __name__)
 

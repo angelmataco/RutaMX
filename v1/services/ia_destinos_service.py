@@ -14,8 +14,8 @@ verifican con `maps_service.geocodificar()` (Nominatim), igual que los
 destinos curados.
 """
 
-from app.models import Destino, Estado, db
-from app.services import llm_provider, maps_service
+from base_datos.modelos import Destino, Estado, db
+from v1.services import llm_provider, maps_service
 
 
 def generar_destino_con_ia(nombre_escrito_por_usuario: str) -> Destino | None:

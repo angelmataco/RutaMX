@@ -8,16 +8,16 @@ vuelve a correr. Las coordenadas se afinan después corriendo
 verify_coordenadas.py (igual que con el primer lote).
 
 Uso:
-    python scripts/seed_destinos_v2.py
+    python base_datos/scripts/seed_destinos_v2.py
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app import create_app
-from app.models import Destino, Estado, db
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, Estado, db
 
 # (nombre, estado, tipo, lat, lon, descripcion, intereses)
 DESTINOS_V2 = [
@@ -368,7 +368,7 @@ DESTINOS_V2 = [
 
 
 def seed():
-    app = create_app()
+    app = crear_app_minima()
 
     with app.app_context():
         estados_por_nombre = {e.nombre: e for e in Estado.query.all()}

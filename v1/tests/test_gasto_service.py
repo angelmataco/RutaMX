@@ -1,5 +1,5 @@
-from app.services import gasto_service as g
-from app.services import llm_provider
+from v1.services import gasto_service as g
+from v1.services import llm_provider
 
 
 def test_noches_viaje_corto_de_dia_no_duerme():

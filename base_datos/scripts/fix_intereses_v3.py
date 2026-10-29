@@ -5,16 +5,16 @@ siguiendo las mismas reglas que ya usamos antes: "cultura" es amplio,
 "comida" solo si hay una razón concreta en el texto.
 
 Uso:
-    python scripts/fix_intereses_v3.py
+    python base_datos/scripts/fix_intereses_v3.py
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app import create_app
-from app.models import Destino, db
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, db
 from sqlalchemy import func
 
 REGLAS_NATURALEZA = [
@@ -67,7 +67,7 @@ def _segunda_etiqueta(descripcion, actual):
 
 
 def fix():
-    app = create_app()
+    app = crear_app_minima()
 
     with app.app_context():
         destinos = Destino.query.filter(func.array_length(Destino.intereses, 1) < 2).all()

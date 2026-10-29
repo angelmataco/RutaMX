@@ -5,16 +5,16 @@ tienen una cifra oficial verificable; el resto se queda en NULL a
 propósito.
 
 Uso:
-    python scripts/fix_poblacion_v2.py
+    python base_datos/scripts/fix_poblacion_v2.py
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app import create_app
-from app.models import Destino, Estado, db
+from base_datos.conexion import crear_app_minima
+from base_datos.modelos import Destino, Estado, db
 
 # (nombre, estado) -> población (Censo INEGI 2020, ciudades > 100k)
 POBLACION_V2 = {
@@ -31,7 +31,7 @@ POBLACION_V2 = {
 
 
 def fix():
-    app = create_app()
+    app = crear_app_minima()
 
     with app.app_context():
         actualizados = 0
