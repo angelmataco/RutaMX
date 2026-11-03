@@ -196,7 +196,8 @@ RutaMX/
 ├── base_datos/                # Compartida por v1 y v2; no importa nada de ninguna
 │   ├── conexion.py            # Objeto db, iniciar_base_datos(app) y crear_app_minima() para scripts
 │   ├── modelos.py             # Modelos: Estado, Destino, Usuario, RutaGuardada (Supabase)
-│   ├── repositorios/          # Acceso a datos por entidad (ahí irá M-09)
+│   ├── repositorios/          # Acceso a datos por entidad: rutas_repositorio.py (M-09: crear, obtener y listar rutas)
+│   ├── tests/                 # Pruebas de M-09 con PostgreSQL desechable (RUTAMX_TEST_DB_URL)
 │   ├── migraciones/
 │   │   └── agregar_usuario_id.py  # Migración: agrega usuario_id a rutas_guardadas
 │   └── scripts/

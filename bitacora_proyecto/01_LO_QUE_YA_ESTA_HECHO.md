@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-10-29
+Última actualización: 2026-11-03
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -825,13 +825,13 @@ preguntas de revisión. La cobertura (RF sin historia, sin criterio, sin prueba)
 
 ## Reorganización del repositorio en v1, v2 y base_datos (2026-10-29)
 
-Rama `reorganizacion` (3 commits locales, sin push; `main` sin tocar). Solo se movieron archivos y se reescribieron
+Se hizo en la rama `reorganizacion`, que el 2026-11-03 se mezcló en `main` (avance directo, sin conflictos) y se borró. Solo se movieron archivos y se reescribieron
 imports; no cambió ningún comportamiento (mismo resultado de la suite antes y después: 99 pasan, 24 fallan y 42 dan error
 por Supabase, ver `03`).
 
 - `app/` pasó a `v1/` (con `v1/tests/` y `v1/scripts/`); `app/models.py` pasó a `base_datos/modelos.py`.
 - `base_datos/` (compartida, no importa v1 ni v2): `conexion.py` (objeto `db`, `iniciar_base_datos(app)` y
-  `crear_app_minima()` para scripts), `modelos.py`, `repositorios/` (vacía, ahí irá M-09), `migraciones/` y `scripts/`.
+  `crear_app_minima()` para scripts), `modelos.py`, `repositorios/` (ahí está M-09, ver la sección `[V2]` de abajo), `migraciones/` y `scripts/`.
 - `v2/` creada y vacía para lo nuevo. Se borró la carpeta vacía `paginas_nav_bar/`.
 - Reglas de dependencia y de cambios a la base en `AGENTS.md`.
 - README, AGENTS y bitácoras con las rutas nuevas.

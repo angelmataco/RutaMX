@@ -14,6 +14,8 @@
 
 ### [V2] Decisiones tomadas al implementar (2026-11-03)
 
+- **Una sola rama:** `reorganizacion` se mezcló en `main` con avance directo (sin conflictos, con el visto bueno de Roberto) y se borró, local y remota. Motivo: GitHub muestra `main` y la rama aparte hacía invisible lo nuevo.
+
 - **Sesión propia:** cada operación usa `Session(db.engine)` y no `db.session`, para no confirmar cambios pendientes ajenos. Límite: no ve datos sin confirmar de otra sesión y su commit no se puede revertir desde una transacción exterior; M-05 deberá tenerlo en cuenta si orquesta varios cambios.
 - **Identificadores enteros:** `usuario_id` y `ruta_id` deben ser enteros (se rechazan `None`, texto y booleanos). Lo agregó Claude más allá de la orden v2; Codex lo revisó y lo consideró dentro del alcance.
 - **Todo fallo es `ErrorRepositorio`:** también los que no son de SQLAlchemy, conservando la causa (hallazgo bloqueante de la revisión de Codex).
@@ -628,7 +630,7 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
 - **Decisión de Angel:** extender `rutas_guardadas` con columnas nuevas en vez de crear una tabla ligada. La IA había
   recomendado una tabla `rutas_publicacion` para no tocar la v1; Angel prefirió la simplicidad. Las columnas son
   opcionales o con valor por defecto ('privada'), así las filas de la v1 siguen válidas. **El cambio real a la base y a
-  `base_datos/modelos.py` no se ha hecho** y espera la aprobación explícita de Angel (la app principal está congelada).
+  `base_datos/modelos.py` no se ha hecho**: Angel lo aprobó el 2026-11-03, pero la ejecución sigue diferida (la app principal está congelada).
 - No se persiste el chat (D-09) ni historial de versiones (D-11).
 
 ## Reorganización en v1, v2 y base_datos (2026-10-29)
