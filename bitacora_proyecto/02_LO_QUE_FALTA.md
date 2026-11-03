@@ -191,14 +191,14 @@ _(vacío por ahora)_
 
 ## Persistencia del apartado nuevo (práctica de persistencia, 2026-10-15)
 
-Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; no hay código ni cambios en la base todavía.
+Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el código de M-09 de tres operaciones ya existe (ver `01`), pero no hay cambios en la base de datos todavía (columnas nuevas y migración siguen sin hacerse).
 
 - Roberto debe revisar el diseño de persistencia (rol de revisor técnico) y se corrige lo que encuentre.
 - **Aprobación explícita de Angel** antes de agregar las columnas nuevas a `rutas_guardadas` (`descripcion`,
   `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`): es una tabla de la v1.
   Hace falta un script de migración con `ALTER TABLE` (SQLAlchemy `create_all` no modifica tablas existentes),
   probado primero en una copia y con respaldo previo.
-- Completar M-09 (ya tiene crear, obtener y listar, ver `01`): faltan actualizar la misma ruta (CA-21.4/D-11) y copiar
+- [V2] Completar M-09 (ya tiene crear, obtener y listar, ver `01`): faltan actualizar la misma ruta (CA-21.4/D-11) y copiar
   (la original no cambia, sin sesión no se crea nada), con pruebas en simulación y datos ficticios.
 - Elegir el segundo módulo a implementar y agregar evidencia de commits (tarea de la práctica).
 - Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.
@@ -209,6 +209,6 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; no hay 
   `instance/config.py` cambió. Hasta resolverlo, la app real y las pruebas que usan la base fallan (24 fallan y 42 con error).
   Revisar el panel de Supabase.
 - **Decidir qué hacer con la rama `reorganizacion`**: Roberto debe hacer pull de esa rama; falta decidir cuándo se mezcla en `main`.
-- Regresión de la v1 contra una base aislada y verificación en navegador de M-09: sin verificar (2026-11-03).
-- Quedan para otro incremento T-04/T-05, autor y visibilidad, actualización (CA-21.4/D-11), copia y regresión de v1. Siguen P-01 y P-03.
+- [V2] Regresión de la v1 contra una base aislada y verificación en navegador de M-09: sin verificar (2026-11-03).
+- [V2] Quedan para otro incremento T-04/T-05, autor y visibilidad, actualización (CA-21.4/D-11), copia y regresión de v1. Siguen P-01 y P-03.
 

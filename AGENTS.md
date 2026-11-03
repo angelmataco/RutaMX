@@ -154,3 +154,7 @@ cómo está armado cada módulo.
 
 Todo commit nuevo empieza con `[V2]` para distinguir lo nuevo de la app vieja, y sigue con Conventional Commits:
 `[V2] feat: agrega ...`, `[V2] fix: ...`, `[V2] docs: ...`. Los commits anteriores no se reescriben.
+
+El mismo marcador va al inicio de toda entrada nueva sobre trabajo de la versión 2 en `bitacora_proyecto/`
+(encabezados `## [V2] ...` en 01 y 03, y viñetas `- [V2] ...` en 02) y en los documentos nuevos de `documentacion/`
+(`# [V2] ...`). Lo de la v1 no lleva marcador. Cuando se documente en la bóveda de Obsidian, ahí también se marca igual.

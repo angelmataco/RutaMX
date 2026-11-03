@@ -2,7 +2,7 @@
 
 Última actualización: 2026-11-03
 
-## Orden M-09 v2: decisiones del equipo (2026-11-03)
+## [V2] Orden M-09 v2: decisiones del equipo (2026-11-03)
 
 - Esta práctica implementará solo crear, obtener y listar rutas por usuario. No modifica `base_datos/modelos.py`: autor y visibilidad esperan T-04/T-05; el dueño es `usuario_id`.
 - M-09 comprobará integridad mínima: nombre, origen y destino con texto no vacío; paradas como lista (puede estar vacía). Los errores se expresan con `ErrorRepositorio`. D-03 sigue en M-05.
@@ -12,7 +12,7 @@
 - La regresión de v1 queda diferida y se informa como limitación. Actualizar, copiar y CA-21.4/D-11 siguen fuera de esta práctica.
 - Estas decisiones ajustan la secuencia del plan v1.1: T-04/T-05 ya no bloquean las tres operaciones sobre el modelo actual.
 
-### Decisiones tomadas al implementar (2026-11-03)
+### [V2] Decisiones tomadas al implementar (2026-11-03)
 
 - **Sesión propia:** cada operación usa `Session(db.engine)` y no `db.session`, para no confirmar cambios pendientes ajenos. Límite: no ve datos sin confirmar de otra sesión y su commit no se puede revertir desde una transacción exterior; M-05 deberá tenerlo en cuenta si orquesta varios cambios.
 - **Identificadores enteros:** `usuario_id` y `ruta_id` deben ser enteros (se rechazan `None`, texto y booleanos). Lo agregó Claude más allá de la orden v2; Codex lo revisó y lo consideró dentro del alcance.

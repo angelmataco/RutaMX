@@ -1,4 +1,4 @@
-# Práctica M-09 — Evidencia del Paso 4 (pruebas)
+# [V2] Práctica M-09 — Evidencia del Paso 4 (pruebas)
 
 Módulo: M-09 Repositorio de rutas (`crear_ruta`, `obtener_ruta`, `listar_rutas_de_usuario`).
 Fecha de ejecución: 2026-11-03. Datos 100 % ficticios.
@@ -39,6 +39,59 @@ Cobertura adicional: PR-08 (datos secundarios incompletos), dueño que sale del 
 | PR-03 no probaba que se llamara `rollback` | Revisión de Codex (importante) | Un espía confirma la llamada explícita. |
 | La protección de la base solo revisaba el host | Revisión de Codex (importante) | Además exige que el nombre de la base termine en `_prueba` o `_test`. |
 | El Postgres temporal no arrancó la primera vez | Sesión de trabajo | La ruta del socket Unix superaba el máximo de 103 bytes; se usó un directorio corto para el socket. |
+
+## Commits y salida completa
+
+| Dato | Valor |
+|---|---|
+| Commit del código y las pruebas | `2cf75cf` — https://github.com/angelmataco/RutaMX/commit/2cf75cf636b584f136c9b31b6fd9042ed05cc8f5 |
+| Commit de la documentación | `d8b7c97` — https://github.com/angelmataco/RutaMX/commit/d8b7c978296da54fbaa4d099c175458ba3571562 |
+| Salida completa de pytest (con y sin la base) | `documentacion/Practica_M09_salida_pytest.txt` (rutas de este equipo reemplazadas por `...`) |
+
+## Cómo recrear y retirar el PostgreSQL temporal
+
+Reproduce el entorno de la evidencia. Es una base local, desechable y sin contraseña (`--auth=trust`, solo escucha en `127.0.0.1`). Host local y nombre terminado en `_prueba` reducen errores de selección, pero no garantizan que una base sea desechable: no apuntar nunca la variable a una base con datos reales.
+
+```bash
+brew install postgresql@16
+PG=/opt/homebrew/opt/postgresql@16/bin
+DATOS=$(mktemp -d)                      # carpeta temporal del clúster
+mkdir -p /tmp/rutamx_pg                 # socket en ruta corta (límite de 103 bytes)
+
+$PG/initdb -D "$DATOS" -U rutamx_test --auth=trust -E UTF8
+$PG/pg_ctl -D "$DATOS" -o "-p 54329 -c listen_addresses=127.0.0.1 -k /tmp/rutamx_pg" -l "$DATOS/log.txt" -w start
+$PG/createdb -h 127.0.0.1 -p 54329 -U rutamx_test rutamx_prueba
+
+RUTAMX_TEST_DB_URL=postgresql://rutamx_test@127.0.0.1:54329/rutamx_prueba \
+  venv/bin/python -m pytest base_datos/tests -q          # esperado: 53 passed
+
+# Retirar el entorno
+$PG/pg_ctl -D "$DATOS" stop
+rm -rf "$DATOS" /tmp/rutamx_pg
+```
+
+## Estado de las tareas del plan M-09 (T-01 a T-12)
+
+El incremento aceptado es **crear, obtener y listar**. No se cierran las 12 tareas como conjunto terminado.
+
+| Tarea | Estado | Nota |
+|---|---|---|
+| T-01 Revisar el diseño de persistencia (H-2 a H-6) | Parcial | H-2 y H-6 resueltas por decisión del equipo; falta la revisión de Roberto del diseño (H-4). |
+| T-02 Aprobar el cambio de columnas | Parcial | Angel aprobó el cambio (2026-11-03); su ejecución queda diferida. |
+| T-03 Base de prueba aislada | Hecha | `base_datos/tests/conftest.py`, con PostgreSQL temporal en lugar de Docker. |
+| T-04 Migración `ALTER TABLE` | Diferida | Incremento de migración. |
+| T-05 Extender el modelo | Diferida | Sin `autor_id` ni `visibilidad`. |
+| T-06 Pruebas de M-09 | Parcial | Cubre PR-01, 02, 03, 06 a 10; faltan PR-04, 05 y 11 a 15. |
+| T-07 Crear y actualizar | Parcial | Crear hecho; actualizar (CA-21.4/D-11) diferido. |
+| T-08 Obtener y listar | Hecha | Con aislamiento por usuario. |
+| T-09 Copia atómica | Diferida | Depende de P-01. |
+| T-10 Regresión de la v1 | Diferida | Sin verificar (2026-11-03). |
+| T-11 Prueba en la app corriendo | Diferida | Sin verificar (2026-11-03). |
+| T-12 Bitácora y commit | Hecha para este incremento | Commits `2cf75cf` y `d8b7c97`, más el ajuste del marcador `[V2]`. |
+
+## Riesgo transaccional para M-05
+
+La sesión propia evita confirmar cambios ajenos, pero sus commits no participan en una transacción exterior. La atomicidad actual acredita **una** creación individual. Antes de que M-05 orqueste varias escrituras debe definirse la unidad transaccional.
 
 ## Funciones o partes que cada integrante puede explicar
 

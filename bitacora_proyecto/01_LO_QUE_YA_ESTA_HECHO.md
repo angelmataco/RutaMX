@@ -842,7 +842,7 @@ por Supabase, ver `03`).
 sin código: 12 tareas (T-01 a T-12), 15 casos de prueba y riesgos para M-09 Repositorio de rutas.
 
 
-## M-09 Repositorio de rutas: crear, obtener y listar (2026-11-03)
+## [V2] M-09 Repositorio de rutas: crear, obtener y listar (2026-11-03)
 
 Práctica de clase "Implementación del primer módulo". Estado: **probado en simulación (2026-11-03)**: 53 pruebas aprobadas
 contra un PostgreSQL 16 desechable en el equipo, sin tocar Supabase; no verificado en uso real. Se llama "incremento M-09 de
@@ -856,4 +856,8 @@ tres operaciones": no es el módulo completo.
 - Comando: `RUTAMX_TEST_DB_URL=postgresql://rutamx_test@127.0.0.1:54329/rutamx_prueba venv/bin/python -m pytest base_datos/tests -q`
   (el Postgres temporal se crea con `initdb` y `pg_ctl`; ver la evidencia).
 - Flujo: orden de implementación (Codex), análisis y código (Claude), revisión de Codex con un bloqueante corregido.
-- Evidencia y limitaciones: `documentacion/Practica_M09_Evidencia_Paso4.md`. Decisiones en `03`.
+- Cobertura parcial: acredita persistencia, aislamiento y errores del repositorio; no la confirmación visual, los mensajes al
+  usuario, la autenticación ni el estado vacío en la interfaz. CA-21.4/D-11 siguen sin implementar. No se afirma el
+  cumplimiento de RF-38 ni RF-44 de extremo a extremo.
+- Evidencia y limitaciones: `documentacion/Practica_M09_Evidencia_Paso4.md` (estado de T-01 a T-12, cómo recrear el
+  Postgres temporal y salida completa en `documentacion/Practica_M09_salida_pytest.txt`). Decisiones en `03`.

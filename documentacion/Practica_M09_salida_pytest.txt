@@ -1,0 +1,88 @@
+[V2] Salida de pytest de M-09 (2026-11-03). Datos ficticios; PostgreSQL 16.15 desechable en 127.0.0.1:54329.
+Código evaluado: commit 2cf75cf (rama reorganizacion).
+
+$ RUTAMX_TEST_DB_URL=postgresql://rutamx_test@127.0.0.1:54329/rutamx_prueba venv/bin/python -m pytest base_datos/tests -v
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.3.3, pluggy-1.6.0 -- .../venv/bin/python
+rootdir: .../Proyecto_RutaMX
+plugins: anyio-4.15.1
+collecting ... collected 53 items
+
+test_crear_rechaza_texto_obligatorio_invalido[None-nombre] PASSED [  1%]
+test_crear_rechaza_texto_obligatorio_invalido[None-origen] PASSED [  3%]
+test_crear_rechaza_texto_obligatorio_invalido[None-destino] PASSED [  5%]
+test_crear_rechaza_texto_obligatorio_invalido[-nombre] PASSED [  7%]
+test_crear_rechaza_texto_obligatorio_invalido[-origen] PASSED [  9%]
+test_crear_rechaza_texto_obligatorio_invalido[-destino] PASSED [ 11%]
+test_crear_rechaza_texto_obligatorio_invalido[   -nombre] PASSED [ 13%]
+test_crear_rechaza_texto_obligatorio_invalido[   -origen] PASSED [ 15%]
+test_crear_rechaza_texto_obligatorio_invalido[   -destino] PASSED [ 16%]
+test_crear_rechaza_texto_obligatorio_invalido[123-nombre] PASSED [ 18%]
+test_crear_rechaza_texto_obligatorio_invalido[123-origen] PASSED [ 20%]
+test_crear_rechaza_texto_obligatorio_invalido[123-destino] PASSED [ 22%]
+test_crear_rechaza_texto_obligatorio_invalido[valor4-nombre] PASSED [ 24%]
+test_crear_rechaza_texto_obligatorio_invalido[valor4-origen] PASSED [ 26%]
+test_crear_rechaza_texto_obligatorio_invalido[valor4-destino] PASSED [ 28%]
+test_crear_rechaza_campo_obligatorio_omitido[nombre] PASSED [ 30%]
+test_crear_rechaza_campo_obligatorio_omitido[origen] PASSED [ 32%]
+test_crear_rechaza_campo_obligatorio_omitido[destino] PASSED [ 33%]
+test_crear_rechaza_campo_obligatorio_omitido[paradas] PASSED [ 35%]
+test_crear_rechaza_paradas_que_no_son_lista[None] PASSED [ 37%]
+test_crear_rechaza_paradas_que_no_son_lista[texto] PASSED [ 39%]
+test_crear_rechaza_paradas_que_no_son_lista[valor2] PASSED [ 41%]
+test_crear_rechaza_paradas_que_no_son_lista[5] PASSED [ 43%]
+test_crear_rechaza_datos_que_no_son_diccionario[None] PASSED [ 45%]
+test_crear_rechaza_datos_que_no_son_diccionario[ruta] PASSED [ 47%]
+test_crear_rechaza_datos_que_no_son_diccionario[datos2] PASSED [ 49%]
+test_usuario_id_invalido_se_rechaza_en_las_tres_operaciones[None] PASSED [ 50%]
+test_usuario_id_invalido_se_rechaza_en_las_tres_operaciones[1] PASSED [ 52%]
+test_usuario_id_invalido_se_rechaza_en_las_tres_operaciones[1.5] PASSED [ 54%]
+test_usuario_id_invalido_se_rechaza_en_las_tres_operaciones[True] PASSED [ 56%]
+test_obtener_rechaza_ruta_id_invalido[None] PASSED [ 58%]
+test_obtener_rechaza_ruta_id_invalido[1] PASSED [ 60%]
+test_obtener_rechaza_ruta_id_invalido[2.5] PASSED [ 62%]
+test_obtener_rechaza_ruta_id_invalido[True] PASSED [ 64%]
+test_pr01_crear_devuelve_diccionario_asociado_al_usuario PASSED [ 66%]
+test_el_dueno_sale_del_argumento_no_de_los_datos PASSED [ 67%]
+test_paradas_vacias_se_aceptan PASSED [ 69%]
+test_conserva_contenido_y_orden_de_las_paradas PASSED [ 71%]
+test_pr02_datos_invalidos_no_dejan_filas PASSED [ 73%]
+test_usuario_inexistente_falla_sin_filas PASSED [ 75%]
+test_pr03_fallo_en_el_commit_hace_rollback_y_no_deja_filas PASSED [ 77%]
+test_error_que_no_es_de_sqlalchemy_tambien_sale_como_error_del_repositorio PASSED [ 79%]
+test_no_confirma_cambios_pendientes_ajenos PASSED [ 81%]
+test_pr06_listar_devuelve_solo_las_rutas_del_dueno PASSED [ 83%]
+test_pr07_otro_usuario_obtiene_none_y_la_ruta_queda_intacta PASSED [ 84%]
+test_obtener_ruta_inexistente_devuelve_none PASSED [ 86%]
+test_pr08_datos_secundarios_incompletos_no_impiden_recuperar PASSED [ 88%]
+test_pr09_fallo_de_lectura_en_obtener_es_error_controlado PASSED [ 90%]
+test_pr09_fallo_de_lectura_en_listar_es_error_controlado PASSED [ 92%]
+test_listar_devuelve_la_mas_reciente_primero PASSED [ 94%]
+test_identificadores_cero_o_negativos[0] PASSED [ 96%]
+test_identificadores_cero_o_negativos[-1] PASSED [ 98%]
+test_pr10_usuario_sin_rutas_recibe_lista_vacia PASSED [100%]
+
+============================== 53 passed in 0.33s ==============================
+
+$ venv/bin/python -m pytest base_datos/tests -q -rs   (sin RUTAMX_TEST_DB_URL)
+1x ..................................sssssssssssssssssss                    [100%]
+1x =========================== short test summary info ============================
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:96: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:108: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:115: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:121: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:128: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:136: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:142: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:170: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:198: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:215: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:229: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:238: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:242: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:264: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:286: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:305: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [2] base_datos/tests/test_rutas_repositorio.py:314: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x SKIPPED [1] base_datos/tests/test_rutas_repositorio.py:324: OMITIDA: falta RUTAMX_TEST_DB_URL (PostgreSQL desechable). Sin ella no hay evidencia de persistencia ni de atomicidad.
+1x 34 passed, 19 skipped in 0.03s

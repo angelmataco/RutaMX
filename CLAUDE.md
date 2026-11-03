@@ -10,3 +10,8 @@ contexto que ya se decidió entre los dos.
 hoteles; el 05 si tocas el frontend) antes de proponer un plan o tocar código.** Después de cualquier cambio
 real, actualiza el archivo de `bitacora_proyecto/` que corresponda — el
 detalle de cuál va en cuál está en `AGENTS.md`.
+
+**Marcador `[V2]` (regla del profesor, desde 2026-11-03):** todo commit nuevo
+empieza con `[V2]` (por ejemplo `[V2] feat: ...`), y lo mismo las entradas
+nuevas de la bitácora y los documentos nuevos de `documentacion/`. Detalle en
+`AGENTS.md`.

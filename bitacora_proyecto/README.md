@@ -28,6 +28,12 @@ lectura obligatoria antes de cualquier cambio.
   líneas), con sus ganchos HTML/CSS/JS y cómo comprobar que un cambio no los
   rompió. También fija que en la app no hay emojis, solo los iconos a medida.
 
+## Marcador `[V2]` (regla del profesor, desde 2026-11-03)
+
+Todo lo nuevo de la versión 2 se distingue de la app vieja con `[V2]` al inicio: en los commits (`[V2] feat: ...`), en los
+encabezados de 01 y 03 (`## [V2] ...`), en las viñetas de 02 (`- [V2] ...`) y en los documentos nuevos de `documentacion/`.
+Lo de la v1 no lleva marcador. Detalle en [`../AGENTS.md`](../AGENTS.md).
+
 ## Regla para cualquier IA (Claude, Codex, o la que sea)
 
 1. **Antes de proponer o hacer cualquier cambio**, leer los archivos de
