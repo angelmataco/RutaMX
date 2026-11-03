@@ -149,3 +149,8 @@ Flask + vanilla JS + Supabase (Postgres, vía SQLAlchemy). Sin npm ni bundler: l
 (Leaflet, Blobatar) va por CDN o copiado en `static/`. Ver
 `bitacora_proyecto/01_LO_QUE_YA_ESTA_HECHO.md` para el detalle completo de
 cómo está armado cada módulo.
+
+## Mensajes de commit desde 2026-11-03 (regla del profesor)
+
+Todo commit nuevo empieza con `[V2]` para distinguir lo nuevo de la app vieja, y sigue con Conventional Commits:
+`[V2] feat: agrega ...`, `[V2] fix: ...`, `[V2] docs: ...`. Los commits anteriores no se reescriben.

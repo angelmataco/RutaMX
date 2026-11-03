@@ -841,3 +841,19 @@ por Supabase, ver `03`).
 `documentacion/RutaMx_Plan_de_Implementacion_M09.pdf` (v1.1, revisado por Angel y Roberto) y su `.md` editable. Solo plan,
 sin código: 12 tareas (T-01 a T-12), 15 casos de prueba y riesgos para M-09 Repositorio de rutas.
 
+
+## M-09 Repositorio de rutas: crear, obtener y listar (2026-11-03)
+
+Práctica de clase "Implementación del primer módulo". Estado: **probado en simulación (2026-11-03)**: 53 pruebas aprobadas
+contra un PostgreSQL 16 desechable en el equipo, sin tocar Supabase; no verificado en uso real. Se llama "incremento M-09 de
+tres operaciones": no es el módulo completo.
+
+- `base_datos/repositorios/rutas_repositorio.py`: `crear_ruta`, `obtener_ruta`, `listar_rutas_de_usuario` y `ErrorRepositorio`.
+  Devuelven diccionarios (con `id` y `usuario_id`); una ruta inexistente o ajena es `None`. Validación mínima (nombre, origen
+  y destino con texto, paradas como lista) y transacción propia con commit o rollback. No modifica `modelos.py` ni `v1/`.
+- `base_datos/tests/`: `conftest.py` (base desechable por `RUTAMX_TEST_DB_URL`; si falta, las 19 pruebas de integración se
+  omiten con aviso; nunca usa Supabase) y `test_rutas_repositorio.py` (53 pruebas: normal, límite y error).
+- Comando: `RUTAMX_TEST_DB_URL=postgresql://rutamx_test@127.0.0.1:54329/rutamx_prueba venv/bin/python -m pytest base_datos/tests -q`
+  (el Postgres temporal se crea con `initdb` y `pg_ctl`; ver la evidencia).
+- Flujo: orden de implementación (Codex), análisis y código (Claude), revisión de Codex con un bloqueante corregido.
+- Evidencia y limitaciones: `documentacion/Practica_M09_Evidencia_Paso4.md`. Decisiones en `03`.

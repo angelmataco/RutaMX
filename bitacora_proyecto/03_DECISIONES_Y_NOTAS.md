@@ -1,6 +1,25 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-10-29
+Última actualización: 2026-11-03
+
+## Orden M-09 v2: decisiones del equipo (2026-11-03)
+
+- Esta práctica implementará solo crear, obtener y listar rutas por usuario. No modifica `base_datos/modelos.py`: autor y visibilidad esperan T-04/T-05; el dueño es `usuario_id`.
+- M-09 comprobará integridad mínima: nombre, origen y destino con texto no vacío; paradas como lista (puede estar vacía). Los errores se expresan con `ErrorRepositorio`. D-03 sigue en M-05.
+- Las salidas serán diccionarios con `id`; una ruta inexistente o ajena devuelve `None`.
+- Integración con PostgreSQL desechable (PostgreSQL 16 instalado con Homebrew y creado con `initdb` en una carpeta temporal; Docker se descartó) mediante `RUTAMX_TEST_DB_URL`. Si falta, se omite con aviso; nunca se usa Supabase como respaldo ni se carga el `.env` real.
+- Cada escritura controla su transacción: commit al terminar y rollback ante cualquier fallo.
+- La regresión de v1 queda diferida y se informa como limitación. Actualizar, copiar y CA-21.4/D-11 siguen fuera de esta práctica.
+- Estas decisiones ajustan la secuencia del plan v1.1: T-04/T-05 ya no bloquean las tres operaciones sobre el modelo actual.
+
+### Decisiones tomadas al implementar (2026-11-03)
+
+- **Sesión propia:** cada operación usa `Session(db.engine)` y no `db.session`, para no confirmar cambios pendientes ajenos. Límite: no ve datos sin confirmar de otra sesión y su commit no se puede revertir desde una transacción exterior; M-05 deberá tenerlo en cuenta si orquesta varios cambios.
+- **Identificadores enteros:** `usuario_id` y `ruta_id` deben ser enteros (se rechazan `None`, texto y booleanos). Lo agregó Claude más allá de la orden v2; Codex lo revisó y lo consideró dentro del alcance.
+- **Todo fallo es `ErrorRepositorio`:** también los que no son de SQLAlchemy, conservando la causa (hallazgo bloqueante de la revisión de Codex).
+- **Protección de la base de prueba:** además de host local, el nombre de la base debe terminar en `_prueba` o `_test`, porque las pruebas hacen `TRUNCATE` y `drop_all`.
+- **Estado:** M-09 de tres operaciones, probado en simulación (53 pruebas con PostgreSQL desechable, sin tocar Supabase, 2026-11-03). No está verificado en uso real. Cobertura parcial de HU-21, HU-22 y PNF-11; no cubre CA-21.4/D-11.
+- **Prefijo de commits (regla del profesor, desde 2026-11-03):** todo commit nuevo empieza con `[V2]` para distinguir lo nuevo de la app vieja; por ejemplo `[V2] feat: ...`. Detalle en `AGENTS.md`. Se filtra con `git log --grep='^\[V2\]'`.
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
 código. Se va agregando conforme pasa.
