@@ -865,7 +865,7 @@ tres operaciones": no es el módulo completo.
 ## [V2] Plan de incrementos, fase A (2026-11-05)
 
 Práctica del profesor "Práctica guiada: plan de incrementos" (4 de noviembre de 2026). Solo documentación: no se tocó código ni la base de datos.
-Estado: **documentos listos para revisión del equipo; la aceptación de Angel y Roberto sigue pendiente** (ninguna ficha está aprobada).
+Estado: **plan aceptado por Angel y Roberto el 2026-11-05 y publicado en GitHub** (commit `3e11b46` en `main` y tag `v0.1.0` sobre `d74a1ba`).
 
 - `documentacion/Consigna_Plan_Incremental.md`: texto de la consigna (el PDF del profesor está fuera del repo).
 - `documentacion/A1_Verificacion_Especificacion.md` y `A1_Conteo_Independiente_Codex.md`: conteo de la especificación v2.0 por dos IA por separado, con el mismo resultado: 44 RF, 33 RNF, 23 HU y **93 criterios** (el 92 del control de documento es de la versión 1.0; la v2.0 agregó CA-12.5).
@@ -873,4 +873,4 @@ Estado: **documentos listos para revisión del equipo; la aceptación de Angel y
 - `documentacion/A3_Propuesta_Incrementos.md` y `A4_Validacion_Plan.md`: propuesta de 4 incrementos (v0.2.0 a v0.5.0) y su validación cruzada. En la validación, Codex corrió su verificación reproducible y la revisé: 44 RF y 33 RNF asignados una sola vez y cero dependencias fuera de orden. Declara que no fue una conversación nueva.
 - `documentacion/plan_incrementos.md`: plan final, aprobado por Angel y Roberto el 2026-11-05, con fichas, matriz de trazabilidad inicial, registro de cambios y bitácora de IA.
 - Flujo: Claude analizó y documentó; Codex hizo el conteo ciego y la validación; cada paso lo revisó la otra IA. Cada revisión encontró errores reales que se corrigieron (por ejemplo, yo había escrito "seis operaciones y 124 pruebas" de M-09 tomándolo de un relevo sin verificar; el repo tiene tres operaciones).
-- **No se hizo todavía:** el tag `v0.1.0`, el commit del plan y el push (los ejecuta Angel, comandos en la sección 12 del plan). En esta fase documental no se verificó la app real ni se corrieron pruebas de la app; M-09 y lo nuevo de v2 siguen en "probado en simulación (2026-11-03)" y sin verificar en uso real. Esto no cambia la evidencia histórica de pruebas en vivo de la v1 registrada arriba.
+- **Publicado (2026-11-05):** el tag anotado `v0.1.0` (sobre el estado de M-09) y el commit `3e11b46` los subió Angel con `git push`; se comprobó con `git ls-remote`. Se generó `documentacion/RutaMX_Plan_de_Incrementos.pdf` (portada, plan y anexos A1 a A4) para la entrega en Moodle; el PDF no está en git. En esta fase documental no se verificó la app real ni se corrieron pruebas de la app; M-09 y lo nuevo de v2 siguen en "probado en simulación (2026-11-03)" y sin verificar en uso real. Esto no cambia la evidencia histórica de pruebas en vivo de la v1 registrada arriba.

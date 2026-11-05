@@ -363,7 +363,7 @@ Une cada requerimiento con su sección, historia, incremento, módulo, prueba su
 
 ## 12. Publicación en GitHub
 
-El tag `v0.1.0` se creó **en local** sobre el último commit de `main` antes de los documentos del plan (estado de M-09), y el commit del plan se hizo después, también en local. Falta subirlos: el `git push` lo ejecuta el usuario, porque Claude no sube a remotos. No se incluye `RutaMx_Entrega_Documentacion_Completa.pdf`, que no es parte del plan.
+El tag `v0.1.0` se creó **en local** sobre el último commit de `main` antes de los documentos del plan (estado de M-09), y el commit del plan se hizo después, también en local. Ambos se subieron el 2026-11-05 con los comandos de abajo, que ejecutó Angel (Claude no sube a remotos). No se incluye `RutaMx_Entrega_Documentacion_Completa.pdf`, que no es parte del plan.
 
 ```sh
 git push origin main
@@ -374,7 +374,8 @@ git push origin v0.1.0
 |---|---|
 | URL de `documentacion/plan_incrementos.md` en GitHub | `https://github.com/angelmataco/RutaMX/blob/main/documentacion/plan_incrementos.md` (válida después del push) |
 | Tag v0.1.0 visible en GitHub (Tags) | `https://github.com/angelmataco/RutaMX/releases/tag/v0.1.0` (válida después del push) |
-| Hash del commit del plan | Se anota en la entrega, tomado de `git log -1` |
+| Hash del commit del plan | `3e11b46` (publicado en `main` el 2026-11-05) |
+| Commit al que apunta el tag `v0.1.0` | `d74a1ba` (estado de M-09, antes de los documentos del plan) |
 
 ## 13. Verificación de este documento
 

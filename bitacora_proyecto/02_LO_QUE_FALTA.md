@@ -214,8 +214,8 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 
 ## [V2] Después del plan de incrementos (2026-11-05)
 
-- [V2] Plan aceptado por Angel y Roberto el 2026-11-05 (4 incrementos, fichas, excepción de prioridad de HU-01, HU-05 y HU-17 y limitación de independencia de la validación; `documentacion/plan_incrementos.md`). Falta que Angel suba el commit y el tag `v0.1.0` con `git push` y que se anote la evidencia (URL y hash) en la sección 12 del plan.
-- [V2] Publicar el incremento 1: tag `v0.1.0` sobre `main`, commit de los documentos del plan y push. Lo ejecuta Angel (comandos en la sección 12 del plan). El PDF `RutaMx_Entrega_Documentacion_Completa.pdf` sigue sin commit.
+- [V2] Plan aceptado por Angel y Roberto el 2026-11-05 (4 incrementos, fichas, excepción de prioridad de HU-01, HU-05 y HU-17 y limitación de independencia de la validación; `documentacion/plan_incrementos.md`). Ya está publicado: commit `3e11b46` en `main` y tag `v0.1.0` en GitHub (2026-11-05).
+- [V2] Anotar en la sección 12 del plan el hash del commit publicado (`3e11b46`), que quedó como "se anota en la entrega". Los PDF `RutaMx_Entrega_Documentacion_Completa.pdf` y `RutaMX_Plan_de_Incrementos.pdf` siguen sin commit.
 - [V2] Pasar la duración de cada clase y cuánto trabaja el equipo fuera de clase (4 clases de trabajo y 2 de exposición): con eso se calibra el tamaño de los incrementos. El tamaño actual (12, 9, 10 y 13 RF) es estimación, no medición.
 - [V2] Consultar con el profesor o el cliente P-01 (cómo se publica una ruta), P-02 (proveedor de mapas) y P-03 (valores de categoría y región). P-01 y P-03 bloquean el catálogo del v0.4.0; P-02 decide el mapa del v0.5.0.
 - [V2] Fases B y C por incremento: tareas, un commit y un push por tarea con el formato `[V2] tipo(RF-XX): descripción`, regresión, contraste y tag. Primero el v0.2.0 (Planear con IA).
