@@ -1,6 +1,6 @@
 # Lo que ya está hecho — RutaMX
 
-Última actualización: 2026-11-03
+Última actualización: 2026-11-05
 
 RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
@@ -861,3 +861,16 @@ tres operaciones": no es el módulo completo.
   cumplimiento de RF-38 ni RF-44 de extremo a extremo.
 - Evidencia y limitaciones: `documentacion/Practica_M09_Evidencia_Paso4.md` (estado de T-01 a T-12, cómo recrear el
   Postgres temporal y salida completa en `documentacion/Practica_M09_salida_pytest.txt`). Decisiones en `03`.
+
+## [V2] Plan de incrementos, fase A (2026-11-05)
+
+Práctica del profesor "Práctica guiada: plan de incrementos" (4 de noviembre de 2026). Solo documentación: no se tocó código ni la base de datos.
+Estado: **documentos listos para revisión del equipo; la aceptación de Angel y Roberto sigue pendiente** (ninguna ficha está aprobada).
+
+- `documentacion/Consigna_Plan_Incremental.md`: texto de la consigna (el PDF del profesor está fuera del repo).
+- `documentacion/A1_Verificacion_Especificacion.md` y `A1_Conteo_Independiente_Codex.md`: conteo de la especificación v2.0 por dos IA por separado, con el mismo resultado: 44 RF, 33 RNF, 23 HU y **93 criterios** (el 92 del control de documento es de la versión 1.0; la v2.0 agregó CA-12.5).
+- `documentacion/A2_Inventario_Requerimientos.md`: inventario de 44 RF y 33 RNF con dependencias citadas. Todo en "Pendiente": el incremento 1 es solo M-09 (decisión de Angel).
+- `documentacion/A3_Propuesta_Incrementos.md` y `A4_Validacion_Plan.md`: propuesta de 4 incrementos (v0.2.0 a v0.5.0) y su validación cruzada. En la validación, Codex corrió su verificación reproducible y la revisé: 44 RF y 33 RNF asignados una sola vez y cero dependencias fuera de orden. Declara que no fue una conversación nueva.
+- `documentacion/plan_incrementos.md`: plan final, aprobado por Angel y Roberto el 2026-11-05, con fichas, matriz de trazabilidad inicial, registro de cambios y bitácora de IA.
+- Flujo: Claude analizó y documentó; Codex hizo el conteo ciego y la validación; cada paso lo revisó la otra IA. Cada revisión encontró errores reales que se corrigieron (por ejemplo, yo había escrito "seis operaciones y 124 pruebas" de M-09 tomándolo de un relevo sin verificar; el repo tiene tres operaciones).
+- **No se hizo todavía:** el tag `v0.1.0`, el commit del plan y el push (los ejecuta Angel, comandos en la sección 12 del plan). En esta fase documental no se verificó la app real ni se corrieron pruebas de la app; M-09 y lo nuevo de v2 siguen en "probado en simulación (2026-11-03)" y sin verificar en uso real. Esto no cambia la evidencia histórica de pruebas en vivo de la v1 registrada arriba.

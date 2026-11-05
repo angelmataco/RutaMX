@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-11-03
+Última actualización: 2026-11-05
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -212,3 +212,12 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 - [V2] Regresión de la v1 contra una base aislada y verificación en navegador de M-09: sin verificar (2026-11-03).
 - [V2] Quedan para otro incremento T-04/T-05, autor y visibilidad, actualización (CA-21.4/D-11), copia y regresión de v1. Siguen P-01 y P-03.
 
+## [V2] Después del plan de incrementos (2026-11-05)
+
+- [V2] Plan aceptado por Angel y Roberto el 2026-11-05 (4 incrementos, fichas, excepción de prioridad de HU-01, HU-05 y HU-17 y limitación de independencia de la validación; `documentacion/plan_incrementos.md`). Falta que Angel suba el commit y el tag `v0.1.0` con `git push` y que se anote la evidencia (URL y hash) en la sección 12 del plan.
+- [V2] Publicar el incremento 1: tag `v0.1.0` sobre `main`, commit de los documentos del plan y push. Lo ejecuta Angel (comandos en la sección 12 del plan). El PDF `RutaMx_Entrega_Documentacion_Completa.pdf` sigue sin commit.
+- [V2] Pasar la duración de cada clase y cuánto trabaja el equipo fuera de clase (4 clases de trabajo y 2 de exposición): con eso se calibra el tamaño de los incrementos. El tamaño actual (12, 9, 10 y 13 RF) es estimación, no medición.
+- [V2] Consultar con el profesor o el cliente P-01 (cómo se publica una ruta), P-02 (proveedor de mapas) y P-03 (valores de categoría y región). P-01 y P-03 bloquean el catálogo del v0.4.0; P-02 decide el mapa del v0.5.0.
+- [V2] Fases B y C por incremento: tareas, un commit y un push por tarea con el formato `[V2] tipo(RF-XX): descripción`, regresión, contraste y tag. Primero el v0.2.0 (Planear con IA).
+- [V2] Para el v0.3.0: M-09 debe sumar actualizar al volver a guardar (D-11 y CA-21.4); para el v0.5.0, copiar. Eliminar rutas no está en la v2.0 y no se planea.
+- [V2] Sigue pendiente ejecutar el cambio de esquema de las siete columnas que Angel autorizó el 2026-11-03 (script, prueba en copia y respaldo). Cualquier otro cambio de esquema necesita nueva aprobación.

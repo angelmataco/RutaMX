@@ -1,6 +1,18 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-11-03
+Última actualización: 2026-11-05
+
+## [V2] Decisiones del plan de incrementos (2026-11-05)
+
+- **Especificación única:** `documentacion/RutaMx_Documento_Requerimientos_v2.0.pdf` (versión 2.0, 8 de octubre de 2026). Totales vigentes: 44 RF, 33 RNF, 23 HU y 93 CA. El `RutaMx_Entrega_Documentacion_Completa.pdf` es un compilado y no es la fuente.
+- **Reparto de IA invertido respecto a la consigna (decisión de Angel):** Claude hace el análisis y la planeación (lo que la consigna asigna a ChatGPT); Codex desarrolla y prueba (lo que la consigna asigna a Claude); cada paso lo revisa la otra IA y el equipo decide y verifica.
+- **Incremento 1 = solo M-09** (decisión de Angel, 2026-11-05). v1 es el sitio existente reutilizable y no cuenta como RF cumplidos; por eso los 44 RF y 33 RNF quedan "Pendiente".
+- **Calendario:** 3 semanas; 4 clases de trabajo y 2 de exposición (aclaración de Angel). Se propone **4 incrementos** como escenario condicionado, con alternativa de 3; la viabilidad no está demostrada porque no se conoce la duración de clase ni el trabajo fuera de clase.
+- **Ubicación:** el plan vive en `documentacion/`, no en `docs/` como dice la consigna.
+- **Commits:** `[V2] tipo(RF-XX): descripción`, un commit y un push por tarea; entradas de bitácora y documentos nuevos también con `[V2]`.
+- **Actualizar al volver a guardar entra al v0.3.0** (D-11 y CA-21.4), por observación de Codex; eliminar rutas queda fuera. **RNF-32 se adelanta al v0.2.0** porque RNF-06 y RNF-07 dependen del entorno documentado.
+- **Cobertura parcial:** RF-18, RF-24 y RF-37 se asignan al v0.2.0 pero se marcan terminados solo al cerrar el v0.5.0; un tag no afirma RF completos si su ficha declara cobertura parcial.
+- **Lección:** un relevo de otra sesión no es evidencia del repo. Hay que verificar en el checkout antes de afirmar qué existe (el error de "seis operaciones" lo detectó la revisión de Codex).
 
 ## [V2] Orden M-09 v2: decisiones del equipo (2026-11-03)
 
@@ -646,4 +658,4 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
 - **Nota:** el primer commit de la rama (`1b37f4b`) solo trae los movimientos; los imports están en `08c611a`. No arranca por sí solo.
 - **Nota:** las pruebas de v1 se conectan a la base real de Supabase (crean y borran un usuario "Prueba"). Sale de la regla de pruebas
   que no tocan lo real; queda como pendiente de decidir.
-
+- [V2] **Plan de incrementos aprobado (2026-11-05):** Angel y Roberto aceptaron los 4 incrementos (v0.2.0 a v0.5.0), las fichas, la excepción de prioridad de HU-01, HU-05 y HU-17 y la limitación de independencia de A4. El tag `v0.1.0` se creó en local sobre el estado de M-09 antes del commit de documentos; el `git push` lo hace Angel.
