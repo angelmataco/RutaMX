@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-11-05
+Última actualización: 2026-11-10
 
 ## [V2] Decisiones del plan de incrementos (2026-11-05)
 
@@ -659,3 +659,5 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
 - **Nota:** las pruebas de v1 se conectan a la base real de Supabase (crean y borran un usuario "Prueba"). Sale de la regla de pruebas
   que no tocan lo real; queda como pendiente de decidir.
 - [V2] **Plan de incrementos aprobado (2026-11-05):** Angel y Roberto aceptaron los 4 incrementos (v0.2.0 a v0.5.0), las fichas, la excepción de prioridad de HU-01, HU-05 y HU-17 y la limitación de independencia de A4. El tag `v0.1.0` se creó en local sobre el estado de M-09 antes del commit de documentos; el `git push` lo hace Angel.
+
+- [V2] **D-03 completo en M-05, con la fuente geográfica inyectada (2026-11-10):** la primera versión validaba solo la forma y aceptaba lugares inexistentes y origen igual a destino; Codex lo detectó al leer el PDF v2.0 (D-03, pág. 9, y CA-19.3). Ahora M-05 exige lugares identificables con id y coordenadas válidas, pide confirmación si origen y destino son iguales o hay paradas repetidas, y falla de forma segura sin verificador o con el servicio caído. El verificador se inyecta (no se importa de v1) para que M-05 no conozca al proveedor geográfico (M-08). Los topes de 30 paradas y 10 intereses son técnicos, no de la especificación.

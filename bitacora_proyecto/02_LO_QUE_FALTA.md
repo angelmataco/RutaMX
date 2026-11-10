@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-11-05
+Última actualización: 2026-11-10
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -200,7 +200,6 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
   probado primero en una copia y con respaldo previo.
 - [V2] Completar M-09 (ya tiene crear, obtener y listar, ver `01`): faltan actualizar la misma ruta (CA-21.4/D-11) y copiar
   (la original no cambia, sin sesión no se crea nada), con pruebas en simulación y datos ficticios.
-- [V2] Elegir el segundo módulo a implementar (el plan propone M-05 Gestor de rutas, que consume M-09).
 - Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.
 
 ## Después de la reorganización y del plan de M-09 (2026-10-29)
@@ -214,10 +213,17 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 
 ## [V2] Después del plan de incrementos (2026-11-05)
 
+- [V2] Incremento v0.2.0 (2026-11-10): falta comprobar M-07 con credenciales válidas de un proveedor real y el flujo integrado en navegador. Chromium no pudo arrancar por sandbox de macOS (Permission denied 1100); falta verificar visualmente 1280×900 y 375×812, errores, confirmaciones y efectos. El caso opcional está en `v2/tests/test_interfaz_planear.py::test_navegador_escritorio_y_movil`. RF-18, RF-24 y RF-37 quedan en cobertura parcial hasta el v0.5.0.
+
 - [V2] Plan aceptado por Angel y Roberto el 2026-11-05 (4 incrementos, fichas, excepción de prioridad de HU-01, HU-05 y HU-17 y limitación de independencia de la validación; `documentacion/plan_incrementos.md`). Ya está publicado: commit `3e11b46` en `main` y tag `v0.1.0` en GitHub (2026-11-05).
 - [V2] Anotar en la sección 12 del plan el hash del commit publicado (`3e11b46`), que quedó como "se anota en la entrega". Los PDF `RutaMx_Entrega_Documentacion_Completa.pdf` y `RutaMX_Plan_de_Incrementos.pdf` siguen sin commit.
-- [V2] Pasar la duración de cada clase y cuánto trabaja el equipo fuera de clase (4 clases de trabajo y 2 de exposición): con eso se calibra el tamaño de los incrementos. El tamaño actual (12, 9, 10 y 13 RF) es estimación, no medición.
+- [V2] Pasar cuánto trabaja el equipo fuera de clase (la clase dura 1 h 30 min, dato de Angel del 2026-11-10; 4 clases de trabajo y 2 de exposición): con eso se calibra el tamaño de los incrementos. El tamaño actual (12, 9, 10 y 13 RF) es estimación, no medición.
 - [V2] Consultar con el profesor o el cliente P-01 (cómo se publica una ruta), P-02 (proveedor de mapas) y P-03 (valores de categoría y región). P-01 y P-03 bloquean el catálogo del v0.4.0; P-02 decide el mapa del v0.5.0.
+- [V2] Revisar a ojo `/v2/planear` con `scripts/demo_planear_v2.py` (escritorio y 375 px) y anotar la fecha: sin verificar (2026-11-10).
+- [V2] Conectar la IA real (falta `ANTHROPIC_API_KEY` e `IA_V2_MODELO`; Angel no tiene llave): RF-21 y RF-36 siguen probados solo en simulación, sin verificar (2026-11-10).
+- [V2] Antes de publicar, exigir una `SECRET_KEY` real (config.py usa un valor de desarrollo) y poner tope propio a `/v2/planear/reiniciar`.
 - [V2] Fases B y C por incremento: tareas, un commit y un push por tarea con el formato `[V2] tipo(RF-XX): descripción`, regresión, contraste y tag. Primero el v0.2.0 (Planear con IA).
 - [V2] Para el v0.3.0: M-09 debe sumar actualizar al volver a guardar (D-11 y CA-21.4); para el v0.5.0, copiar. Eliminar rutas no está en la v2.0 y no se planea.
 - [V2] Sigue pendiente ejecutar el cambio de esquema de las siete columnas que Angel autorizó el 2026-11-03 (script, prueba en copia y respaldo). Cualquier otro cambio de esquema necesita nueva aprobación.
+
+- [V2] Regresión integrada de la app compartida con v2: v1 sigue sin probarse en este turno porque su suite escribe en Supabase; las 19 pruebas de integración de base_datos se omiten sin PostgreSQL desechable (`RUTAMX_TEST_DB_URL`).
