@@ -1,0 +1,79 @@
+{% from 'partials/icons.html' import icono %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="rutamx-csrf" content="{{ csrf }}">
+  <title>Planear con IA — RutaMX</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo-emblema.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/efectos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('planear_v2.static', filename='planear_ia.css') }}">
+</head>
+<body class="planear-pagina">
+{% include 'partials/iconos_sprite.html' %}
+<a class="planear-saltar" href="#mensaje">Ir a la conversación</a>
+<div class="navbar-espacio" data-navbar-espacio>
+  <header class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__brand" href="/" aria-label="RutaMX, volver al inicio">
+        <img class="navbar__logo" src="{{ url_for('static', filename='img/logo-emblema.svg') }}" width="48" height="48" alt="">
+        <span class="navbar__marca"><span class="navbar__title">Ruta<span class="navbar__title-mx">MX</span></span><span class="navbar__lema">Road trips México</span></span>
+      </a>
+      <nav class="navbar__links" aria-label="Planeación"><a href="#ruta">Conversación</a><a href="#itinerario">Itinerario</a></nav>
+      <div class="navbar__auth"><a class="btn btn--ghost" href="/">Volver al inicio</a></div>
+    </div>
+    <div class="navbar__progreso" data-navbar-progreso></div>
+  </header>
+</div>
+<main class="container planear-contenedor" data-planear>
+  <header id="inicio" class="planear-intro">
+    <p class="planear-ceja">TU PRÓXIMA ESCAPADA</p>
+    <h1>Un viaje empieza<br>con una <em>conversación.</em></h1>
+    <p>Cuéntanos de dónde sales, a dónde quieres ir y cuántos días tienes. Tu itinerario irá tomando forma aquí.</p>
+  </header>
+  {% if demostracion %}<p class="planear-aviso" role="status">Modo demostración: respuestas de prueba</p>{% endif %}
+  {% if error %}<p class="planear-aviso" role="alert">{{ error }}</p>{% endif %}
+  <div class="planear-pestanas" role="tablist" aria-label="Vista de planeación">
+    <button type="button" id="tab-chat" role="tab" aria-controls="ruta" aria-selected="true" tabindex="0">Conversación</button>
+    <button type="button" id="tab-itinerario" role="tab" aria-controls="itinerario" aria-selected="false" tabindex="-1">Itinerario <span data-novedad hidden>actualizado</span></button>
+  </div>
+  <div class="planear-columnas">
+    <section id="ruta" class="card section planear-panel planear-panel--activo" aria-labelledby="titulo-chat">
+      <div class="planear-cabecera"><div><p class="planear-ceja">PLANEAMOS CONTIGO</p><h2 id="titulo-chat">Planear con IA</h2></div>{{ icono('ruta', 28) }}</div>
+      <div class="planear-mensajes" role="log" aria-live="polite" aria-label="Conversación del viaje" data-mensajes></div>
+      <div class="planear-espera" data-espera hidden><div data-orbe></div><p role="status">Preparando tu propuesta…</p></div>
+      <p class="planear-error" role="alert" data-error hidden></p>
+      <form class="planear-formulario" data-formulario>
+        <label for="mensaje">Describe tu viaje</label>
+        <textarea id="mensaje" name="mensaje" maxlength="1000" rows="3" required placeholder="Quiero salir de León e ir a Oaxaca durante cuatro días…" {% if error %}disabled{% endif %}></textarea>
+        <div class="planear-acciones"><span class="card__note">Origen, destino y días. Lo demás es opcional.</span><button class="btn btn--primary" type="submit" data-enviar {% if error %}disabled{% endif %}>Enviar {{ icono('siguiente', 18) }}</button></div>
+      </form>
+      <button class="planear-reiniciar" type="button" data-reiniciar {% if error %}disabled{% endif %}>Iniciar otra conversación</button>
+    </section>
+    <section id="itinerario" class="card section planear-panel planear-itinerario" aria-labelledby="titulo-itinerario">
+      <p class="planear-ceja">EL CAMINO QUE IMAGINAS</p><h2 id="titulo-itinerario">Tu itinerario</h2>
+      <p role="status" class="planear-actualizado" data-actualizado hidden>Itinerario actualizado</p>
+      <div data-itinerario><div class="planear-vacio">{{ icono('ruta', 48) }}<h3>Tu itinerario aparecerá aquí</h3><p>Empieza contándonos tu viaje. Cuando esté listo, podrás consultar cada parada.</p></div></div>
+      <p class="card__note planear-fuente">Lugares localizados con <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. No se verifican horarios ni disponibilidad.</p>
+    </section>
+  </div>
+</main>
+<dialog class="card planear-confirmacion" aria-labelledby="titulo-confirmacion" data-confirmacion>
+  <h2 id="titulo-confirmacion">Confirma tu recorrido</h2><p data-pregunta></p>
+  <div class="planear-acciones"><button class="btn btn--ghost" type="button" data-no>No, cambiar</button><button class="btn btn--primary" type="button" data-si>Sí, confirmo</button></div>
+</dialog>
+<footer class="pie-creditos"><div class="container"><p>Efectos visuales adaptados de <a href="https://rareui.com" target="_blank" rel="noopener">Rare UI</a>.</p></div></footer>
+<script type="application/json" id="estado-inicial">{{ estado|tojson }}</script>
+<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/secciones.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/orbe.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/gooey.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/pildora.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/spotlight.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/fondo.js') }}"></script>
+<script src="{{ url_for('planear_v2.static', filename='planear_ia.js') }}" defer></script>
+</body>
+</html>
