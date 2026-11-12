@@ -1069,6 +1069,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Restaura una ruta guardada: rellena el formulario y muestra mapa,
   // resumen e itinerario tal como se guardaron.
   function abrirRutaGuardada(ruta) {
+    // [V2] Las rutas guardadas por Planear con IA de v2 no traen distancia ni
+    // tiempo: se abren en la página de v2 en vez de dibujar una vista parcial.
+    if (ruta.resumen && ruta.resumen.rutamx_v2) {
+      window.location.assign("/v2/rutas");
+      return;
+    }
     const form = document.getElementById("hero-form");
     form.querySelector('[name="origen"]').value = ruta.origen || "";
     form.querySelector('[name="destino"]').value = ruta.destino || "";

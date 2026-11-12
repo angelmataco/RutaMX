@@ -124,7 +124,7 @@ Solo se cuentan los que tienen una prueba concreta. El plan asigna al v0.3.0 RNF
 
 - **Incremento = v0.3.0**, el segundo de los cuatro de clase.
 - **Sin migración de esquema:** los datos de v2 se guardan en `resumen.rutamx_v2`.
-- **Compatibilidad con v1:** `resumen` también trae `origen.nombre` y `destino.nombre`; se agregaron los campos que exige el lector de v1; abrir en v1 una ruta de v2 está sin verificar (2026-11-12) y puede dar una vista parcial.
+- **Compatibilidad con v1:** `resumen` también trae `origen.nombre` y `destino.nombre`. Con autorización de Angel (2026-11-12), `abrirRutaGuardada` de v1 redirige a `/v2/rutas` si la ruta es de v2; programado, sin verificar en navegador (2026-11-12).
 - **D-11 interpretado:** misma fila solo con el mismo usuario y el mismo viaje.
 - **Iniciar sesión desde Planear:** en otra pestaña, porque el login vive en v1, que no se toca.
 - **Aclaración:** el siguiente mensaje es su respuesta; para otro tema se reinicia.
