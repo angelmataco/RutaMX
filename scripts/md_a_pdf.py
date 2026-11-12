@@ -5,8 +5,7 @@ Uso (desde la raiz del proyecto; primero se escribe el .md y luego se genera el 
 
 Soporta titulos (#, ##, ###), parrafos, vinetas, listas numeradas, tablas, bloques
 de codigo y **negritas**/`codigo` en linea. Usa fuentes estandar: sin emojis ni
-caracteres fuera de Latin-1. ReportLab no esta en requirements.txt: solo se usa
-para generar documentos.
+caracteres fuera de Latin-1. Requiere reportlab (ya esta en requirements.txt).
 """
 import re
 import sys
