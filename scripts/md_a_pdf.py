@@ -4,7 +4,7 @@ Uso (desde la raiz del proyecto; primero se escribe el .md y luego se genera el 
     venv/bin/python scripts/md_a_pdf.py documentacion/Reporte_X.md documentacion/Reporte_X.pdf
 
 Soporta titulos (#, ##, ###), parrafos, vinetas, listas numeradas, tablas, bloques
-de codigo y **negritas**/`codigo` en linea. Usa fuentes estandar: sin emojis ni
+de codigo, citas con > (recuadro) y **negritas**/`codigo` en linea. Usa fuentes estandar: sin emojis ni
 caracteres fuera de Latin-1. Requiere reportlab (ya esta en requirements.txt).
 """
 import re
@@ -28,6 +28,9 @@ h1 = ParagraphStyle("h1", parent=base["Heading1"], fontSize=16, leading=19, spac
 h2 = ParagraphStyle("h2", parent=base["Heading2"], fontSize=12.5, spaceBefore=12, textColor=colors.HexColor("#1f3a5f"))
 h3 = ParagraphStyle("h3", parent=base["Heading3"], fontSize=10.5, spaceBefore=8)
 vineta = ParagraphStyle("v", parent=normal, leftIndent=14, bulletIndent=3)
+recuadro = ParagraphStyle("rec", parent=normal, fontSize=10.5, leading=14.5, backColor=colors.HexColor("#e8f0e4"),
+                          borderColor=colors.HexColor("#4a7c3a"), borderWidth=1, borderPadding=7,
+                          leftIndent=8, rightIndent=8, spaceBefore=6, spaceAfter=10)
 codigo = ParagraphStyle("code", fontName="Courier", fontSize=7.5, leading=9.5,
                         backColor=colors.HexColor("#f1f1f1"), leftIndent=4, rightIndent=4, borderPadding=4)
 
@@ -62,6 +65,12 @@ while i < len(lineas):
         hist.append(Paragraph(inline(l[3:]), h2)); i += 1
     elif l.startswith("# "):
         hist.append(Paragraph(inline(l[2:]), h1)); i += 1
+    elif l.startswith(">"):
+        partes = []
+        while i < len(lineas) and lineas[i].startswith(">"):
+            partes.append(inline(lineas[i].lstrip("> ").strip()))
+            i += 1
+        hist.append(Paragraph("<br/><br/>".join(partes), recuadro))
     elif l.startswith("|"):
         filas = []
         while i < len(lineas) and lineas[i].startswith("|"):
@@ -72,7 +81,8 @@ while i < len(lineas):
         datos = [[Paragraph(inline(c), celda_h if k == 0 else celda) for c in f + [""] * (n - len(f))]
                  for k, f in enumerate(filas)]
         ancho = letter[0] - 3.6 * cm
-        tabla = Table(datos, colWidths=[ancho / n] * n, repeatRows=1)
+        pesos = [max(11, min(60, max(len(f[k]) if k < len(f) else 0 for f in filas))) for k in range(n)]
+        tabla = Table(datos, colWidths=[ancho * w / sum(pesos) for w in pesos], repeatRows=1)
         tabla.setStyle(TableStyle([
             ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e8edf3")),

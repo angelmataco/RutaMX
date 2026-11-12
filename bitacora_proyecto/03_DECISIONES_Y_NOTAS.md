@@ -686,3 +686,14 @@ El modal de v1 conserva su asignación determinista por propósito y hora. En `/
 - **Posición de la parada:** M-07 la cuenta desde 0 y `GestorRutas.agregar_parada` desde 1; el orquestador usa el índice desde 0 sobre la propuesta. Hay pruebas del orden, pero conviene unificar la convención.
 - **Revisión cruzada, hallazgos reales corregidos:** (1) tras fallar la confirmación de una modificación, el siguiente mensaje regeneraba la ruta y se perdían las paradas (paso 4); (2) las rutas de v2 rompían «Mis rutas» de v1 al abrirse, y re-guardar sin nombre borraba el personalizado (paso 5); (3) abrir una ruta con dos confirmaciones de D-03 se rechazaba tras la primera (paso 6); (4) la pantalla nueva tenía enlaces internos sin destino y un diálogo sin uso (paso 7).
 - **Sin PostgreSQL desechable en esta sesión:** el sistema rechazó el comando que lo levantaba y no se buscó otra vía; las pruebas de integración de M-09 quedaron omitidas.
+
+## [V2] Plantilla del reporte de avance de cada incremento (2026-11-12)
+
+El profesor calificó el reporte del v0.2.0 con 18% de 30% porque no veía con claridad lo que pide. Desde el v0.2.0 y en todos los incrementos siguientes, el reporte (`documentacion/Reporte_Avance_Incremento_vX.Y.Z.md` y su PDF) lleva, en este orden y con una tabla «Qué contiene este reporte» al inicio:
+
+1. **Incrementos desarrollados:** tabla de los 5 incrementos con su estado y lo construido en el actual.
+2. **Planeado contra real en tiempos:** tabla con planeado, real y diferencia (clase de 90 min), la hora de cada hito y el alcance planeado contra real.
+3. **Porcentaje de avance del proyecto:** recuadro con una sola cifra (RF completos de 44, probados en simulación), cuánto sumó el incremento y cuánto está verificado en uso real; tabla de cómo ha crecido el avance.
+4. **Diferencias con la app del incremento anterior:** qué podía hacer el usuario antes y ahora, qué cambió por dentro (RF, pruebas, módulos, archivos, esquema) y qué sigue igual.
+
+Lo demás (revisión cruzada, decisiones, lo no comprobado, cómo reproducir y siguiente paso) va después. Primero se escribe el `.md` y luego se genera el PDF con `venv/bin/python scripts/md_a_pdf.py <reporte>.md <reporte>.pdf`. Los reportes del v0.2.0 y v0.3.0 se reescribieron con esta plantilla.
