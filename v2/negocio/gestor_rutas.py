@@ -1,6 +1,6 @@
 """M-05 Gestor de rutas: ruta estructurada como fuente única, D-03 y atomicidad.
 
-Responsabilidades (incremento v0.2.0, solo creación de la ruta):
+Responsabilidades (v0.2.0: creación de la ruta; v0.3.0: agregar una parada):
 - Guardar en memoria la ruta estructurada de una conversación (D-08, D-09):
   `origen`, `destino`, `duracion_dias`, `intereses` y `paradas` ordenadas
   (pueden ir vacías, RF-22). Es la única fuente de verdad (RF-24).
@@ -203,6 +203,37 @@ class GestorRutas:
     def proponer(self, propuesta, confirmaciones=()):
         """Acepta la propuesta inicial de la IA si es una ruta válida."""
         return self.aplicar(lambda _anterior: propuesta, confirmaciones)
+
+    def agregar_parada(self, nombre, descripcion="", posicion=None, confirmaciones=()):
+        """Agrega una parada (RF-25, RF-26) y devuelve la ruta nueva.
+
+        `posicion` es el lugar que ocupará, empezando en 1; `None` la pone al
+        final. Pasa por `aplicar`, así que la ruta completa se vuelve a validar
+        con D-03 y, si algo falla (posición inválida, lugar no identificado,
+        servicio caído), la ruta vigente queda exactamente igual (CA-12.5,
+        CA-20.4). El itinerario y el mapa se derivan de la ruta nueva.
+        """
+        self._exigir_ruta()
+        parada = {
+            "nombre": limpiar_texto(nombre, "parada"),
+            "descripcion": limpiar_texto(
+                descripcion, "descripción de la parada", obligatorio=False) or "",
+        }
+
+        def transformacion(copia):
+            paradas = copia["paradas"]
+            if posicion is None:
+                indice = len(paradas)
+            elif (isinstance(posicion, int) and not isinstance(posicion, bool)
+                    and 1 <= posicion <= len(paradas) + 1):
+                indice = posicion - 1
+            else:
+                raise ErrorValidacion(
+                    f"La posición de la parada debe estar entre 1 y {len(paradas) + 1}.")
+            paradas.insert(indice, parada)
+            return copia
+
+        return self.aplicar(transformacion, confirmaciones)
 
     # --- Vistas derivadas de la ruta única (RF-23, RF-43) ---
 

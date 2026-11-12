@@ -1,5 +1,48 @@
 /* M-03: el servidor es la autoridad; el navegador solo representa su estado. */
 document.addEventListener("DOMContentLoaded", () => {
+  const sesion = document.querySelector('[data-sesion]');
+  document.querySelector('[data-cerrar-sesion]')?.addEventListener('click', () => sesion.close());
+  const guardadas = document.querySelector('[data-rutas-guardadas]');
+  if (guardadas) {
+    const estado = guardadas.querySelector('[data-lista-estado]');
+    const lista = guardadas.querySelector('[data-lista-rutas]');
+    const csrfLista = document.querySelector('meta[name="rutamx-csrf"]').content;
+    let abriendo = false;
+    fetch('/v2/rutas/lista', {credentials: 'same-origin'}).then(async (respuesta) => {
+      const datos = await respuesta.json();
+      if (datos.requiere_sesion) sesion.showModal();
+      if (!respuesta.ok) throw new Error(datos.error || 'No se pudieron consultar tus rutas.');
+      estado.textContent = datos.rutas.length ? 'Elige una ruta para continuar.' : 'Todavía no tienes rutas guardadas.';
+      datos.rutas.forEach((ruta) => {
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'ruta-burbuja';
+        boton.textContent = `${ruta.nombre}: ${ruta.origen} → ${ruta.destino} · ${ruta.paradas} paradas`;
+        boton.disabled = !ruta.compatible;
+        if (!ruta.compatible) boton.textContent += ' · Disponible en el inicio';
+        boton.addEventListener('click', async () => {
+          if (abriendo) return;
+          abriendo = true;
+          boton.disabled = true;
+          estado.textContent = 'Abriendo tu ruta…';
+          try {
+            const respuesta = await fetch('/v2/planear/abrir', {
+              method: 'POST', credentials: 'same-origin',
+              headers: {'Content-Type': 'application/json', 'X-RutaMX-CSRF': csrfLista},
+              body: JSON.stringify({id: ruta.id}),
+            });
+            const datos = await respuesta.json();
+            if (datos.requiere_sesion) sesion.showModal();
+            if (!respuesta.ok) throw new Error(datos.error || 'No se pudo abrir la ruta.');
+            location.assign('/v2/planear');
+          } catch (fallo) {
+            estado.textContent = fallo instanceof TypeError || fallo instanceof SyntaxError ? 'No se pudo conectar con RutaMX.' : fallo.message;
+          } finally { abriendo = false; boton.disabled = false; }
+        });
+        lista.append(boton);
+      });
+    }).catch((fallo) => { estado.textContent = fallo instanceof TypeError || fallo instanceof SyntaxError ? 'No se pudo conectar con RutaMX.' : fallo.message; });
+  }
   const raiz = document.querySelector("[data-planear]");
   if (!raiz) return;
   const mensajes = raiz.querySelector("[data-mensajes]");
@@ -15,6 +58,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const si = dialogo.querySelector("[data-si]");
   const no = dialogo.querySelector("[data-no]");
   const csrf = document.querySelector('meta[name="rutamx-csrf"]').content;
+  const guardar = raiz.querySelector('[data-guardar]');
+  const avisoGuardado = raiz.querySelector('[data-guardado]');
   const tabs = [...raiz.querySelectorAll('[role="tab"]')];
   const movil = matchMedia("(max-width: 899px)");
   let ocupado = false;
@@ -81,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reiniciar.disabled = valor;
     si.disabled = valor;
     no.disabled = valor;
+    if (guardar) guardar.disabled = valor;
     formulario.setAttribute("aria-busy", String(valor));
     espera.hidden = !valor;
     if (valor) {
@@ -122,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function pintar(estado) {
     if (!estado) return;
+    if (guardar) guardar.hidden = !estado.ruta;
     if (estado.mensajes.length < cantidadMensajes) {
       mensajes.replaceChildren();
       cantidadMensajes = 0;
@@ -153,8 +200,13 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(datos), credentials: "same-origin",
       });
       const estado = await respuesta.json();
+      if (estado.requiere_sesion) sesion.showModal();
       if (!respuesta.ok) throw new Error(estado.error || "No se pudo procesar la solicitud. Intenta de nuevo.");
-      pintar(estado);
+      if (accion === 'guardar') avisoGuardado.textContent = estado.mensaje;
+      else {
+        avisoGuardado.textContent = '';
+        pintar(estado);
+      }
       return true;
     } catch (fallo) {
       error.textContent = fallo instanceof TypeError || fallo instanceof SyntaxError
@@ -177,6 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     campo.value = "";
     solicitar("mensaje", { mensaje });
   });
+  guardar?.addEventListener('click', () => solicitar('guardar', {nombre: null}));
   function confirmar(acepta) {
     if (ocupado) return;
     dialogo.close();

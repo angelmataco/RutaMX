@@ -2,7 +2,8 @@
 
 (La v1 conserva su propio acceso, `guardar_ruta` y `listar_rutas`; no se toca.)
 
-Operaciones: `crear_ruta`, `obtener_ruta` y `listar_rutas_de_usuario`.
+Operaciones: `crear_ruta`, `obtener_ruta`, `listar_rutas_de_usuario` y
+`actualizar_ruta` (guardar de nuevo la misma ruta, D-11 y CA-21.4).
 
 Responsabilidades:
 - Guardar y leer rutas asociadas a un dueño (`usuario_id`), con consultas que
@@ -11,7 +12,7 @@ Responsabilidades:
 - Cada escritura controla su propia transacción (commit o rollback).
 
 Lo que NO hace (es de otros módulos): reglas de negocio D-03 (M-05),
-autenticación (M-10), actualizar/copiar/borrar rutas.
+autenticación (M-10), copiar/borrar rutas.
 
 Transacciones: cada escritura usa una sesión PROPIA (no `db.session`) y hace
 commit o rollback por su cuenta. Así nunca confirma cambios pendientes ajenos,
@@ -105,6 +106,50 @@ def crear_ruta(datos_ruta, usuario_id):
                 raise
     except Exception as error:
         raise ErrorRepositorio("No se pudo guardar la ruta.") from error
+
+
+def actualizar_ruta(ruta_id, datos_ruta, usuario_id):
+    """Reemplaza los datos de una ruta ya guardada por `usuario_id` (D-11).
+
+    Es la MISMA fila (mismo `id` y dueño): no se crea otra. Devuelve el
+    diccionario actualizado, o `None` si la ruta no existe o es de otro
+    usuario (en ese caso no se toca nada). Todo o nada: si algo falla se hace
+    rollback y la versión anterior queda intacta (CA-21.4).
+    """
+    _validar_usuario_id(usuario_id)
+    if not _es_entero(ruta_id):
+        raise ErrorRepositorio("El identificador de la ruta no es válido.")
+    _validar_datos_ruta(datos_ruta)
+    try:
+        with _abrir_sesion() as sesion:
+            try:
+                ruta = sesion.execute(
+                    select(RutaGuardada)
+                    .where(
+                        RutaGuardada.id == ruta_id,
+                        RutaGuardada.usuario_id == usuario_id,
+                    )
+                    .with_for_update()
+                ).scalar_one_or_none()
+                if ruta is None:
+                    sesion.rollback()
+                    return None
+                ruta.nombre = datos_ruta["nombre"]
+                ruta.origen = datos_ruta["origen"]
+                ruta.destino = datos_ruta["destino"]
+                ruta.presupuesto = datos_ruta.get("presupuesto")
+                ruta.intereses = datos_ruta.get("intereses") or []
+                ruta.resumen = datos_ruta.get("resumen") or {}
+                ruta.paradas = datos_ruta["paradas"]
+                sesion.flush()
+                actualizada = _a_diccionario(ruta)
+                sesion.commit()
+                return actualizada
+            except Exception:
+                sesion.rollback()
+                raise
+    except Exception as error:
+        raise ErrorRepositorio("No se pudo actualizar la ruta.") from error
 
 
 def obtener_ruta(ruta_id, usuario_id):

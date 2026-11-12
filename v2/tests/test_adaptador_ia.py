@@ -148,3 +148,60 @@ def test_fabrica_sdk_con_limite_y_sin_reintentos(monkeypatch):
     assert isinstance(ia, AdaptadorAnthropic)
     constructor.assert_called_once_with(api_key="llave-ficticia", timeout=30.0, max_retries=0)
     constructor.return_value.messages.create.assert_not_called()
+
+
+@pytest.mark.parametrize('respuesta,esperada', [
+    ({'accion': 'agregar_parada', 'nombre': ' X ', 'posicion': 0, 'latitud': 45},
+     {'accion': 'agregar_parada', 'nombre': 'X', 'descripcion': '', 'posicion': 0}),
+    ({'accion': 'aclarar', 'pregunta': ' ¿En dónde? '},
+     {'accion': 'aclarar', 'pregunta': '¿En dónde?'}),
+    ({'accion': 'no_soportada', 'ruta': 'ignorar'}, {'accion': 'no_soportada'}),
+])
+def test_modificaciones_normalizadas(ruta, respuesta, esperada):
+    original = deepcopy(ruta)
+    ia = AdaptadorSimulado(modificaciones=[respuesta])
+    assert ia.interpretar_modificacion('Cambia mi ruta', ruta) == esperada
+    assert ruta == original
+
+
+@pytest.mark.parametrize('respuesta', [None, [], 'no JSON', {},
+    {'accion': 'borrar'}, {'accion': 'aclarar'},
+    {'accion': 'aclarar', 'pregunta': 1},
+    {'accion': 'agregar_parada', 'nombre': ''},
+    {'accion': 'agregar_parada', 'nombre': 'X', 'descripcion': 2},
+    *[{'accion': 'agregar_parada', 'nombre': 'X', 'posicion': p}
+      for p in [True, -1, 1.5, '1', None]],
+])
+def test_modificacion_invalida(ruta, respuesta):
+    with pytest.raises(ErrorValidacion, match=ERROR_RESPUESTA):
+        AdaptadorSimulado(modificaciones=[respuesta]).interpretar_modificacion('Agrega', ruta)
+
+
+def test_transporte_modificacion_y_entrada_independiente(ruta):
+    cliente = cliente_con({'accion': 'agregar_parada', 'nombre': 'X'})
+    original = deepcopy(ruta)
+    ia = AdaptadorAnthropic('modelo-prueba', cliente=cliente)
+    assert ia.interpretar_modificacion('Agrega X', ruta)['nombre'] == 'X'
+    llamada = cliente.messages.create.call_args.kwargs
+    enviado = json.loads(llamada['messages'][0]['content'])
+    assert enviado == {'operacion': 'interpretar_modificacion',
+                       'datos': {'instruccion': 'Agrega X', 'ruta': original}}
+    assert 'no_soportada' in llamada['system']
+    assert ruta == original
+
+
+@pytest.mark.parametrize('instruccion,ruta', [('', {'origen': 'A'}),
+    ('x' * 1001, {'origen': 'A'}), ('Agrega X', None), ('Agrega X', {})])
+def test_modificacion_entrada_invalida_no_consulta(instruccion, ruta):
+    cliente = Mock()
+    with pytest.raises(ErrorValidacion):
+        AdaptadorAnthropic('modelo-prueba', cliente=cliente).interpretar_modificacion(instruccion, ruta)
+    cliente.messages.create.assert_not_called()
+
+
+def test_fallo_modificacion_conserva_ruta(ruta):
+    original = deepcopy(ruta)
+    ia = AdaptadorSimulado(modificaciones=[RuntimeError('secreto')])
+    with pytest.raises(ErrorServicioExterno, match=ERROR_SERVICIO):
+        ia.interpretar_modificacion('Agrega X', ruta)
+    assert ruta == original

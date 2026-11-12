@@ -59,3 +59,9 @@
   .planear-mensaje--usuario { margin-left: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .planear-pagina { scroll-behavior: auto; } }
+
+/* Guardado: reutiliza las superficies protegidas .card y .ruta-burbuja. */
+[data-lista-rutas] { display: grid; gap: 1rem; }
+[data-lista-rutas] .ruta-burbuja { width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; font-family: var(--font-sans); }
+[data-guardado] { color: var(--color-verde-oscuro); }
+[data-sesion] { max-width: min(32rem, calc(100vw - 2rem)); }

@@ -56,6 +56,7 @@
     <section id="itinerario" class="card section planear-panel planear-itinerario" aria-labelledby="titulo-itinerario">
       <p class="planear-ceja">EL CAMINO QUE IMAGINAS</p><h2 id="titulo-itinerario">Tu itinerario</h2>
       <p role="status" class="planear-actualizado" data-actualizado hidden>Itinerario actualizado</p>
+      <div class="planear-acciones"><button type="button" class="btn btn--primary" data-guardar hidden>Guardar ruta</button><a class="btn btn--ghost" href="/v2/rutas">Mis rutas guardadas</a></div><p role="status" data-guardado></p>
       <div data-itinerario><div class="planear-vacio">{{ icono('ruta', 48) }}<h3>Tu itinerario aparecerá aquí</h3><p>Empieza contándonos tu viaje. Cuando esté listo, podrás consultar cada parada.</p></div></div>
       <p class="card__note planear-fuente">Lugares localizados con <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. No se verifican horarios ni disponibilidad.</p>
     </section>
@@ -64,6 +65,10 @@
 <dialog class="card planear-confirmacion" aria-labelledby="titulo-confirmacion" data-confirmacion>
   <h2 id="titulo-confirmacion">Confirma tu recorrido</h2><p data-pregunta></p>
   <div class="planear-acciones"><button class="btn btn--ghost" type="button" data-no>No, cambiar</button><button class="btn btn--primary" type="button" data-si>Sí, confirmo</button></div>
+</dialog>
+<dialog class="card planear-confirmacion" aria-labelledby="titulo-sesion" data-sesion>
+<h2 id="titulo-sesion">Inicia sesión para guardar</h2><p>Abre el inicio en otra pestaña e inicia sesión. Después vuelve aquí y pulsa Guardar ruta otra vez.</p>
+<div class="planear-acciones"><a class="btn btn--primary" href="/" target="_blank" rel="noopener">Ir a iniciar sesión</a><button class="btn btn--ghost" type="button" data-cerrar-sesion>Cerrar</button></div>
 </dialog>
 <footer class="pie-creditos"><div class="container"><p>Efectos visuales adaptados de <a href="https://rareui.com" target="_blank" rel="noopener">Rare UI</a>.</p></div></footer>
 <script type="application/json" id="estado-inicial">{{ estado|tojson }}</script>

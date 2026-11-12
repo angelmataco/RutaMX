@@ -1,4 +1,4 @@
-"""Pruebas de M-09 Repositorio de rutas (crear, obtener, listar).
+"""Pruebas de M-09 Repositorio de rutas (crear, obtener, listar, actualizar).
 
 Las de validación no tocan la base. Las de integración usan el PostgreSQL
 desechable de `RUTAMX_TEST_DB_URL` (ver conftest.py); sin él se omiten.
@@ -15,6 +15,7 @@ from base_datos.modelos import RutaGuardada
 from base_datos.repositorios import rutas_repositorio as repo
 from base_datos.repositorios.rutas_repositorio import (
     ErrorRepositorio,
+    actualizar_ruta,
     crear_ruta,
     listar_rutas_de_usuario,
     obtener_ruta,
@@ -323,3 +324,130 @@ def test_identificadores_cero_o_negativos(bd, crear_usuario, identificador):
 
 def test_pr10_usuario_sin_rutas_recibe_lista_vacia(bd, crear_usuario):
     assert listar_rutas_de_usuario(crear_usuario()) == []
+
+
+# ----------------------------------------------------------------- actualizar
+# D-11 y CA-21.4: guardar de nuevo actualiza la misma ruta.
+
+@pytest.mark.parametrize("ruta_id", [None, "1", 2.5, True])
+def test_actualizar_rechaza_ruta_id_invalido(ruta_id):
+    with pytest.raises(ErrorRepositorio):
+        actualizar_ruta(ruta_id, ruta(), usuario_id=1)
+
+
+@pytest.mark.parametrize("usuario_id", [None, "1", 1.5, True])
+def test_actualizar_rechaza_usuario_id_invalido(usuario_id):
+    with pytest.raises(ErrorRepositorio):
+        actualizar_ruta(1, ruta(), usuario_id)
+
+
+@pytest.mark.parametrize("campo", ["nombre", "origen", "destino", "paradas"])
+def test_actualizar_rechaza_campo_obligatorio_omitido(campo):
+    with pytest.raises(ErrorRepositorio):
+        actualizar_ruta(1, quitar(campo), usuario_id=1)
+
+
+@pytest.mark.parametrize("datos", [None, "ruta", [1, 2]])
+def test_actualizar_rechaza_datos_que_no_son_diccionario(datos):
+    with pytest.raises(ErrorRepositorio):
+        actualizar_ruta(1, datos, usuario_id=1)
+
+
+def test_pr04_actualizar_modifica_la_misma_fila_sin_crear_otra(bd, crear_usuario):
+    usuario_a = crear_usuario()
+    creada = crear_ruta(ruta(), usuario_a)
+
+    nuevas_paradas = [{"nombre": "Parada Z"}, {"nombre": "Parada B"}]
+    actualizada = actualizar_ruta(
+        creada["id"],
+        ruta(nombre="Nombre nuevo", destino="Ciudad Tres", paradas=nuevas_paradas,
+             intereses=["museos"], resumen={"distancia_km": 300}, presupuesto=None),
+        usuario_a,
+    )
+
+    assert actualizada["id"] == creada["id"]
+    assert actualizada["usuario_id"] == usuario_a
+    assert actualizada["nombre"] == "Nombre nuevo"
+    assert actualizada["paradas"] == nuevas_paradas  # contenido y orden
+    assert actualizada["presupuesto"] is None
+    assert obtener_ruta(creada["id"], usuario_a) == actualizada
+    assert contar_rutas(bd) == 1
+
+
+def test_actualizar_ruta_de_otro_usuario_devuelve_none_y_no_toca_nada(bd, crear_usuario):
+    usuario_a = crear_usuario()
+    usuario_b = crear_usuario()
+    creada = crear_ruta(ruta(), usuario_a)
+
+    assert actualizar_ruta(creada["id"], ruta(nombre="Intruso"), usuario_b) is None
+    assert obtener_ruta(creada["id"], usuario_a) == creada
+    assert contar_rutas(bd) == 1
+
+
+def test_actualizar_ruta_inexistente_devuelve_none(bd, crear_usuario):
+    assert actualizar_ruta(424242, ruta(), crear_usuario()) is None
+    assert contar_rutas(bd) == 0
+
+
+def test_el_dueno_no_cambia_aunque_los_datos_traigan_otro(bd, crear_usuario):
+    usuario_a = crear_usuario()
+    usuario_b = crear_usuario()
+    creada = crear_ruta(ruta(), usuario_a)
+    actualizada = actualizar_ruta(creada["id"], ruta(usuario_id=usuario_b), usuario_a)
+    assert actualizada["usuario_id"] == usuario_a
+
+
+def test_actualizar_con_datos_invalidos_deja_la_version_anterior(bd, crear_usuario):
+    usuario_a = crear_usuario()
+    creada = crear_ruta(ruta(), usuario_a)
+    for datos in (ruta(nombre="  "), quitar("origen"), ruta(paradas="x")):
+        with pytest.raises(ErrorRepositorio):
+            actualizar_ruta(creada["id"], datos, usuario_a)
+    assert obtener_ruta(creada["id"], usuario_a) == creada
+
+
+def test_cp_fallo_en_el_commit_al_actualizar_conserva_la_version_anterior(
+    bd, crear_usuario, monkeypatch
+):
+    usuario_a = crear_usuario()
+    creada = crear_ruta(ruta(), usuario_a)
+    llamadas = []
+
+    class SesionQueFallaAlConfirmar(Session):
+        def commit(self):
+            raise OperationalError("commit", {}, Exception("fallo forzado"))
+
+        def rollback(self):
+            llamadas.append("rollback")
+            super().rollback()
+
+    monkeypatch.setattr(repo, "_abrir_sesion", lambda: SesionQueFallaAlConfirmar(bd.engine))
+    with pytest.raises(ErrorRepositorio) as info:
+        actualizar_ruta(creada["id"], ruta(nombre="No debe quedar"), usuario_a)
+    assert "fallo forzado" not in str(info.value)  # sin detalles internos
+    assert "rollback" in llamadas
+    monkeypatch.undo()
+
+    assert obtener_ruta(creada["id"], usuario_a) == creada  # versión anterior intacta
+    assert contar_rutas(bd) == 1
+    # El servicio sigue funcionando.
+    assert actualizar_ruta(creada["id"], ruta(nombre="Ahora sí"), usuario_a)["nombre"] == "Ahora sí"
+
+
+def test_error_inesperado_al_actualizar_sale_como_error_del_repositorio(
+    bd, crear_usuario, monkeypatch
+):
+    usuario_a = crear_usuario()
+    creada = crear_ruta(ruta(), usuario_a)
+
+    class SesionConFalloInesperado(Session):
+        def commit(self):
+            raise RuntimeError("falla inesperada")
+
+    monkeypatch.setattr(repo, "_abrir_sesion", lambda: SesionConFalloInesperado(bd.engine))
+    with pytest.raises(ErrorRepositorio) as info:
+        actualizar_ruta(creada["id"], ruta(nombre="Otra"), usuario_a)
+    assert "falla inesperada" not in str(info.value)
+    assert isinstance(info.value.__cause__, RuntimeError)
+    monkeypatch.undo()
+    assert obtener_ruta(creada["id"], usuario_a) == creada

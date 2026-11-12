@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-11-10
+Última actualización: 2026-11-12
 
 ## [V2] Decisiones del plan de incrementos (2026-11-05)
 
@@ -32,7 +32,7 @@
 - **Identificadores enteros:** `usuario_id` y `ruta_id` deben ser enteros (se rechazan `None`, texto y booleanos). Lo agregó Claude más allá de la orden v2; Codex lo revisó y lo consideró dentro del alcance.
 - **Todo fallo es `ErrorRepositorio`:** también los que no son de SQLAlchemy, conservando la causa (hallazgo bloqueante de la revisión de Codex).
 - **Protección de la base de prueba:** además de host local, el nombre de la base debe terminar en `_prueba` o `_test`, porque las pruebas hacen `TRUNCATE` y `drop_all`.
-- **Estado:** M-09 de tres operaciones, probado en simulación (53 pruebas con PostgreSQL desechable, sin tocar Supabase, 2026-11-03). No está verificado en uso real. Cobertura parcial de HU-21, HU-22 y RNF-11; no cubre CA-21.4/D-11.
+- **Estado:** M-09 de tres operaciones, probado en simulación (53 pruebas con PostgreSQL desechable, sin tocar Supabase, 2026-11-03). No está verificado en uso real. Cobertura parcial de HU-21, HU-22 y RNF-11; no cubre CA-21.4/D-11 (esto cambió el 2026-11-12: M-09 ya tiene `actualizar_ruta`, ver la sección del v0.3.0 al final).
 - **Prefijo de commits (regla del profesor, desde 2026-11-03):** todo commit nuevo empieza con `[V2]` para distinguir lo nuevo de la app vieja; por ejemplo `[V2] feat: ...`. Detalle en `AGENTS.md`. Se filtra con `git log --grep='^\[V2\]'`.
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
@@ -673,3 +673,16 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
 ## [V2] Alcance de las reglas del chat respecto a v1 (2026-11-10)
 
 El modal de v1 conserva su asignación determinista por propósito y hora. En `/v2/planear`, M-07 propone nombres y M-05 exige verificarlos con M-08 antes de aceptar la ruta (D-03); las coordenadas nunca se toman del modelo. La v2 no importa los servicios de planeación de v1 ni reemplaza su modal. La auditoría aclara esa diferencia del código ya existente; no cambia las reglas de ninguno de los flujos.
+
+## [V2] Decisiones del incremento v0.3.0 (2026-11-12)
+
+- **Guardar sin migración de esquema:** los datos de v2 van en `resumen.rutamx_v2` (versión 1) porque M-09 solo persiste siete columnas y `AGENTS.md` pide cambios compatibles hacia atrás. Las siete columnas que Angel autorizó el 2026-11-03 siguen sin ejecutarse. Cualquier otro cambio de esquema necesita su aprobación.
+- **Compatibilidad con v1:** v1 lista las rutas de v2 porque comparten tabla y filtro por usuario; al abrir una, `aplicarPlanIA` exige `resumen.origen.nombre` y `resumen.destino.nombre`. Por eso v2 también los escribe: se agregaron los campos que exige el lector de v1, pero la apertura en v1 está sin verificar (2026-11-12) y puede dar una vista parcial o incompleta. v1 está congelada y no se tocó. Lo señaló la revisión cruzada del paso 5.
+- **«Guardar de nuevo actualiza la misma ruta» (D-11) se interpreta así:** se actualiza la misma fila solo si es el mismo usuario y el mismo origen y destino; un viaje distinto crea una ruta nueva para no sobrescribir la anterior. Si el equipo prefiere actualizar siempre, es un cambio de una línea en `rutas_planear.py`, pero hay que decidirlo.
+- **El dueño sale siempre de la sesión** (`session["usuario_id"]`, la de v1/M-10, solo lectura sin importar v1), nunca del cuerpo de la petición. Un id inválido cuenta como anónimo.
+- **Abrir una ruta guardada** crea una conversación nueva y la instala pasándola por M-04 y M-05 (se revalida con D-03). Si D-03 pide confirmaciones se resuelven solas, máximo dos (origen igual a destino y paradas repetidas), porque el usuario ya las confirmó al crear la ruta. Si falla algo, la conversación vigente no se reemplaza.
+- **Aclaración:** la instrucción ambigua se conserva y el siguiente mensaje es su respuesta, aunque sea otra cosa; para cambiar de tema hay que reiniciar. Limitación actual (sin aceptación explícita de Angel).
+- **Iniciar sesión desde Planear:** el login vive en el inicio de v1, que no se toca; el aviso abre el inicio en otra pestaña y, como la sesión es la misma cookie, basta volver y pulsar Guardar otra vez.
+- **Posición de la parada:** M-07 la cuenta desde 0 y `GestorRutas.agregar_parada` desde 1; el orquestador usa el índice desde 0 sobre la propuesta. Hay pruebas del orden, pero conviene unificar la convención.
+- **Revisión cruzada, hallazgos reales corregidos:** (1) tras fallar la confirmación de una modificación, el siguiente mensaje regeneraba la ruta y se perdían las paradas (paso 4); (2) las rutas de v2 rompían «Mis rutas» de v1 al abrirse, y re-guardar sin nombre borraba el personalizado (paso 5); (3) abrir una ruta con dos confirmaciones de D-03 se rechazaba tras la primera (paso 6); (4) la pantalla nueva tenía enlaces internos sin destino y un diálogo sin uso (paso 7).
+- **Sin PostgreSQL desechable en esta sesión:** el sistema rechazó el comando que lo levantaba y no se buscó otra vía; las pruebas de integración de M-09 quedaron omitidas.

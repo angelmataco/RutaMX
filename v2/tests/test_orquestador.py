@@ -217,3 +217,71 @@ def test_reintento_tras_fallo_geografico_conserva_datos_y_ruta_previa():
     geo.verificar.side_effect = GeografiaFalsa().verificar
     r = o.procesar("Intenta otra vez")
     assert r["estado"] == "propuesta" and r["ruta"]["duracion_dias"] == 4
+
+
+def con_modificaciones(modificaciones):
+    ia = AdaptadorSimulado(extracciones=[DATOS, {}, {}, {}], rutas=[propuesta()],
+                          modificaciones=modificaciones)
+    o = OrquestadorPlaneacion(ia, GeografiaFalsa())
+    o.procesar('Viaje')
+    return o
+
+
+def test_agregar_por_chat_y_posicion_cero():
+    o = con_modificaciones([{'accion': 'agregar_parada', 'nombre': 'Lugar D', 'posicion': 0}])
+    r = o.procesar('Agrega Lugar D al principio')
+    assert r['estado'] == 'propuesta'
+    assert [p['nombre'] for p in r['ruta']['paradas']] == ['Lugar D', 'Lugar C']
+
+
+def test_aclaracion_conserva_intencion_y_ruta():
+    o = con_modificaciones([{'accion': 'aclarar', 'pregunta': '¿En dónde?'},
+                           {'accion': 'agregar_parada', 'nombre': 'Lugar D'}])
+    antes = o.iniciar()['ruta']
+    assert o.procesar('Agrega una parada')['estado'] == 'aclarar'
+    assert o.iniciar()['ruta'] == antes
+    original = o._ia.interpretar_modificacion
+    o._ia.interpretar_modificacion = Mock(wraps=original)
+    r = o.procesar('Lugar D')
+    contexto = o._ia.interpretar_modificacion.call_args.args[0]
+    assert 'Agrega una parada' in contexto and 'Lugar D' in contexto
+    assert len(r['ruta']['paradas']) == 2
+
+
+@pytest.mark.parametrize('accion', [{'accion': 'no_soportada'}, RuntimeError('secreto'),
+    {'accion': 'agregar_parada', 'nombre': 'Lugar D', 'posicion': 99}])
+def test_modificacion_fallida_o_no_soportada_conserva_ruta(accion):
+    o = con_modificaciones([accion])
+    antes = o.iniciar()['ruta']
+    r = o.procesar('Cambia')
+    assert r['estado'] in {'error', 'no_soportada'}
+    assert r['ruta'] == antes
+    assert 'secreto' not in r['mensaje']
+
+
+def test_modificacion_repetida_confirma_sin_llamar_ia_otra_vez():
+    o = con_modificaciones([{'accion': 'agregar_parada', 'nombre': 'Lugar C'}])
+    antes = o.iniciar()['ruta']
+    assert o.procesar('Agrega Lugar C')['estado'] == 'confirmar'
+    assert o.iniciar()['ruta'] == antes
+    assert len(o.confirmar(True)['ruta']['paradas']) == 2
+
+
+def test_fallo_confirmacion_modificacion_no_regenera_en_siguiente_mensaje():
+    geo = Mock()
+    geo.verificar.side_effect = GeografiaFalsa().verificar
+    ia = AdaptadorSimulado(
+        extracciones=[DATOS, {}, {}], rutas=[propuesta()],
+        modificaciones=[{'accion': 'agregar_parada', 'nombre': 'Lugar C'},
+                        {'accion': 'agregar_parada', 'nombre': 'Lugar E'}])
+    ia.generar_ruta = Mock(wraps=ia.generar_ruta)
+    o = OrquestadorPlaneacion(ia, geo)
+    antes = o.procesar('Viaje')['ruta']
+    assert o.procesar('Agrega C')['estado'] == 'confirmar'
+    geo.verificar.side_effect = RuntimeError('secreto')
+    assert o.confirmar(True)['ruta'] == antes
+    geo.verificar.side_effect = GeografiaFalsa().verificar
+    r = o.procesar('Agrega E')
+    assert r['estado'] == 'propuesta'
+    assert [p['nombre'] for p in r['ruta']['paradas']] == ['Lugar C', 'Lugar E']
+    assert ia.generar_ruta.call_count == 1

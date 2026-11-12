@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-11-10
+Última actualización: 2026-11-12
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -169,14 +169,14 @@ _(vacío por ahora)_
 
 ## Persistencia del apartado nuevo (práctica de persistencia, 2026-10-15)
 
-Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el código de M-09 de tres operaciones ya existe (ver `01`), pero no hay cambios en la base de datos todavía (columnas nuevas y migración siguen sin hacerse).
+Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el código de M-09 con cuatro operaciones (crear, obtener, listar y actualizar) ya existe (ver `01`), pero no hay cambios en la base de datos todavía (columnas nuevas y migración siguen sin hacerse).
 
 - Roberto debe revisar el diseño de persistencia (rol de revisor técnico) y se corrige lo que encuentre.
 - Angel **aprobó** (2026-11-03) agregar las columnas nuevas a `rutas_guardadas` (`descripcion`,
   `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`), pero **no se ha ejecutado**: es una tabla de la v1.
   Hace falta un script de migración con `ALTER TABLE` (SQLAlchemy `create_all` no modifica tablas existentes),
   probado primero en una copia y con respaldo previo.
-- [V2] Completar M-09 (ya tiene crear, obtener y listar, ver `01`): faltan actualizar la misma ruta (CA-21.4/D-11) y copiar
+- [V2] Completar M-09 (ya tiene crear, obtener, listar y actualizar, ver `01`): falta copiar
   (la original no cambia, sin sesión no se crea nada), con pruebas en simulación y datos ficticios.
 - Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.
 
@@ -185,7 +185,7 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 - Confirmar que Supabase vuelve a responder. En la reorganización del 2026-10-29 se registraron `FATAL: tenant/user ... not found`, 24 pruebas fallidas y 42 con error (ver 01); no se volvió a consultar la base en esta auditoría. Revisar el panel, sin tratar aquel resultado histórico como una medición actual.
 - Roberto debe hacer pull de `main` para recibir la estructura nueva (`app/` ahora es `v1/`); la rama `reorganizacion` ya se mezcló y se borró (2026-11-03).
 - [V2] Regresión de la v1 contra una base aislada y verificación en navegador de M-09: sin verificar (2026-11-03).
-- [V2] Quedan para otro incremento T-04/T-05, autor y visibilidad, actualización (CA-21.4/D-11), copia y regresión de v1. Siguen P-01 y P-03.
+- [V2] Quedan para otro incremento T-04/T-05, autor y visibilidad, copia y regresión de v1. Siguen P-01 y P-03.
 
 ## [V2] Después del plan de incrementos (2026-11-05)
 
@@ -197,7 +197,17 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 - [V2] Conectar la IA real (falta `ANTHROPIC_API_KEY` e `IA_V2_MODELO`; Angel no tiene llave): RF-21 y RF-36 siguen probados solo en simulación, sin verificar (2026-11-10).
 - [V2] Antes de publicar, exigir una `SECRET_KEY` real (config.py usa un valor de desarrollo) y poner tope propio a `/v2/planear/reiniciar`.
 - [V2] Cerrar la integración del v0.2.0: revisión visual, regresión aislada de v1/base_datos y tag tras las verificaciones. Sus módulos y demostración están publicados en `origin/main` hasta `407a14e` (verificado el 2026-11-10 con `git status -sb`, `git rev-parse` y `git ls-remote origin refs/heads/main`); no repetir su implementación.
-- [V2] Para el v0.3.0: M-09 debe sumar actualizar al volver a guardar (D-11 y CA-21.4); para el v0.5.0, copiar. Eliminar rutas no está en la v2.0 y no se planea.
+- [V2] Para el v0.5.0: M-09 debe sumar copiar. Eliminar rutas no está en la v2.0 y no se planea.
 - [V2] Sigue pendiente ejecutar el cambio de esquema de las siete columnas que Angel autorizó el 2026-11-03 (script, prueba en copia y respaldo). Cualquier otro cambio de esquema necesita nueva aprobación.
 
 - [V2] Regresión integrada de la app compartida con v2: v1 sigue sin regresión verificada al corte de 2026-11-10 porque su suite escribe en Supabase; las 19 pruebas de integración de base_datos se omiten sin PostgreSQL desechable (`RUTAMX_TEST_DB_URL`).
+
+## [V2] Después del v0.3.0 (2026-11-12)
+
+- [V2] Verificar en navegador el v0.3.0 (guardar, aviso de iniciar sesión, pregunta de aclaración y pantalla `/v2/rutas`, en 1280×900 y 375×812): sin verificar (2026-11-12). Playwright no está instalado y Chromium no pudo arrancar en el v0.2.0 por el sandbox de macOS.
+- [V2] Correr contra un PostgreSQL desechable las pruebas de integración de `actualizar_ruta` (7 nuevas, omitidas con las otras de `base_datos/tests`): sin él, la persistencia y el rollback de actualizar están sin verificar (2026-11-12). El sistema rechazó el comando que lo levantaba y no se buscó otra vía.
+- [V2] Probar guardar y abrir con una sesión real de v1 (login real): hoy la sesión se simula escribiendo `usuario_id` en la cookie firmada; sin verificar (2026-11-12).
+- [V2] Abrir en «Mis rutas» de v1 una ruta guardada por v2 puede dar una vista parcial o incompleta: se agregaron los campos que el lector de v1 exige (`resumen.origen.nombre` y `resumen.destino.nombre`) para evitar el error de lectura conocido, pero la apertura en v1 está sin verificar (2026-11-12) y no se probó que muestre mapa ni itinerario. Falta que Angel decida qué hacer; v1 está congelada.
+- [V2] Limpieza de M-04/M-05: `GestorRutas.agregar_parada` está probada, pero el orquestador agrega la parada armando la propuesta y pasándola por `proponer`; unificar para no tener dos caminos. Además, instalar una ruta guardada usa hoy un adaptador envoltorio en `rutas_planear.py`; un método público de M-04 sería más limpio.
+- [V2] Limitación actual: mientras hay una aclaración pendiente, el siguiente mensaje se toma como su respuesta; para cambiar de viaje hay que reiniciar la conversación.
+- [V2] Cerrar el v0.3.0: regresión de v1 y `base_datos` contra bases aisladas, commit `[V2]` de este incremento y tag `v0.3.0` tras las verificaciones.

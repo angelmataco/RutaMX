@@ -1,0 +1,50 @@
+{% from 'partials/icons.html' import icono %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="rutamx-csrf" content="{{ csrf }}">
+  <title>Mis rutas guardadas — RutaMX</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo-emblema.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/efectos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('planear_v2.static', filename='planear_ia.css') }}">
+</head>
+<body class="planear-pagina">
+{% include 'partials/iconos_sprite.html' %}
+<a class="planear-saltar" href="#ruta">Ir a la lista de rutas</a>
+<div class="navbar-espacio" data-navbar-espacio>
+  <header class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__brand" href="/" aria-label="RutaMX, volver al inicio">
+        <img class="navbar__logo" src="{{ url_for('static', filename='img/logo-emblema.svg') }}" width="48" height="48" alt="">
+        <span class="navbar__marca"><span class="navbar__title">Ruta<span class="navbar__title-mx">MX</span></span><span class="navbar__lema">Road trips México</span></span>
+      </a>
+      <nav class="navbar__links" aria-label="Planeación"><a href="#ruta">Mis rutas</a></nav>
+      <div class="navbar__auth"><a class="btn btn--ghost" href="/">Volver al inicio</a></div>
+    </div>
+    <div class="navbar__progreso" data-navbar-progreso></div>
+  </header>
+</div>
+<main class="container planear-contenedor" data-rutas-guardadas>
+<header id="inicio" class="planear-intro"><h1>Mis rutas guardadas</h1><p>Retoma tu viaje y sigue agregando paradas.</p><a class="btn btn--ghost" href="/v2/planear">Volver a Planear</a></header>
+<section class="card section" id="ruta" tabindex="-1" aria-label="Rutas guardadas"><p role="status" data-lista-estado>Cargando tus rutas…</p><div data-lista-rutas></div></section>
+</main>
+<dialog class="card planear-confirmacion" aria-labelledby="titulo-sesion" data-sesion>
+<h2 id="titulo-sesion">Inicia sesión para guardar</h2><p>Abre el inicio en otra pestaña e inicia sesión. Después vuelve aquí y pulsa Guardar ruta otra vez.</p>
+<div class="planear-acciones"><a class="btn btn--primary" href="/" target="_blank" rel="noopener">Ir a iniciar sesión</a><button class="btn btn--ghost" type="button" data-cerrar-sesion>Cerrar</button></div>
+</dialog>
+<footer class="pie-creditos"><div class="container"><p>Efectos visuales adaptados de <a href="https://rareui.com" target="_blank" rel="noopener">Rare UI</a>.</p></div></footer>
+<script type="application/json" id="estado-inicial">null</script>
+<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/secciones.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/orbe.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/gooey.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/pildora.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/spotlight.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/fondo.js') }}"></script>
+<script src="{{ url_for('planear_v2.static', filename='planear_ia.js') }}" defer></script>
+</body>
+</html>

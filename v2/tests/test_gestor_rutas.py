@@ -1,4 +1,4 @@
-"""Pruebas de M-05 (RF-22, 23, 24, 35, 37, 43; D-03 a, b y c; CA-19.3).
+"""Pruebas de M-05 (RF-22, 23, 24, 25, 26, 35, 37, 43; D-03 a, b y c; CA-19.3, CA-12.5, CA-20.4).
 
 Sin base ni red: la fuente geográfica es un verificador falso con datos
 ficticios.
@@ -405,3 +405,110 @@ def test_resumen_sin_paradas():
     assert g.resumen_chat().endswith("Sin paradas intermedias.")
     assert g.itinerario() == []
     assert [p["nombre"] for p in g.puntos_mapa()] == ["Ciudad de México", "Oaxaca"]
+
+
+# --- Agregar una parada (RF-25, RF-26; CA-12.5, CA-20.4) ---
+
+def gestor_con_ruta(verificador=None):
+    g = gestor(verificador)
+    g.proponer(propuesta())
+    return g
+
+
+def nombres(g):
+    return [p["nombre"] for p in g.ruta["paradas"]]
+
+
+def test_agregar_parada_sin_posicion_la_pone_al_final():
+    g = gestor_con_ruta()
+    nueva = g.agregar_parada("Mérida", "Cena")
+    assert [p["nombre"] for p in nueva["paradas"]] == ["Puebla", "Tehuacán", "Mérida"]
+    assert nueva["paradas"][-1]["descripcion"] == "Cena"
+    assert nueva["paradas"][-1]["lugar"]["id"] == "mer"  # validada con D-03
+    assert nombres(g) == ["Puebla", "Tehuacán", "Mérida"]
+
+
+def test_agregar_parada_en_una_posicion_respeta_el_orden():
+    g = gestor_con_ruta()
+    g.agregar_parada("Campeche", posicion=1)
+    g.agregar_parada("Mérida", posicion=3)
+    assert nombres(g) == ["Campeche", "Puebla", "Mérida", "Tehuacán"]
+
+
+def test_agregar_parada_a_una_ruta_sin_paradas():
+    g = gestor()
+    g.proponer(propuesta(paradas=[]))
+    g.agregar_parada("Puebla", posicion=1)
+    assert nombres(g) == ["Puebla"]
+
+
+def test_agregar_parada_actualiza_itinerario_mapa_y_chat():
+    g = gestor_con_ruta()
+    g.agregar_parada("Mérida")
+    assert [i["nombre"] for i in g.itinerario()] == ["Puebla", "Tehuacán", "Mérida"]
+    assert [i["orden"] for i in g.itinerario()] == [1, 2, 3]
+    assert [p["nombre"] for p in g.puntos_mapa()] == [
+        "Ciudad de México", "Puebla", "Tehuacán", "Mérida", "Oaxaca"]
+    assert "Mérida" in g.resumen_chat()
+
+
+@pytest.mark.parametrize("posicion", [0, -1, 4, 1.5, "1", True])
+def test_agregar_parada_con_posicion_invalida_no_cambia_la_ruta(posicion):
+    g = gestor_con_ruta()
+    antes = g.ruta
+    with pytest.raises(ErrorValidacion):
+        g.agregar_parada("Mérida", posicion=posicion)
+    assert g.ruta == antes
+
+
+@pytest.mark.parametrize("nombre", [None, "", "   ", 5])
+def test_agregar_parada_con_nombre_invalido_no_cambia_la_ruta(nombre):
+    g = gestor_con_ruta()
+    antes = g.ruta
+    with pytest.raises(ErrorValidacion):
+        g.agregar_parada(nombre)
+    assert g.ruta == antes
+
+
+def test_agregar_parada_sin_ruta_falla_y_no_crea_una():
+    g = gestor()
+    with pytest.raises(ErrorValidacion):
+        g.agregar_parada("Puebla")
+    assert g.ruta is None
+
+
+def test_agregar_parada_no_identificable_no_cambia_la_ruta():  # CA-12.5
+    g = gestor_con_ruta()
+    antes = g.ruta
+    with pytest.raises(ErrorRutaInvalida):
+        g.agregar_parada("Lugar inventado")
+    assert g.ruta == antes
+
+
+def test_agregar_parada_con_servicio_caido_no_cambia_la_ruta_ni_filtra_detalle():  # CA-20.4
+    verificador = VerificadorFalso()
+    g = gestor_con_ruta(verificador)
+    antes = g.ruta
+    verificador.falla = True
+    with pytest.raises(ErrorRutaInvalida) as info:
+        g.agregar_parada("Mérida")
+    assert "SECRETA" not in str(info.value)
+    assert g.ruta == antes
+
+
+def test_agregar_parada_repetida_pide_confirmacion_y_luego_se_acepta():
+    g = gestor_con_ruta()
+    antes = g.ruta
+    with pytest.raises(ErrorRutaRequiereConfirmacion) as info:
+        g.agregar_parada("Puebla")
+    assert info.value.pendiente == CONFIRMACION_PARADAS_REPETIDAS
+    assert g.ruta == antes
+    g.agregar_parada("Puebla", confirmaciones={CONFIRMACION_PARADAS_REPETIDAS})
+    assert nombres(g) == ["Puebla", "Tehuacán", "Puebla"]
+
+
+def test_agregar_parada_no_modifica_lo_que_recibe_ni_la_copia_devuelta_afecta():
+    g = gestor_con_ruta()
+    nueva = g.agregar_parada("Mérida")
+    nueva["paradas"].clear()
+    assert nombres(g) == ["Puebla", "Tehuacán", "Mérida"]
