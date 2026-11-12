@@ -1,7 +1,7 @@
 # [V2] Reporte de avance: incremento v0.3.0 (guardar y recuperar rutas, agregar parada y pedir aclaraciones)
 
 - Fecha: 2026-11-12 (CDMX), clase 2 de 4 de trabajo. Equipo: Angel Mata y Roberto Valderrama, con Claude y Codex como apoyo.
-- Corte: 08:31 (CDMX). Fuente de requerimientos: `documentacion/RutaMx_Documento_Requerimientos_v2.0.pdf` (44 RF, 33 RNF). Plan: `documentacion/plan_incrementos.md` (aprobado el 2026-11-05).
+- Corte: 08:31 (CDMX); los dos commits y la redirección de v1 son posteriores (hasta las 08:45). Fuente de requerimientos: `documentacion/RutaMx_Documento_Requerimientos_v2.0.pdf` (44 RF, 33 RNF). Plan: `documentacion/plan_incrementos.md` (aprobado el 2026-11-05).
 - Palabras de estado: **programado** (existe en el código), **probado en simulación** (pasó pruebas sin lo real) y **verificado en uso real** (probado con lo real, con fecha). Lo que no se pudo comprobar dice **sin verificar**. Hoy **ningún RF está verificado de extremo a extremo en uso real**.
 
 ## 1. Resumen
@@ -13,7 +13,7 @@
 | RF del incremento | 9 asignados (RF-25, 26, 33, 38, 39, 40, 41, 42 y 44), todos **probados en simulación** |
 | Avance del proyecto | 17 de 44 RF completos en simulación (38.6%); 4 de 44 parciales (9.1%); 23 de 44 sin iniciar (52.3%); 0 de 44 verificados de extremo a extremo en uso real |
 | Pruebas | 362 pasan y 27 se omiten (`pytest v2/tests base_datos/tests`): v2 313 pasan y 1 se omite; `base_datos` 49 pasan y 26 se omiten por no haber PostgreSQL desechable |
-| Lo que falta para cerrar v0.3.0 | Verificación en navegador, pruebas de integración de `actualizar_ruta` con PostgreSQL, regresión de v1, commit y tag `v0.3.0` |
+| Lo que falta para cerrar v0.3.0 | Verificación en navegador, pruebas de integración de `actualizar_ruta` con PostgreSQL, regresión de v1, push y tag `v0.3.0` |
 
 El incremento **no se declara cerrado**: el código está probado en simulación, pero el criterio de cierre del plan incluye verificarlo en un navegador real, la regresión de lo anterior y el tag (sección 6). Tampoco está cerrado el v0.2.0: sigue sin tag, sin verificación visual y sin IA real.
 
@@ -23,7 +23,7 @@ El incremento **no se declara cerrado**: el código está probado en simulación
 |---|---|---|---|---|
 | 1 | v0.1.0 | M-09 Repositorio de rutas | 0 cerrados; evidencia parcial en RF-38, 39, 40 y 42 | Hecho, **probado en simulación**; tag `v0.1.0` publicado |
 | 2 | v0.2.0 | Planear con IA | 12 | Código listo y **probado en simulación** (2026-11-10), publicado en `main`; sin tag |
-| 3 | v0.3.0 | Guardar y recuperar rutas, agregar parada, aclaraciones | 9 | **En curso**: código listo y **probado en simulación** (2026-11-12); sin commit ni tag |
+| 3 | v0.3.0 | Guardar y recuperar rutas, agregar parada, aclaraciones | 9 | **En curso**: código listo y **probado en simulación** (2026-11-12); commit local `f7cbf8e` (sin push) y sin tag |
 | 4 | v0.4.0 | Descubrir: catálogo, búsqueda, filtros, detalle | 10 | No iniciado (bloqueado por P-01 y P-03) |
 | 5 | v0.5.0 | Edición por chat completa, copiar, mapa, cierre | 13 | No iniciado |
 
@@ -117,8 +117,8 @@ Solo se cuentan los que tienen una prueba concreta. El plan asigna al v0.3.0 RNF
 | Módulos del v0.3.0 con código y pruebas | 7 de 7 (M-11 sin cambios) |
 | Pasos de la tabla cerrados al corte | 7 de 8 (este reporte es el octavo) |
 | Pruebas nuevas | 91 en `v2/tests` (313 contra 222) y 15 que pasan más 7 omitidas en `base_datos/tests` |
-| Cambios sin commit | 13 archivos modificados y 4 nuevos en la carpeta de código (736 líneas añadidas y 20 quitadas en lo ya existente, sin contar los archivos nuevos) |
-| Commit y tag del incremento | Sin commit y sin tag `v0.3.0` al corte |
+| Commits locales | `f7cbf8e` (el incremento: 22 archivos, 1737 líneas añadidas y 30 quitadas) y `8057244` (redirección de v1 hacia v2); ninguno subido a `origin/main` |
+| Push y tag del incremento | Sin push y sin tag `v0.3.0` |
 
 ## 5. Decisiones tomadas hoy
 
@@ -126,7 +126,7 @@ Solo se cuentan los que tienen una prueba concreta. El plan asigna al v0.3.0 RNF
 - **Sin migración de esquema:** los datos de v2 se guardan en `resumen.rutamx_v2`.
 - **Compatibilidad con v1:** `resumen` también trae `origen.nombre` y `destino.nombre`. Con autorización de Angel (2026-11-12), `abrirRutaGuardada` de v1 redirige a `/v2/rutas` si la ruta es de v2; programado, sin verificar en navegador (2026-11-12).
 - **D-11 interpretado:** misma fila solo con el mismo usuario y el mismo viaje.
-- **Iniciar sesión desde Planear:** en otra pestaña, porque el login vive en v1, que no se toca.
+- **Iniciar sesión desde Planear:** en otra pestaña, porque el login vive en v1.
 - **Aclaración:** el siguiente mensaje es su respuesta; para otro tema se reinicia.
 
 Detalle en `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`.
@@ -140,7 +140,7 @@ Detalle en `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`.
 | Login real de v1 con guardar y abrir | La sesión se simuló en las pruebas | Iniciar sesión en la app y guardar una ruta |
 | IA real | No hay `ANTHROPIC_API_KEY` ni `IA_V2_MODELO` | Conseguir llave y modelo y probar con ellos |
 | Regresión de v1 y de `base_datos` | La suite de v1 escribe en Supabase; las de `base_datos` piden base desechable | Base aislada y correr las tres suites |
-| Commit y tag `v0.3.0` | Esperan las verificaciones anteriores | Commit `[V2]`, `git push origin main` y luego el tag |
+| Push y tag `v0.3.0` | Esperan las verificaciones anteriores | `git push origin main` y luego el tag |
 
 Preguntas abiertas del plan sin respuesta: P-01 (cómo se marca una ruta pública), P-02 (proveedor de mapas) y P-03 (valores de categoría y región). P-01 y P-03 bloquean el v0.4.0.
 
@@ -164,4 +164,4 @@ venv/bin/python scripts/demo_planear_v2.py                                      
 1. Verificar en navegador y con un login real, y anotar la fecha.
 2. Levantar un PostgreSQL desechable y correr las pruebas de integración de M-09.
 3. Regresión de v1 y `base_datos` contra bases aisladas.
-4. Si todo sale bien, commit `[V2]`, push y los tags `v0.2.0` y `v0.3.0`; después sigue el v0.4.0, que necesita las respuestas a P-01 y P-03.
+4. Si todo sale bien, push de los commits locales y los tags `v0.2.0` y `v0.3.0`; después sigue el v0.4.0, que necesita las respuestas a P-01 y P-03.
