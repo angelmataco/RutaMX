@@ -9,31 +9,29 @@ la regla completa en `AGENTS.md`.
 
 ## Por planear / decidir con Angel (pedido explícito)
 
-- **Re-etiquetar la base y agregar restaurantes y hoteles (siguiente paso
-  grande, pedido de Angel, sin pagar nada).** Plan completo en
+- **Re-etiquetar la base y agregar restaurantes y hoteles (plan pendiente de Angel, sin pagar nada).** Plan completo en
   [`04_PLAN_RESTAURANTES_Y_HOTELES.md`](04_PLAN_RESTAURANTES_Y_HOTELES.md).
-  Orden acordado: (1) revisar las etiquetas de los 369 destinos con criterios
+  Orden acordado: (1) revisar las etiquetas del catálogo de destinos con criterios
   comprobables y un reporte que Angel revisa antes de cambiar nada; (2) crear
   la tabla `establecimientos` (restaurantes y hoteles buenos, con cupos según
   el tamaño del lugar, más algunos en carretera con menos prioridad); (3)
   adaptar TODA la app y la IA de "Planear con IA" para que sigan fluyendo igual
   con las tablas nuevas; (4) nueva forma de recomendar (restaurantes primero,
   luego pueblos/ciudades con muy buena comida, marcados claramente). Decisión
-  abierta principal: cómo definir "bueno" sin pagar (las calificaciones de
-  Tripadvisor/Google no se pueden guardar ni son gratis). **Ya hecho:** marcar
-  la gastronomía destacada por UNESCO y Michelin (ver bitácora 01). **Decidido:** la poda de "comida" espera a los restaurantes; se
+  abierta principal: cómo definir "bueno" sin pagar; revisar las condiciones
+  de las fuentes comerciales antes de elegir proveedor. La poda de "comida" espera a los restaurantes; se
   conservan los 21 lugares destacados (lista y regla en el plan `04`, copia de
   seguridad en `base_datos/scripts/datos/`). **Falta:**
   revisar las demás etiquetas (cultura, naturaleza, playas, descanso), podar
-  "comida" de los ~84 lugares que no son destacados (hacerlo cuando ya haya
-  restaurantes, para que "Comer" no quede vacío) y el resto del plan.
+  "comida" de los 86 lugares no destacados de la copia de 2026-09-19 (recontar antes de aplicar). Esperar a tener
+  restaurantes para que "Comer" no quede vacío y el resto del plan.
 
 - **Tiempo de la app vs Google Maps.** León → Cabo San Lucas: la app dice
   ~50 h y Google Maps ~44 h. Causa probable: OSRM (servidor demo) usa
   velocidades genéricas por tipo de vía, más lentas que las autopistas de
   cuota de México. No se pudo verificar contra Google desde el código.
   Opciones: (1) calibrar con un factor de corrección usando el tiempo de
-  Google en ~5 rutas reales (gratis, queda a ~3–5%); (2) usar la API de
+  Google en ~5 rutas reales (hipótesis sin costo por validar; no se midió su precisión); (2) usar la API de
   Google Routes (exacto, pero pide cuenta con tarjeta y key); (3) otro
   servicio gratuito (mismo problema de velocidades genéricas). Se
   recomienda la 1; falta que Angel pase los tiempos de Google.
@@ -46,12 +44,11 @@ la regla completa en `AGENTS.md`.
 - Iconos opcionales que hoy no existen: los 6 intereses de "¿Qué buscas?" (Naturaleza,
   Playas, Pueblos mágicos, Comida, Descanso, Cultura) siguen siendo solo texto.
 - El fondo de líneas y la luz de las tarjetas no se han medido en un teléfono real
-  (solo emulado a 375 px): si se siente pesado, bajar líneas en `fondo.js`.
+  (solo emulado a 375 px): medirlo antes de proponer ajustes. La regla protegida solo permite cambiar color y velocidad del fondo; no reducir sus líneas sin nueva decisión de Angel.
 
 ## Pendiente marcado en el código (TODOs reales)
 
-_(nada marcado en el código por ahora — la navegación en vivo se delegó a
-Google Maps con el enlace/QR, ver bitácora 01.)_
+- Revisar el comentario `TODO` de `v1/static/js/map.js:4`: aún menciona navegación en vivo propia. El flujo de navegación ya se delegó al enlace/QR de Google Maps; no es una función nueva aprobada.
 
 ## Pendientes sueltos de funcionalidad ya implementada
 
@@ -65,14 +62,7 @@ Google Maps con el enlace/QR, ver bitácora 01.)_
 - La estimación de casetas con IA nunca se ha probado con una key real
   (solo con el proveedor mockeado). Falta ver que la respuesta sea
   razonable para rutas conocidas.
-- Alternativa descartada por ahora: casetas reales con la API SAKBÉ de
-  INEGI (pide registrar un token; Angel prefiere no registrarse en nada
-  mientras sea proyecto escolar).
-- Personas vacío cuenta como 1. Las paradas de comida solo se detectan
-  por el interés "comida" del destino; las noches son por trayecto, no
-  por parada.
-- Los resultados de "Planear con IA" traen el gasto con valores por
-  defecto; no usan los ajustes del formulario.
+- Decidir si el chat de v1 debe heredar también coche, gasolina y cantidades manuales del formulario. Hoy usa personas y hora de salida de la conversación; esos datos sí afectan el gasto de cada opción.
 
 Estos NO son features sin hacer — son detalles/riesgos que quedaron
 abiertos dentro de features que ya están terminadas y documentadas en
@@ -82,21 +72,12 @@ real por hacer, no porque la feature esté incompleta.
 **De cuentas de usuario:**
 - El test `test_registrar_usuario_duplicado_por_acentos_y_mayusculas` usa el nombre "Ángel
   Mata" y falla porque esa cuenta real ya existe; hay que cambiarlo a un nombre ficticio.
-- No hay "recuperar PIN" (sin correo no hay a dónde mandarlo) — si
-  alguien lo olvida, se resetea a mano desde la base. Aceptado a
-  propósito para el alcance escolar.
-- Nombre + apellido debe ser único por cuenta — si dos personas reales
-  se llaman exactamente igual, la segunda no puede registrarse con ese
-  nombre. No es problema real para el grupo de prueba (Angel, Roberto).
 
 **De la interfaz (navbar, secciones y avatar):**
 - El navbar compacto, el tope entre secciones y la portada solo se probaron con mouse/rueda y
   ventanas emuladas: falta probarlos en un teléfono real y con trackpad (momentum). El
   seguimiento de ojos del avatar no corre sin mouse fino ni con "reducir movimiento" (lo decide
   el paquete).
-- En el navbar compacto no se ve el perfil ni los botones de navegación (pedido de Angel: solo
-  logo, nombre y la píldora de progreso); para abrirlos hay que subir. Si estorba, mostrar el avatar
-  también ahí.
 - Dos medidas del CSS son aproximadas y hay que ajustarlas si cambian el formulario o el navbar:
   `--tope-superior` (54px, alto del navbar compacto) y los 760px del espacio bajo el hero sin
   resultados (recuadro ~694 + navbar + holgura), ambas en `styles.css`.
@@ -116,7 +97,7 @@ real por hacer, no porque la feature esté incompleta.
   si alguien conecta esas keys y falla la llamada, revisar la forma
   exacta contra la documentación vigente de cada proveedor.
 
-**De "Planear con IA":**
+**De "Planear con IA" de v1 (modal del formulario; distinto de `/v2/planear`):**
 - Los prompts nuevos (reglas de tramos, dormir después de las 8 pm, ventana
   de 30/20 min, sin preguntar por presupuesto ni horas máximas) solo se han
   probado con el proveedor mockeado. Falta probarlos con una key real y ver
@@ -132,9 +113,6 @@ real por hacer, no porque la feature esté incompleta.
   de Anthropic/OpenAI/Gemini genuina para confirmar que el chat completo
   (preguntas, quick-replies, las dos opciones finales) funciona de
   extremo a extremo.
-- El campo "personas" se captura en la conversación pero no se guarda en
-  ningún lado (ni en `RutaGuardada` ni en `Destino`) — hoy solo influye
-  en el razonamiento de la IA sobre qué proponer, no se persiste.
 - Los tests de `planificador_ia_service.py` y de la asignación de
   objetivos están con el proveedor mockeado (correcto para no gastar
   tokens en cada `pytest`), pero por lo mismo no prueban el prompt real
@@ -156,7 +134,7 @@ real por hacer, no porque la feature esté incompleta.
   estricto de intereses.
 - El grafo de conocimiento (`graphify-out/`, ignorado por git) está desactualizado: correr `/graphify update`.
 
-## Efectos visuales: detalles por revisar (quedan 6; el step-player se quitó)
+## Efectos visuales: verificaciones pendientes
 
 - El orbe de "Planear con IA" (`planificador_ia.js`) se probó solo en el estado de
   carga de sugerencias; falta verlo en el chat con una API key real conectada.
@@ -204,9 +182,7 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 
 ## Después de la reorganización y del plan de M-09 (2026-10-29)
 
-- **Supabase no responde** (`FATAL: tenant/user ... not found`): el proyecto parece pausado o la URL de
-  `instance/config.py` cambió. Hasta resolverlo, la app real y las pruebas que usan la base fallan (24 fallan y 42 con error).
-  Revisar el panel de Supabase.
+- Confirmar que Supabase vuelve a responder. En la reorganización del 2026-10-29 se registraron `FATAL: tenant/user ... not found`, 24 pruebas fallidas y 42 con error (ver 01); no se volvió a consultar la base en esta auditoría. Revisar el panel, sin tratar aquel resultado histórico como una medición actual.
 - Roberto debe hacer pull de `main` para recibir la estructura nueva (`app/` ahora es `v1/`); la rama `reorganizacion` ya se mezcló y se borró (2026-11-03).
 - [V2] Regresión de la v1 contra una base aislada y verificación en navegador de M-09: sin verificar (2026-11-03).
 - [V2] Quedan para otro incremento T-04/T-05, autor y visibilidad, actualización (CA-21.4/D-11), copia y regresión de v1. Siguen P-01 y P-03.
@@ -215,15 +191,13 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 
 - [V2] Incremento v0.2.0 (2026-11-10): falta comprobar M-07 con credenciales válidas de un proveedor real y el flujo integrado en navegador. Chromium no pudo arrancar por sandbox de macOS (Permission denied 1100); falta verificar visualmente 1280×900 y 375×812, errores, confirmaciones y efectos. El caso opcional está en `v2/tests/test_interfaz_planear.py::test_navegador_escritorio_y_movil`. RF-18, RF-24 y RF-37 quedan en cobertura parcial hasta el v0.5.0.
 
-- [V2] Plan aceptado por Angel y Roberto el 2026-11-05 (4 incrementos, fichas, excepción de prioridad de HU-01, HU-05 y HU-17 y limitación de independencia de la validación; `documentacion/plan_incrementos.md`). Ya está publicado: commit `3e11b46` en `main` y tag `v0.1.0` en GitHub (2026-11-05).
-- [V2] Anotar en la sección 12 del plan el hash del commit publicado (`3e11b46`), que quedó como "se anota en la entrega". Los PDF `RutaMx_Entrega_Documentacion_Completa.pdf` y `RutaMX_Plan_de_Incrementos.pdf` siguen sin commit.
 - [V2] Pasar cuánto trabaja el equipo fuera de clase (la clase dura 1 h 30 min, dato de Angel del 2026-11-10; 4 clases de trabajo y 2 de exposición): con eso se calibra el tamaño de los incrementos. El tamaño actual (12, 9, 10 y 13 RF) es estimación, no medición.
 - [V2] Consultar con el profesor o el cliente P-01 (cómo se publica una ruta), P-02 (proveedor de mapas) y P-03 (valores de categoría y región). P-01 y P-03 bloquean el catálogo del v0.4.0; P-02 decide el mapa del v0.5.0.
 - [V2] Revisar a ojo `/v2/planear` con `scripts/demo_planear_v2.py` (escritorio y 375 px) y anotar la fecha: sin verificar (2026-11-10).
 - [V2] Conectar la IA real (falta `ANTHROPIC_API_KEY` e `IA_V2_MODELO`; Angel no tiene llave): RF-21 y RF-36 siguen probados solo en simulación, sin verificar (2026-11-10).
 - [V2] Antes de publicar, exigir una `SECRET_KEY` real (config.py usa un valor de desarrollo) y poner tope propio a `/v2/planear/reiniciar`.
-- [V2] Fases B y C por incremento: tareas, un commit y un push por tarea con el formato `[V2] tipo(RF-XX): descripción`, regresión, contraste y tag. Primero el v0.2.0 (Planear con IA).
+- [V2] Cerrar la integración del v0.2.0: revisión visual, regresión aislada de v1/base_datos y tag tras las verificaciones. Sus módulos y demostración están publicados en `origin/main` hasta `407a14e` (verificado el 2026-11-10 con `git status -sb`, `git rev-parse` y `git ls-remote origin refs/heads/main`); no repetir su implementación.
 - [V2] Para el v0.3.0: M-09 debe sumar actualizar al volver a guardar (D-11 y CA-21.4); para el v0.5.0, copiar. Eliminar rutas no está en la v2.0 y no se planea.
 - [V2] Sigue pendiente ejecutar el cambio de esquema de las siete columnas que Angel autorizó el 2026-11-03 (script, prueba en copia y respaldo). Cualquier otro cambio de esquema necesita nueva aprobación.
 
-- [V2] Regresión integrada de la app compartida con v2: v1 sigue sin probarse en este turno porque su suite escribe en Supabase; las 19 pruebas de integración de base_datos se omiten sin PostgreSQL desechable (`RUTAMX_TEST_DB_URL`).
+- [V2] Regresión integrada de la app compartida con v2: v1 sigue sin regresión verificada al corte de 2026-11-10 porque su suite escribe en Supabase; las 19 pruebas de integración de base_datos se omiten sin PostgreSQL desechable (`RUTAMX_TEST_DB_URL`).

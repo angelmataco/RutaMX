@@ -7,7 +7,7 @@
 - **Especificación única:** `documentacion/RutaMx_Documento_Requerimientos_v2.0.pdf` (versión 2.0, 8 de octubre de 2026). Totales vigentes: 44 RF, 33 RNF, 23 HU y 93 CA. El `RutaMx_Entrega_Documentacion_Completa.pdf` es un compilado y no es la fuente.
 - **Reparto de IA invertido respecto a la consigna (decisión de Angel):** Claude hace el análisis y la planeación (lo que la consigna asigna a ChatGPT); Codex desarrolla y prueba (lo que la consigna asigna a Claude); cada paso lo revisa la otra IA y el equipo decide y verifica.
 - **Incremento 1 = solo M-09** (decisión de Angel, 2026-11-05). v1 es el sitio existente reutilizable y no cuenta como RF cumplidos; por eso los 44 RF y 33 RNF quedan "Pendiente".
-- **Calendario:** 3 semanas; 4 clases de trabajo y 2 de exposición (aclaración de Angel). Se propone **4 incrementos** como escenario condicionado, con alternativa de 3; la viabilidad no está demostrada porque no se conoce la duración de clase ni el trabajo fuera de clase.
+- **Calendario:** 3 semanas; 4 clases de trabajo y 2 de exposición (aclaración de Angel). Se propone **4 incrementos** como escenario condicionado, con alternativa de 3; la viabilidad no estaba demostrada en ese corte. Angel informó el 2026-11-10 clases de 90 minutos; sigue sin conocerse el trabajo fuera de clase.
 - **Ubicación:** el plan vive en `documentacion/`, no en `docs/` como dice la consigna.
 - **Commits:** `[V2] tipo(RF-XX): descripción`, un commit y un push por tarea; entradas de bitácora y documentos nuevos también con `[V2]`.
 - **Actualizar al volver a guardar entra al v0.3.0** (D-11 y CA-21.4), por observación de Codex; eliminar rutas queda fuera. **RNF-32 se adelanta al v0.2.0** porque RNF-06 y RNF-07 dependen del entorno documentado.
@@ -32,7 +32,7 @@
 - **Identificadores enteros:** `usuario_id` y `ruta_id` deben ser enteros (se rechazan `None`, texto y booleanos). Lo agregó Claude más allá de la orden v2; Codex lo revisó y lo consideró dentro del alcance.
 - **Todo fallo es `ErrorRepositorio`:** también los que no son de SQLAlchemy, conservando la causa (hallazgo bloqueante de la revisión de Codex).
 - **Protección de la base de prueba:** además de host local, el nombre de la base debe terminar en `_prueba` o `_test`, porque las pruebas hacen `TRUNCATE` y `drop_all`.
-- **Estado:** M-09 de tres operaciones, probado en simulación (53 pruebas con PostgreSQL desechable, sin tocar Supabase, 2026-11-03). No está verificado en uso real. Cobertura parcial de HU-21, HU-22 y PNF-11; no cubre CA-21.4/D-11.
+- **Estado:** M-09 de tres operaciones, probado en simulación (53 pruebas con PostgreSQL desechable, sin tocar Supabase, 2026-11-03). No está verificado en uso real. Cobertura parcial de HU-21, HU-22 y RNF-11; no cubre CA-21.4/D-11.
 - **Prefijo de commits (regla del profesor, desde 2026-11-03):** todo commit nuevo empieza con `[V2]` para distinguir lo nuevo de la app vieja; por ejemplo `[V2] feat: ...`. Detalle en `AGENTS.md`. Se filtra con `git log --grep='^\[V2\]'`.
 
 El "por qué" detrás de decisiones que no son obvias con solo leer el
@@ -89,7 +89,7 @@ genuino, confirmado porque Angel lo vio con sus propios ojos en la app.)
 Angel no quería que el usuario respondiera muchas cosas: por eso comidas
 y noches se **deducen solas** (paradas con interés "comida"; noches
 simulando el viaje con la hora de salida) y los ajustes manuales quedan
-en un desplegable opcional, con "vacío = automático". Nada de marcar
+en un `<dialog>` opcional abierto desde el Resumen del viaje, con "vacío = automático". Nada de marcar
 cada parada como "comer/dormir".
 
 Las casetas no se pueden calcular exactas sin datos reales de cada
@@ -122,7 +122,7 @@ puede comer, y que en automático salga de todo pero nunca "dormir" si no
 aplica (solo si se pasa de las 8 pm). Por eso un tramo personalizado filtra
 duro y uno automático solo prioriza, y "dormir" depende de la hora del
 reloj. Se eligió que sea un solo toque por tramo (fila de chips al tocar el
-tramo) y no un formulario, para no volver invasiva la app. La base tiene 96
+tramo) y no un formulario, para no volver invasiva la app. En la fotografía anterior al marcado gastronómico había 96
 de 369 lugares con interés "comida" y 42 con "descanso" (más las ciudades
 grandes cuentan como dónde dormir), por eso a veces un tramo estricto sale
 vacío y se avisa.
@@ -171,7 +171,9 @@ León → Monterrey) subió al primer lugar. Se agregó `RADIO_PRIORIDAD_KM = 40
 Tulum 48). Los restaurantes del futuro solo se recomiendan si el usuario pide una
 parada para comer (regla 7b del plan 04); en automático solo ciudades.
 
-## Estrellas: cuántas salen por ruta y por qué hay un tope de 2
+## (Histórico) Estrellas: por qué se probó un tope de 2
+
+> Reemplazado por la prioridad dentro de cada franja de horas (ver «Recomendaciones: el filtro de intereses…»). El flujo actual no limita a 2 estrellas; las mediciones de abajo describen la evaluación anterior.
 
 Medido con 40 rutas largas al azar entre ciudades grandes (250-1,500 km,
 2026-09-19): 42 % no pasa cerca (≤ 40 km) de ningún lugar con estrella, 20 % pasa
@@ -185,7 +187,9 @@ siguen igual). Con restaurantes el riesgo sube en ciudades con muchas estrellas
 también a restaurantes. **5 visibles** (decisión de Angel): 5 tarjetas en una
 fila en pantallas anchas; en pantallas medianas (3 columnas) quedan 3 + 2.
 
-## Por qué un viaje largo sale con ~9-10 tramos en automático
+## (Histórico) Tramos automáticos por duración
+
+> El backend conserva el cálculo de ~3 h si no recibe `tramos`. El formulario actual manda `tramos = paradas_estimadas`; ver «Tramos automáticos y Paradas sugeridas». La explicación siguiente corresponde al cálculo anterior sin ese parámetro.
 
 En automático cada tramo mide ~3 h de camino (`LAPSO_OBJETIVO_H = 3.0` en
 `ai_service.py`), sin importar cuánto dure el viaje. Tijuana → Puerto Vallarta
@@ -196,7 +200,9 @@ viajes largos, se puede hacer que el largo del tramo crezca con la duración
 (p. ej. 4-5 h para viajes de más de 20 h) o poner un tope al automático (p. ej.
 8); mientras tanto el usuario puede elegir cuántos tramos (2 a 10, o hasta 30).
 
-## Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
+## (Histórico) Presupuesto y horas máximas: por qué burbujas y no `<datalist>`
+
+> Ambos campos se retiraron del formulario. Se conserva la razón histórica del componente; las burbujas actuales se usan para personas.
 
 La primera versión usó `<datalist>` (una lista nativa de opciones al
 enfocar el campo) — funcional, pero Angel la vio "fea, sin chiste", una
@@ -220,7 +226,9 @@ recortarlo. Arreglo: `min-width: 0` en la cadena de contenedores flex
 (`.bubble-picker`, `.bubble-picker__scroll`, y `.field` en general) — con
 eso sí respetan su ancho asignado y el scroll queda contenido adentro.
 
-## "Planear con IA": por qué la IA nunca elige el lugar, solo el propósito y la hora
+## "Planear con IA" de v1: por qué la IA solo elige propósito y hora
+
+Esta decisión describe el modal de v1 y su asignación determinista desde destinos. El flujo separado de v2 se aclara al final de este archivo, en «Alcance de las reglas del chat».
 
 La tentación fácil hubiera sido dejar que la IA "arme el itinerario" y
 devuelva nombres de lugares directamente. No se hizo así a propósito:
@@ -392,7 +400,7 @@ y la mantenga actualizada después de cada cambio.
 - Trampa del botón de borrar: con `flex-direction: row-reverse` el primer hijo del DOM
   queda a la derecha; el panel tiene `min-width: 0` para que no empuje el bote fuera.
 - **Gooey con hover, no con clic:** al hacer clic la página salta a otra sección y el navbar
-  (que no es fijo) sale de pantalla, así que la animación nunca se veía. Por eso se dispara al
+  (que entonces no era fijo) salía de pantalla, así que la animación nunca se veía. Por eso se dispara al
   pasar el cursor (`mouseenter`), y al salir vuelve a la sección real (`real` vs `activo`).
 - **Step-player eliminado** a pedido de Angel; no reintroducirlo.
 
@@ -661,3 +669,7 @@ Decisión de la práctica de persistencia (2026-10-15; documento: `documentacion
 - [V2] **Plan de incrementos aprobado (2026-11-05):** Angel y Roberto aceptaron los 4 incrementos (v0.2.0 a v0.5.0), las fichas, la excepción de prioridad de HU-01, HU-05 y HU-17 y la limitación de independencia de A4. El tag `v0.1.0` se creó en local sobre el estado de M-09 antes del commit de documentos; el `git push` lo hace Angel.
 
 - [V2] **D-03 completo en M-05, con la fuente geográfica inyectada (2026-11-10):** la primera versión validaba solo la forma y aceptaba lugares inexistentes y origen igual a destino; Codex lo detectó al leer el PDF v2.0 (D-03, pág. 9, y CA-19.3). Ahora M-05 exige lugares identificables con id y coordenadas válidas, pide confirmación si origen y destino son iguales o hay paradas repetidas, y falla de forma segura sin verificador o con el servicio caído. El verificador se inyecta (no se importa de v1) para que M-05 no conozca al proveedor geográfico (M-08). Los topes de 30 paradas y 10 intereses son técnicos, no de la especificación.
+
+## [V2] Alcance de las reglas del chat respecto a v1 (2026-11-10)
+
+El modal de v1 conserva su asignación determinista por propósito y hora. En `/v2/planear`, M-07 propone nombres y M-05 exige verificarlos con M-08 antes de aceptar la ruta (D-03); las coordenadas nunca se toman del modelo. La v2 no importa los servicios de planeación de v1 ni reemplaza su modal. La auditoría aclara esa diferencia del código ya existente; no cambia las reglas de ninguno de los flujos.

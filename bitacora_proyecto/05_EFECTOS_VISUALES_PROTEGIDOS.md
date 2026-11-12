@@ -1,6 +1,6 @@
 # Efectos visuales protegidos (rare-ui) — NO SE TOCAN
 
-Última actualización: 2026-09-20
+Última actualización: 2026-11-10
 
 **Regla de Angel:** el rediseño de toda la interfaz (base de Stitch, 2026-09-20) ya se
 hizo respetando estos efectos, y cualquier rediseño futuro también debe respetarlos. Los efectos de este documento, sacados de la carpeta
@@ -49,8 +49,8 @@ a JS/CSS puro** porque RutaMX no tiene React ni build. La carpeta original no se
 
 | # | Efecto | Archivo | Qué hace | Ganchos que NO se pueden quitar |
 |---|---|---|---|---|
-| 9 | spotlight-card | `spotlight.js` + bloque 9 de `efectos.css` | Aro y resplandor que siguen al cursor en tarjetas y ventanas, en terracota→ocre. | La lista `SUPERFICIES` de `spotlight.js` debe coincidir con el selector `:is(...)` del bloque 9 (`.card`, `.ruta-burbuja`, `.modal-auth`, `.modal-ajustes`, `.modal-rutas`, `.modal-ia`). Toda ventana nueva que se sume debe agregarse a ambas listas. |
-| 10 | background-paths | `fondo.js` + bloque 10 de `efectos.css` | Líneas que fluyen detrás de toda la página, con los colores de la app. | El script crea `.fondo-rutas` solo, con 2 SVG de 36 curvas cada uno que animan `pathLength`, `pathOffset` y `stroke-opacity` como el original. Las secciones (`.hero`, `.section--*`) deben seguir transparentes o translúcidas para que se vea. No usar `opacity` por curva ni animar `transform` de capas: ver bitácora 03. |
+| 9 | spotlight-card | `spotlight.js` + bloque 9 de `efectos.css` | Aro y resplandor que siguen al cursor en tarjetas y ventanas, en terracota→ocre. | La lista `SUPERFICIES` de `spotlight.js` debe coincidir con el selector `:is(...)` del bloque 9 (`.card`, `.ruta-burbuja`, `.modal-auth`, `.modal-ajustes`, `.modal-rutas`, `.modal-ia`, `.navbar__menu`). Toda ventana nueva que se sume debe agregarse a ambas listas. |
+| 10 | background-paths | `fondo.js` + bloque 10 de `efectos.css` | Líneas que fluyen detrás de toda la página, con los colores de la app. | El script crea `.fondo-rutas` solo, con 2 SVG de 36 curvas cada uno (18 por SVG en pantallas ≤700 px) que animan `pathLength`, `pathOffset` y `stroke-opacity` como el original. Las secciones (`.hero`, `.section--*`) deben seguir transparentes o translúcidas para que se vea. No usar `opacity` por curva ni animar `transform` de capas: ver bitácora 03. |
 
 Además, los **iconos a medida** (sprite en `partials/iconos_sprite.html`) son parte del
 diseño: nada de emojis en la app. Los dibujos de `eliminar.js` y `duracion.js` conservan
@@ -117,7 +117,7 @@ estructura nueva, no eliminarlo.
 10. **Grid reveal:** al pulsar "Planea mi ruta" la página baja de inmediato y el mapa muestra la cuadrícula
     hasta que llega la ruta; se puede deslizar mientras carga.
 11. Consola del navegador sin errores y sin scroll horizontal en 375 px.
-12. `pytest -q` (123 tests) sigue pasando.
+12. Ejecutar la regresión con entorno aislado. Los 123 tests corresponden a una comprobación histórica de v1, no a toda la app actual. Corte 2026-11-10: `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests -q` → 222 pasan y 1 se omite; v1 y la integración de BD siguen pendientes de base aislada. Una suite de Python no sustituye la verificación visual.
 13. **Luz de tarjetas:** al mover el cursor cerca del borde de una tarjeta o ventana se ilumina el aro; con una ventana abierta solo brilla la ventana, no las tarjetas de atrás.
 14. **Fondo:** líneas que crecen y se desplazan como el original, cambiando entre los tonos de la paleta; con una ventana abierta se pausan.
 15. Ninguna tarjeta ni ventana pierde su fondo blanco (si pasa, revisar el fondo animado y la máscara del aro).

@@ -6,6 +6,11 @@ RutaMX es una app web para planear road trips por México. Flujo completo
 funcionando de punta a punta: formulario → cálculo de ruta → mapa →
 sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
+Lo anterior describe la v1 y sus verificaciones históricas; no certifica disponibilidad actual de Supabase.
+Lo nuevo de v2 se documenta en las secciones `[V2]` del final. Las cifras de destinos son fotografías:
+369 del catálogo inicial y 374 tras las cinco altas de gastronomía; no se recontó la base en esta auditoría.
+Los totales antiguos de pruebas se conservan como evidencia de cada entrega, no como resultado de hoy.
+
 ## Mapa y ruta
 
 - Mapa con Leaflet + OpenStreetMap.
@@ -124,8 +129,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   (`efectos/duracion.js`, ver sección de efectos visuales). Antes fue una rueda tipo iOS
   en un `<dialog>` (`time_picker.js`, ya eliminado). Sigue guardando `HH:MM` (24 h) en
   `[data-time-hidden]`, así que `form.js` y `main.js` casi no cambiaron.
-- **Presupuesto** (hoy ya no existe, ver "Gasto máximo recomendado") y **Horas máximas de manejo**: en vez de una lista
-  plana de `<datalist>` (se veía sosa), ahora son una fila de "burbujas"
+- **Histórico: presupuesto y horas máximas de manejo** (ambos retirados del formulario actual): en vez de una lista
+  plana de `<datalist>` (se veía sosa), se usó una fila de "burbujas"
   deslizable — mismo estilo que los chips de "¿Qué buscas?" — con montos
   predefinidos (presupuesto: $1,000, $3,000, $5,000, $7,000, $9,000; horas:
   1 a 16) más una burbuja "Otro" que revela un campo normal para escribir
@@ -135,7 +140,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## "Planear con IA" — chat que arma el itinerario completo
 
-- Botón "🤖 Planear con IA" en el formulario principal — abre un panel de
+- Botón "Planear con IA" (icono SVG) en el formulario principal — abre un panel de
   chat grande y centrado, efecto vidrio esmerilado (`<dialog>` nativo +
   `backdrop-filter: blur`), sin librerías nuevas.
 - El usuario describe su viaje en lenguaje natural; la IA hace máximo 5
@@ -153,8 +158,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   real del reloj de cada parada — no propone "dormir" en pleno día ni
   solo visitas cortas ya entrada la noche
   (`ai_service.filtrar_objetivos_por_hora_del_dia`).
-- **Funciona también sin usar el botón de IA**: si en el formulario
-  manual pones horas máximas de manejo + hora de salida,
+- **Funciona también sin usar el botón de IA**: si un cliente antiguo envía
+  `horas_max` + hora de salida sin geometría de ruta,
   `sugerir_paradas()` usa el mismo motor de reparto por propósito/hora
   (con una fórmula fija en vez de una conversación) — probado en vivo,
   CDMX→Oaxaca con horas_max=4 + hora_salida=08:00 devolvió una parada de
@@ -179,12 +184,11 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 - Filtra destinos por cercanía real a la carretera (usando la geometría de
   OSRM), no en línea recta.
-- Si el usuario indica horas máximas de manejo seguido, prioriza destinos
-  cerca de ese punto del viaje como sugerencia de descanso.
-- Se descartan destinos a menos de 1 hora real de manejo del origen (están
-  prácticamente en la misma ciudad de la que sales); ya NO se descartan
-  los que están cerca del destino (ahí sí tiene sentido sugerir cosas).
-- "Ver más recomendaciones" trae tandas de 16 en vez de 8.
+- El parámetro antiguo `horas_max` se conserva en la API como respaldo sin geometría; el formulario actual ya no lo pregunta.
+- El flujo con geometría usa la ventana de **30 min después del origen a 20 min antes del destino**.
+  La exclusión de una hora corresponde al comportamiento anterior, no a los tramos actuales.
+- La primera vista muestra 5 recomendaciones por franjas; el navegador pide 40 candidatos por lote
+  y «Ver más» despliega los restantes, sin una tanda fija de 16.
 - Sin filtros de interés marcados da recomendaciones generales; si luego
   seleccionas uno o más filtros y vuelves a dar "Planea mi ruta", se
   filtran de acuerdo a eso.
@@ -215,16 +219,14 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Formulario sin valores precargados
 
-- Origen, Destino y Nombre de la ruta no traen texto real
-  precargado: los tres primeros usan `placeholder` (ejemplo en gris que
-  desaparece al escribir) y el presupuesto arranca sin burbuja elegida
-  (antes traía 6500). Origen/Destino siguen con `required`; nombre vacío
-  cae a "origen a destino" y presupuesto vacío se trata como 0.
+- Origen, Destino y Nombre de la ruta usan `placeholder`, sin texto real precargado.
+  Origen/Destino tienen `required`; nombre vacío cae a "origen a destino".
+  Ya no hay campo de presupuesto: el servidor calcula el gasto recomendado.
   Archivo: `v1/templates/partials/hero.html`.
 
 ## Navegación con Google Maps (enlace + QR)
 
-- Botón "📍 Abrir en Google Maps" en la tarjeta de resumen del itinerario,
+- Botón "Abrir en Google Maps" (icono SVG) en la tarjeta de resumen del itinerario,
   y sección "Empieza tu viaje" en el PDF con un QR y un enlace tocable.
   Escanear el QR (o tocar el botón en el celular) abre la ruta completa en
   la app de Google Maps lista para "Iniciar". No usa la API de Google: es
@@ -247,7 +249,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   compartida `formatoDuracion()` en `static/js/formato.js` (y su gemela
   `formato_duracion()` en `pdf_service.py`, deben dar lo mismo).
 
-- **"🗂️ Mis rutas guardadas"**: botón junto a "Planear con IA" en la tarjeta
+- **"Mis rutas guardadas"** (icono SVG): botón junto a "Planear con IA" en la tarjeta
   del inicio. Abre una ventana flotante con las rutas del usuario como
   burbujas (nombre, origen → destino, km · duración · paradas). Sin sesión
   muestra "Aún no has iniciado sesión" con botones Iniciar sesión / Crear
@@ -292,7 +294,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   comida (13–16) o cena (19–21:30); hospedaje si se llega a las 20:00 o
   después. Para no contar de más, solo cuenta una comida por cada 3 h de
   camino y una noche por cada 8 h. Cada parada del itinerario muestra la
-  etiqueta "🍽️ Comer · 13:10" / "🛏️ Dormir · 21:00". Las paradas guardan su
+  etiqueta "Comer · 13:10" / "Dormir · 21:00" con su icono SVG. Las paradas guardan su
   `horas_estimadas` (hora de camino) para poder calcular la hora de
   llegada. Las noches se **deducen solas** simulando el viaje día por día
   con la hora de salida (default 08:00): no se maneja pasadas las 21:00 y
@@ -304,7 +306,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   Cada caseta cuesta distinto, así que es un promedio, y el resumen lo
   dice ("Casetas (promedio)" / "(estimado IA)").
 - **Formulario:** selector de "¿Cuántas personas van?" (burbujas 1–8,
-  vacío = 1). El botón pequeño "⚙️ Ajustes de gasto" vive en el
+  vacío = 1). El botón pequeño "Ajustes de gasto" (icono SVG) vive en el
   **Resumen del viaje**, debajo del desglose, y abre una ventana con
   "Aplicar cambios" (recalcula el gasto) y ✕ (deshace): coche
   (Compacto 15 / Mediano 13 / SUV 11 km/l), gasolina (Magna $23.8 /
@@ -336,7 +338,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 - **Tarjeta ancha** (máx. 980 px, antes 620). Origen | Destino y Nombre de
   la ruta | Hora de salida van en pares; "¿Qué buscas?" y "¿Cuántas
   personas van?" ocupan cada uno **su propia fila a todo el ancho** (así no se ven pegadas unas con otras). Abajo, centrados:
-  "Planea mi ruta", los dos botones y el botón pequeño de ajustes. Con
+  "Emprender ruta", "Planear con IA" y "Mis rutas guardadas"; ajustes vive en el Resumen del viaje. Con
   menos de 900 px pasa a una sola columna. La Hora de salida subió junto
   al nombre para que los pares queden simétricos.
 - **Una sola forma para todas las opciones:** las casillas de personas y los chips de "¿Qué buscas?" son rectángulos redondeados de la
@@ -345,10 +347,8 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   2 filas de 4. Estilos al final de `styles.css`.
 - **Personas:** 8 casillas que llenan todo el ancho (sin "Otro"; máximo 8). `bubble_picker.js` acepta selectores sin botón "Otro".
 - **Ajustes de gasto:** dejó de ser un desplegable dentro del formulario.
-  Ahora es un botón pequeño y discreto ("⚙️ Ajustes de gasto") centrado
-  bajo los botones principales, que abre una ventana flotante (`<dialog>`)
-  con coche, gasolina, comidas y noches. Muestra "· N" cuando hay ajustes
-  activos.
+  Ahora es un botón pequeño con icono SVG en el **Resumen del viaje**, no bajo el formulario.
+  Abre un `<dialog>` con coche, gasolina, comidas y noches, y muestra "· N" cuando hay ajustes activos.
 
 ## Sugerencias por lapsos de tiempo (reemplaza "Horas máximas de manejo")
 
@@ -487,27 +487,11 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Prioridad a los lugares distinguidos (estrella / Michelin / UNESCO)
 
-- **Regla de Angel:** una ciudad o pueblo con reconocimiento gastronómico
-  (estrella ★) tiene preferencia en las recomendaciones **siempre que la ruta
-  pase cerca** (a **40 km o menos** de desvío, `RADIO_PRIORIDAD_KM`). Salen en la
-  **primera página** (las primeras 4 sugerencias) y, de ser posible, en el
-  primer lugar, tanto en "Todo el camino" como dentro de un tramo. Aplica igual
-  en automático que en un tramo de "Comer", y también a "Planear con IA"
-  (`asignar_paradas_a_objetivos`).
-- **Cómo se ordena:** `ai_service.prestigio()` da puntos por reconocimiento
-  (estrella Michelin > UNESCO / 50 Best > Bib Gourmand; 2 estrellas suman más);
-  `prioridad()` lo aplica solo si el lugar está a ≤ 40 km de la carretera;
-  `_distinguidos_primero()` los sube al frente (los más distinguidos primero; a
-  igual puntaje, el más cercano al inicio del viaje). Cada sugerencia trae ahora
-  `distancia_a_ruta_km`.
-- **Por qué el límite de 40 km:** las sugerencias aceptan lugares hasta 150 km de
-  la ruta; sin este límite, en León → Monterrey Guadalajara (145 km de la
-  carretera) saltaba al primer lugar solo por tener estrella. Más allá de 40 km
-  el lugar sigue pudiendo aparecer, pero sin prioridad (conserva su ★).
-- Ejemplos verificados: CDMX → Oaxaca (Atlixco y Puebla primero), Mérida → Cancún
-  (Playa del Carmen y Puerto Morelos primero; Tulum, a 48 km, sin prioridad),
-  León → Monterrey (Guadalajara ya no va primero).
-- 4 tests nuevos (rutas y prioridad).
+- `prestigio()` y `prioridad()` conservan la preferencia por reconocimientos solo a **40 km o menos** de la carretera; más lejos, la estrella se muestra sin esa prioridad.
+- En el flujo actual `_sugerir_por_lapsos` filtra intereses y reparte por franjas con `_repartir_por_franjas`: gana lo distinguido **dentro de cada franja**, no se garantiza subir todos los distinguidos al principio. La primera vista son 5 recomendaciones, sin tope global de 2 estrellas.
+- La regla anterior de primeras 4 sugerencias y el orden global quedaron reemplazados (ver «Recomendaciones por franjas de horas»). `_distinguidos_primero()` no existe en el código actual; `_linea_de_tiempo` y `_elegir_con_distinguidos` sí existen, pero son auxiliares del flujo anterior.
+- **Motivo del radio (hallazgo histórico):** se aceptaban candidatos hasta a 150 km; Guadalajara, a 145 km de la carretera en León→Monterrey, desplazaba a lugares cercanos solo por su reconocimiento. El límite de 40 km evita esa prioridad sin ocultar la estrella.
+- Las comprobaciones registradas al introducir el radio (CDMX→Oaxaca, Mérida→Cancún y León→Monterrey) son históricas; no se repitieron durante esta auditoría.
 
 ## Sugerencias como línea de tiempo (5 visibles, "Ver más" y máximo 2 estrellas)
 
@@ -563,7 +547,7 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
 
 ## Efectos visuales (solo frontend) tomados de rare-ui
 
-- Pedido de Angel: usar 7 efectos (el step-player se quitó y después se sumó el duration-picker; hoy son 7) de la carpeta `efectos visuales rare-ui` (que
+- Pedido de Angel: usar 8 efectos (el step-player se quitó; la lista vigente incluye duration-picker y grid-reveal) de la carpeta `efectos visuales rare-ui` (que
   **no se modificó**; es una librería de componentes React/Tailwind/Motion). Como
   RutaMX es Flask + JS/CSS puro, cada uno se **reescribió sin librerías** en
   `v1/static/js/efectos/` + `v1/static/css/efectos.css`. **No se tocó nada del
@@ -615,16 +599,17 @@ sugerencias de paradas → armar itinerario → guardar → descargar PDF.
   final (se veía como un salto raro al segundo); ahora parte de `18px` y todo cambia a la par en ~0.35 s.
   Con sesión iniciada "Iniciar sesión" se oculta (el monito ocupa su lugar) y "Cerrar sesión" vive en
   la ventana de perfil, donde esta regla sigue aplicando.
+- **Cuadrícula sobre el mapa** (`gridreveal.js`, efecto `grid-reveal`): cubre el mapa durante el cálculo de ruta; su flujo se detalla en «Planea mi ruta abre al instante».
 - **Orbe de puntos** (`orbe.js`, grande: 120 px en sugerencias y 92 px en el chat): reemplaza el texto "Buscando ideas para tu
   recorrido…" y los tres puntitos de "Planear con IA" mientras piensa.
 - Todo respeta `prefers-reduced-motion`. Ancla nueva `id="inicio"` en el hero (para la
   píldora).
 - **Step-player quitado** a pedido de Angel (no le gustó): se borraron `stepplayer.js`, su
   CSS y sus enganchos. Ajustes posteriores: PIN a lo ancho, gooey animado con el cursor,
-  píldora a la esquina derecha y más grande, orbe más grande.
+  píldora entonces a la esquina derecha (después se movió al navbar compacto) y orbe más grande.
 - Probado en vivo (desktop y móvil 375 px): cálculo de ruta, cambio de tramos,
   reproducción, agregar/borrar parada, login con PIN incorrecto, píldora, menú;
-  sin errores de consola y sin desborde horizontal. 123 tests siguen pasando.
+  sin errores de consola y sin desborde horizontal. Registro histórico de esa entrega: 123 tests aprobados; no se repitió hoy.
 
 ## Filtro principal: lo que se marca en "¿Qué buscas?" manda
 
@@ -757,7 +742,7 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
   la página (`efectos/fondo.js` + bloque 10 de `efectos.css`). **Respeta el código original del
   componente, incluido su arranque (sin entrada propia):** dos juegos (position 1 y -1) de 36
   curvas con la misma fórmula, `viewBox 0 0 696 316`, grosor `0.5 + i*0.03` y `strokeOpacity
-  0.1 + i*0.03`; cada curva anima `pathLength` 0.3→1, `pathOffset` 0→1→0 y `opacity` 0.3→0.6→0.3,
+  0.1 + i*0.03`; cada curva anima `pathLength` 0.3→1, `pathOffset` 0→1→0 y `stroke-opacity` (base × 0.3→0.6→0.3),
   en linear y en bucle, con duración distinta por curva. **Solo dos cambios, pedidos por Angel:**
   (1) velocidad: cada vuelta dura ~16.5–26 s en lugar de 20–30 s, un punto medio que Angel escogió
   entre el original y una versión más rápida de 13–22 s (`DURACION_BASE` y `DURACION_AZAR` en
@@ -777,11 +762,12 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
   `styles.css`: `.btn` le ganaba con `inline-flex` y el margen automático no lo centraba).
 - **Corrección móvil:** la fila del itinerario (nombre + etiqueta + botones) desbordaba a
   375 px; ahora baja de línea y las cuadrículas usan `minmax(0, 1fr)`.
-- Verificado: 123 tests pasan, consola sin errores, sin scroll horizontal en 375 px.
+- Verificación histórica del rediseño: 123 tests aprobados, consola sin errores y sin scroll horizontal en 375 px; no es la regresión actual.
 
 ## Calidad / pruebas
 
-- 123 tests automatizados (`pytest -q`), cubren cálculo de ruta, geocoding,
+- **Corte actual (2026-11-10):** `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests -q` → **222 passed, 1 skipped** (navegador opcional). Hay una advertencia de compatibilidad de dependencias de `requests`. No se corrió v1 contra Supabase ni la regresión visual.
+- **Resultado histórico de v1, previo a la reorganización:** 123 tests (`pytest -q`), que cubrían cálculo de ruta, geocoding,
   sugerencias, guardado de rutas, generación de PDF, generación de
   destinos con IA (con el proveedor mockeado, sin gastar tokens reales),
   cuentas de usuario (registro, login, aislamiento entre cuentas), y el
@@ -803,7 +789,7 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
   público y trae los 8 efectos portados; queda como decisión pendiente de Angel (y Roberto) si se hace privado.
 - **Comprobado:** se revisó la plantilla; los efectos y sus `<script>` no se tocaron.
 
-## Commits recientes (los últimos 8)
+## Cambios históricos de v1 (anteriores a la reorganización)
 
 1. Avatar de sesión con Blobatar, navbar fijo que se encoge y tope suave entre secciones — ver
    las secciones "Cuentas de usuario" y "Navbar fijo que se encoge…" de arriba.
@@ -817,7 +803,7 @@ logo y paleta de Angel). Solo diseño: no se tocó el backend.
 
 ## Documento de requerimientos v2.0 (práctica de historias y trazabilidad)
 
-`info_proyecto/RutaMx_Documento_Requerimientos_v2.0.pdf` (46 páginas, generado solo a partir de
+`documentacion/RutaMx_Documento_Requerimientos_v2.0.pdf` (46 páginas, generado solo a partir de
 `RutaMx_Documento_Requerimientos.pdf` v1.0, que no se modificó). Incluye RF/RNF corregidos, 23 historias
 priorizadas (12 Alta, 10 Media, 1 Baja), 93 criterios Dado/Cuando/Entonces (92 originales + CA-12.5),
 matriz de trazabilidad de RF y RNF, propuesta de 11 módulos (M-01 a M-11), bitácora de IA y respuestas a las
@@ -832,14 +818,14 @@ por Supabase, ver `03`).
 - `app/` pasó a `v1/` (con `v1/tests/` y `v1/scripts/`); `app/models.py` pasó a `base_datos/modelos.py`.
 - `base_datos/` (compartida, no importa v1 ni v2): `conexion.py` (objeto `db`, `iniciar_base_datos(app)` y
   `crear_app_minima()` para scripts), `modelos.py`, `repositorios/` (ahí está M-09, ver la sección `[V2]` de abajo), `migraciones/` y `scripts/`.
-- `v2/` creada y vacía para lo nuevo. Se borró la carpeta vacía `paginas_nav_bar/`.
+- En esa reorganización `v2/` se creó vacía; hoy contiene los módulos del v0.2.0 descritos abajo. Se borró la carpeta vacía `paginas_nav_bar/`.
 - Reglas de dependencia y de cambios a la base en `AGENTS.md`.
 - README, AGENTS y bitácoras con las rutas nuevas.
 
 ## Plan de implementación del módulo M-09 (entrega de clase, 2026-10-29)
 
-`documentacion/RutaMx_Plan_de_Implementacion_M09.pdf` (v1.1, revisado por Angel y Roberto) y su `.md` editable. Solo plan,
-sin código: 12 tareas (T-01 a T-12), 15 casos de prueba y riesgos para M-09 Repositorio de rutas.
+`documentacion/RutaMx_Plan_de_Implementacion_M09.pdf` (v1.1, revisado por Angel y Roberto) y su `.md` editable. Documento
+de diseño: 12 tareas (T-01 a T-12), 15 casos de prueba y riesgos para M-09. La implementación parcial posterior se describe abajo.
 
 
 ## [V2] M-09 Repositorio de rutas: crear, obtener y listar (2026-11-03)
@@ -873,7 +859,7 @@ Estado: **plan aceptado por Angel y Roberto el 2026-11-05 y publicado en GitHub*
 - `documentacion/A3_Propuesta_Incrementos.md` y `A4_Validacion_Plan.md`: propuesta de 4 incrementos (v0.2.0 a v0.5.0) y su validación cruzada. En la validación, Codex corrió su verificación reproducible y la revisé: 44 RF y 33 RNF asignados una sola vez y cero dependencias fuera de orden. Declara que no fue una conversación nueva.
 - `documentacion/plan_incrementos.md`: plan final, aprobado por Angel y Roberto el 2026-11-05, con fichas, matriz de trazabilidad inicial, registro de cambios y bitácora de IA.
 - Flujo: Claude analizó y documentó; Codex hizo el conteo ciego y la validación; cada paso lo revisó la otra IA. Cada revisión encontró errores reales que se corrigieron (por ejemplo, yo había escrito "seis operaciones y 124 pruebas" de M-09 tomándolo de un relevo sin verificar; el repo tiene tres operaciones).
-- **Publicado (2026-11-05):** el tag anotado `v0.1.0` (sobre el estado de M-09) y el commit `3e11b46` los subió Angel con `git push`; se comprobó con `git ls-remote`. Se generó `documentacion/RutaMX_Plan_de_Incrementos.pdf` (portada, plan y anexos A1 a A4) para la entrega en Moodle; el PDF no está en git. En esta fase documental no se verificó la app real ni se corrieron pruebas de la app; M-09 y lo nuevo de v2 siguen en "probado en simulación (2026-11-03)" y sin verificar en uso real. Esto no cambia la evidencia histórica de pruebas en vivo de la v1 registrada arriba.
+- **Publicado (2026-11-05):** el tag anotado `v0.1.0` (sobre el estado de M-09) y el commit `3e11b46` los subió Angel con `git push`; se comprobó con `git ls-remote`. Se generó `documentacion/RutaMX_Plan_de_Incrementos.pdf` (portada, plan y anexos A1 a A4) para la entrega en Moodle; en ese momento no estaba en git. Los dos PDF del plan/entrega quedaron versionados después en `407a14e` (2026-11-10). En esta fase documental no se verificó la app real ni se corrieron pruebas de la app; M-09 y lo nuevo de v2 siguen en "probado en simulación (2026-11-03)" y sin verificar en uso real. Esto no cambia la evidencia histórica de pruebas en vivo de la v1 registrada arriba.
 
 ## [V2] Incremento v0.2.0: M-11 Utilerías (2026-11-10)
 
@@ -909,9 +895,9 @@ Estado: **probado en simulación (2026-11-10)**; sin verificar en uso real ni en
 - La ruta aceptada y el itinerario vienen de M-05; el resumen del chat se deriva de esa misma ruta. Los fallos de extracción, generación o validación geográfica conservan la ruta aceptada. Los datos del usuario se guardan al extraerse, aunque falle generar o validar la propuesta, y permiten reintentar sin volver a pedirlos; pueden diferir de la ruta anterior mientras el intento nuevo no se acepta. Las salidas son copias y las operaciones se serializan con un candado por conversación. Cada instancia pertenece a una sola conversación del servidor; no se acepta estado de ruta enviado por el navegador.
 - D-03: ante igualdad de origen/destino o paradas repetidas, guarda la propuesta pendiente en el servidor y pide confirmación específica. `confirmar(bool)` o una respuesta exacta «sí»/«confirmo»/«no»/«cancelar» resuelve esa solicitud sin volver a generar con IA; cada condición se confirma por separado. Una descripción nueva invalida las confirmaciones anteriores y conserva el contexto pendiente para corregirlo. Sin verificador geográfico no presenta una ruta válida.
 - No importa Flask, no guarda chat en la base y no implementa todavía agregar/eliminar/reordenar paradas ni cambiar preferencias sobre una ruta (otros incrementos). Esta unidad cubre la creación de propuestas.
-- `v2/tests/test_orquestador.py`: 30 pruebas con IA y geografía simuladas, sin red ni base. `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests` → **174 passed** (incluye las 30 del orquestador). Falta verificar el flujo integrado en navegador y con proveedores reales; no se declara cerrado el incremento.
+- `v2/tests/test_orquestador.py`: **35 pruebas actuales**, con IA y geografía simuladas, sin red ni base. La primera entrega registró 30 y 174 en toda v2; tras corregir el reintento son 35 y, en el corte de la auditoría, **222 passed, 1 skipped** en toda v2. Falta verificar el flujo integrado en navegador y con proveedores reales; no se declara cerrado el incremento.
 
-- [V2] Corrección de revisión de M-04 (2026-11-10): antes se perdían los datos recién extraídos si fallaba la generación. Ahora se conservan por separado de la ruta aceptada y queda un intento por generar; un mensaje de reintento sin datos nuevos vuelve a generar con los datos completos. Regresión probada ante fallo de IA, propuesta vacía/distinta, intereses alterados y caída geográfica. Verificación de la corrección: `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests/test_orquestador.py` → **35 passed**; la suite v2 actual (incluye las pruebas nuevas del verificador geográfico de la otra unidad) → **200 passed**.
+- [V2] Corrección de revisión de M-04 (2026-11-10): antes se perdían los datos recién extraídos si fallaba la generación. Ahora se conservan por separado de la ruta aceptada y queda un intento por generar; un mensaje de reintento sin datos nuevos vuelve a generar con los datos completos. Regresión probada ante fallo de IA, propuesta vacía/distinta, intereses alterados y caída geográfica. Verificación de la corrección: `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests/test_orquestador.py` → **35 passed**; la suite v2 en ese momento (incluía las pruebas nuevas del verificador geográfico) → **200 passed**; el total posterior está en «Calidad / pruebas».
 
 ## [V2] Incremento v0.2.0: M-03 Interfaz de Planear (2026-11-10)
 
@@ -934,3 +920,59 @@ Estado: **probado en simulación (2026-11-10)**. Se creó fuera de la tabla del 
 - `v2/tests/test_verificador_geografico.py`: 21 pruebas con transporte falso, sin red, incluida la integración con M-05. Una consulta real a Nominatim funcionó el 2026-11-10 (Oaxaca devolvió `relation:2529822`; un lugar inventado devolvió `None`): es una sola comprobación manual, no una prueba automática.
 - `scripts/demo_planear_v2.py`: servidor aparte (`http://127.0.0.1:5055/v2/planear`) con una IA de reglas fijas y la franja «Modo demostración: respuestas de prueba». No usa base, `.env` ni IA real; la app normal no lo usa.
 - Reporte del incremento: `documentacion/Reporte_Avance_Incremento_v0.2.0.md`.
+
+## [V2] Auditoría de las bitácoras (2026-11-10)
+
+- Se contrastaron las cinco bitácoras y su README con el código, los commits publicados en `origin/main` y la copia gastronómica CSV de 2026-09-19 (107 lugares: 21 conservan comida y 86 la perderían). No se consultó Supabase ni se revalidaron fuentes externas de precios, población o reconocimientos.
+- Se retiraron de 02 el plan aprobado, el hash ya anotado y los PDF ya versionados; también comportamientos/limitaciones aceptadas que estaban presentados como pendientes. Las decisiones siguen en 03 y los hechos en 01.
+- Se conciliaron formulario, ajustes, clasificación de comida/noches, personas del chat, prioridad por franjas y tramos automáticos con el código actual. Los flujos v1/v2 y las reglas reemplazadas se identifican expresamente; no cambió ninguna regla de la aplicación ni la protección de efectos.
+- Evidencia actual: `PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests -q` → **222 passed, 1 skipped**; `git diff --check` sin errores. Las cifras 123 de v1, 53 de M-09 y entregas intermedias se conservan como resultados históricos; no se repitieron sus pruebas contra BD real.
+- Commits publicados en `origin/main` y comprobados el 2026-11-10: M-11 `63ba88f`, M-07 `82a1f65`, M-05 `59ca0f6`, M-08 `3bfec32`, M-04 `77beb40`, M-03 `4681d4e`, demostración `5e3c83f`, reporte/bitácora `6b2a099` y PDF del plan/entrega `407a14e`. El hash del plan ya estaba anotado desde `668b9ba`. Existe el tag local `v0.1.0`; no hay tag `v0.2.0`. Se comprobó la publicación con `git status -sb` (sin adelanto respecto a `origin/main`) y `git rev-parse HEAD refs/remotes/origin/main`; además, `git ls-remote origin refs/heads/main` devolvió `407a14e26836868c458d98889b53322b54c9d960`, idéntico al HEAD local. No se ejecutó ningún push.
+
+Discrepancias corregidas (referencias a la sección actual, incluidos renglones retirados de 02):
+
+| Archivo y línea | Corrección |
+|---|---|
+| `01_LO_QUE_YA_ESTA_HECHO.md:9` | Se separaron v1/v2, disponibilidad no comprobada y fotografías de 369/374 destinos. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:132` | Presupuesto y horas máximas se marcaron como retirados; horas_max queda solo como compatibilidad de API. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:141` | Se corrigieron etiquetas con emojis de IA, rutas guardadas, Google Maps, gasto y ajustes: el código usa SVG. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:183` | Exclusión de 1 hora y tandas de 16 → ventana 30/20 minutos, 5 recomendadas y lote de 40. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:220` | Se retiró la descripción de presupuesto precargado; no existe ese campo actual. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:326` | Ajustes se ubicó en el Resumen del viaje y se corrigió Emprender ruta; no hay botón de ajustes bajo el formulario. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:488` | Primeras 4, orden global y función inexistente → prioridad por franjas y radio 40 km; se conserva el motivo histórico. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:548` | 7 efectos → 8 incluyendo grid-reveal; esquina de píldora marcada como ubicación anterior. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:741` | Animación opacity por curva → stroke-opacity, coherente con el código y la protección. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:767` | 123 pruebas de v1 se identifican como históricas; corte v2: 222 aprobadas, 1 omitida. M-04 distingue 30 iniciales de 35 actuales. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:792` | La lista temática antigua dejó de llamarse últimos 8 commits; los hashes actuales se registran en esta auditoría. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:804` | Ruta info_proyecto inexistente → documentacion/. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:812` | v2 vacía y M-09 solo plan se acotaron a sus fechas; se enlazó la implementación posterior. |
+| `01_LO_QUE_YA_ESTA_HECHO.md:851` | PDF sin versionar → alta posterior en 407a14e, sin borrar su estado histórico de noviembre 5. |
+| `02_LO_QUE_FALTA.md:10` | Destinos dejó de imponerse como siguiente prioridad; se quitó la tarea gastronómica terminada y 84 se corrigió a 86 según CSV fechado. |
+| `02_LO_QUE_FALTA.md:29` | La precisión prometida de 3–5% se cambió por hipótesis sin medición, pendiente de validar. |
+| `02_LO_QUE_FALTA.md:39` | Se retiró reducir líneas del fondo: contradice la regla de cambiar solo color y velocidad. |
+| `02_LO_QUE_FALTA.md:49` | Ausencia de TODO → comentario residual real en map.js:4; no implica aprobar navegación propia. |
+| `02_LO_QUE_FALTA.md:55` | Se retiraron personas=1, clasificación solo por interés y decisión SAKBÉ descartada. El chat ya usa personas/hora; solo falta decidir heredar otros ajustes. |
+| `02_LO_QUE_FALTA.md:72` | Se quitaron recuperar PIN y unicidad de nombre como tareas: son límites aceptados en 03. También se retiró la sugerencia de cambiar el navbar compacto decidido. |
+| `02_LO_QUE_FALTA.md:100` | Se separaron pendientes v1/v2; se quitó personas no persistidas porque resumen.ajustes sí conserva ese dato. |
+| `02_LO_QUE_FALTA.md:137` | Se quitó el conteo quedan 6, que no coincidía con viñetas ni con efectos 8+2. |
+| `02_LO_QUE_FALTA.md:183` | La caída de Supabase se fechó como registro de octubre, sin presentarla como comprobación actual. |
+| `02_LO_QUE_FALTA.md:190` | Se eliminaron plan aprobado/publicado, hash ya anotado y PDF ya versionados. La integración v0.2.0 sigue pendiente; los commits de módulos están publicados en `origin/main`, comprobado con `git status -sb` y `git ls-remote`. |
+| `03_DECISIONES_Y_NOTAS.md:5` | Se incorporaron los 90 minutos de clase informados, manteniendo pendiente trabajo fuera de clase. |
+| `03_DECISIONES_Y_NOTAS.md:17` | PNF-11 → RNF-11; se conserva la evidencia histórica de M-09. |
+| `03_DECISIONES_Y_NOTAS.md:87` | Desplegable de ajustes → dialog actual del Resumen del viaje. |
+| `03_DECISIONES_Y_NOTAS.md:118` | El conteo 96/369 se identificó como fotografía previa al marcado gastronómico. |
+| `03_DECISIONES_Y_NOTAS.md:174` | Tope de 2 estrellas marcado como reemplazado por franjas, sin borrar razones ni mediciones. |
+| `03_DECISIONES_Y_NOTAS.md:190` | Se distinguió fórmula de respaldo de 3 h del parámetro tramos=paradas_estimadas que manda el formulario. |
+| `03_DECISIONES_Y_NOTAS.md:203` | Presupuesto/horas máximas quedaron como historia de las burbujas, no campos actuales. |
+| `03_DECISIONES_Y_NOTAS.md:673` | La asignación determinista es propia de v1; v2 propone nombres y exige verificación D-03. No se cambia la regla de coordenadas verificadas. |
+| `03_DECISIONES_Y_NOTAS.md:388` | Navbar no fijo se acotó al momento del bug histórico del gooey. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:5` | Sin implementar → parcial, conforme a casillas [x]; fecha e índice actualizados. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:44` | Condiciones y cuotas comerciales fechadas como hallazgos de septiembre, no revalidadas en esta auditoría. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:100` | La lectura de estrellas/Bib Gourmand ya estaba hecha; queda la futura revisión de fuentes al cargar establecimientos. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:132` | Fotografías de 369 destinos y 107 con comida separadas; CSV confirma 21 conservados y 86 por podar. Recontar antes de aplicar. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:291` | Se aclaró la exclusión de establecimientos en automático, coherente con la propia regla 7b. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:301` | Se acotaron prioridad global y función inexistente frente al código por franjas; radio y condiciones futuras se conservan. |
+| `04_PLAN_RESTAURANTES_Y_HOTELES.md:327` | El checklist conserva sus fases; resultados van a 01 y completados se borran solo de 02. |
+| `05_EFECTOS_VISUALES_PROTEGIDOS.md:52` | Se incluyó navbar__menu en spotlight y la variante móvil de 18 curvas del fondo, ya existentes en código. |
+| `05_EFECTOS_VISUALES_PROTEGIDOS.md:120` | 123 históricos separados de 222+1 actuales; regresión v1/BD y verificación visual permanecen pendientes. |
+| `README.md:16` | El índice distingue implementación/evidencia y estado parcial del plan 04; fecha de revisión añadida. |

@@ -13,7 +13,7 @@
 | RF del incremento | 12 asignados: 8 con cobertura completa del incremento y 4 con cobertura parcial (todos **probados en simulación**) |
 | Avance del proyecto | 8 de 44 RF completos en simulación (18.2%); 8 de 44 parciales (18.2%); 28 de 44 sin iniciar (63.6%); 0 de 44 verificados de extremo a extremo en uso real |
 | Pruebas | 222 pasan y 1 se omite (`pytest v2/tests`), todas con datos ficticios y sin red |
-| Lo que falta para cerrar v0.2.0 | Verificación visual en navegador, regresión de v1 contra una base aislada, IA real (no hay llave), commit y tag `v0.2.0` |
+| Lo que falta para cerrar v0.2.0 | Verificación visual en navegador, regresión de v1 contra una base aislada, IA real (no hay llave), subir los commits a GitHub y el tag `v0.2.0` |
 
 El incremento **no se declara cerrado**: el código está probado en simulación, pero el criterio del plan para cerrarlo incluye verificarlo en un navegador real, regresión de lo anterior y el tag, y eso queda pendiente (sección 6).
 
@@ -66,7 +66,7 @@ Lo observado en la sesión de trabajo con las dos IA (marcas de hora del registr
 | Duración del incremento | 1 clase = 90 min | Del arranque de Claude (09:12) al corte (09:49): 37 min de ventana observada; de la aprobación (09:21) al corte: 28 min |
 | Bloque de implementación | Parte de la clase | Los 6 módulos tienen código y pruebas al corte |
 | Bloque de pruebas (normal, límite, error) | Parte de la clase | 222 pruebas con casos normal, límite y error en simulación |
-| Bloque de integración (regresión, merge, tag) | Parte de la clase | **No hecho**: sin regresión de v1, sin commit ni tag |
+| Bloque de integración (regresión, merge, tag) | Parte de la clase | **Parcial**: hay 9 commits locales `[V2]` (2026-11-10), pero sin regresión de v1, sin push y sin tag |
 
 Lo que **no** se puede afirmar con estos datos: la hora a la que empezó la clase, cuánto trabajaron Angel y Roberto antes o fuera de ella, ni cuánto tardaría una persona sola en lo que hicieron las IA. Los 37 minutos son tiempo de las IA trabajando en equipo, no horas del equipo humano. Con esta sola muestra tampoco se calibran los incrementos 3 a 5 (el plan pide recalibrar al cerrar el v0.2.0, y todavía no está cerrado).
 
@@ -149,7 +149,7 @@ Solo se cuentan los que tienen una prueba concreta. Los demás no se declaran cu
 | Pasos de la tabla cerrados al corte | 5 de 6 (este reporte es el sexto) |
 | Código nuevo de v2 (sin pruebas) | 909 líneas de Python (recuento de Codex, 2026-11-10) |
 | Pruebas nuevas de v2 | 222 (más 1 omitida) |
-| Commits y tag del incremento | 0 (nada se ha subido ni etiquetado) |
+| Commits y tag del incremento | 9 commits locales con prefijo `[V2]` (hechos el 2026-11-10 tras el corte); sin push a GitHub y sin tag `v0.2.0` |
 
 ## 5. Decisiones tomadas hoy
 
@@ -167,7 +167,7 @@ Solo se cuentan los que tienen una prueba concreta. Los demás no se declaran cu
 | Regresión de v1 y de `base_datos` | Las pruebas de v1 escriben en la base real de Supabase (documentado) y las de `base_datos` piden una base desechable (`RUTAMX_TEST_DB_URL`) | Base aislada y correr las tres suites |
 | Mapa (parte de RF-43) | Es del v0.5.0 y depende de P-02 | Incremento 5 |
 | `SECRET_KEY` por defecto en `config.py` | Valor de desarrollo; con él la sesión de la conversación se podría falsificar | Exigir una llave real antes de publicar |
-| Commit y tag `v0.2.0` | Aún no se pide ni se hace | Después de la verificación visual y la regresión |
+| Push y tag `v0.2.0` | El push lo hace el usuario; el tag espera la verificación visual y la regresión | `git push origin main`; luego el tag |
 
 Preguntas abiertas del plan que siguen sin respuesta: P-01 (cómo se marca una ruta pública), P-02 (proveedor de mapas) y P-03 (valores de categoría y región). P-01 y P-03 bloquean el v0.4.0.
 
@@ -190,5 +190,5 @@ Frases que entiende la IA de la demostración: «Salgo de Ciudad de México», �
 
 1. Revisar a ojo la pantalla con la demostración y registrar el resultado con fecha.
 2. Preparar una base aislada para la regresión y correr las tres suites.
-3. Si ambas salen bien, hacer commit con el prefijo `[V2]` y el tag `v0.2.0`, y recalibrar los incrementos 3 a 5 con lo medido.
+3. Si ambas salen bien, subir los commits `[V2]` con `git push origin main` y crear el tag `v0.2.0`, y recalibrar los incrementos 3 a 5 con lo medido.
 4. Mientras no haya llave de IA, el v0.3.0 (guardar, recuperar, agregar parada) se puede avanzar con la IA simulada.

@@ -1,8 +1,8 @@
 # Plan: re-etiquetar la base y agregar restaurantes y hoteles
 
-Última actualización: 2026-09-19
+Última actualización: 2026-11-10
 
-Este es el plan completo (todavía **sin implementar**) de lo que Angel quiere
+Este es el plan completo (**parcialmente implementado**: gastronomía destacada y prioridad a destinos) de lo que Angel quiere
 hacer con más tiempo: (1) revisar las etiquetas de la base actual de destinos,
 y (2) crear tablas de restaurantes y hoteles con lugares buenos, para que las
 recomendaciones de "comer" y "dormir" cambien. Está aquí para que cualquiera
@@ -13,7 +13,7 @@ Leer también `02_LO_QUE_FALTA.md` (pendientes) y `03_DECISIONES_Y_NOTAS.md`.
 ## 1. Qué quiere Angel (en sus palabras, ordenado)
 
 1. **No pagar nada.** Ninguna API de pago ni tarjeta.
-2. **Primero cambiar la base actual (369 destinos), después crear las tablas de
+2. **Primero revisar la base de destinos, después crear las tablas de
    restaurantes y hoteles.** Para saber si un lugar es realmente bueno en
    comida hay que consultar cuántos restaurantes tiene, así que el análisis de
    restaurantes sirve a los dos pasos.
@@ -41,7 +41,9 @@ Leer también `02_LO_QUE_FALTA.md` (pendientes) y `03_DECISIONES_Y_NOTAS.md`.
 
 ## 2. Lo que se verificó (y limita el plan)
 
-### 2.1 Calificaciones (estrellas/reseñas): no hay forma gratuita y legal de guardarlas
+### 2.1 Calificaciones: hallazgos de la revisión de 2026-09-19
+
+Las condiciones, cuotas y precios siguientes son los registrados en aquella revisión, no una consulta actual. Revalidar las fuentes antes de elegir un proveedor; no se modificó la decisión de no pagar ni de no guardar calificaciones sin una fuente que lo permita.
 
 - **Tripadvisor Content API:** 5,000 llamadas gratis al mes, pero pide tarjeta
   ([FAQ](https://tripadvisor-content-api.readme.io/reference/faq)) y su
@@ -105,7 +107,7 @@ los hoteles trae `stars` y el 46 % sitio web.
   ([Michelin](https://guide.michelin.com/mx/es/articulo/michelin-guide-ceremony/guia-michelin-mexico-estrellas-nuevas-2025)).
   Para 2026 la guía amplió sus destinos
   ([HOLA](https://www.hola.com/us-es/lifestyle/20260311888947/guia-michelin-destinos-gastronomicos-mexico-2026/)):
-  **falta leer la lista completa**.
+  esa era la consulta pendiente inicial. Después se contrastaron estrellas y la lista completa de Bib Gourmand para el marcado de 21 destinos (ver 01); los 133 «recomendados» no se usaron.
 
 ## 3. Fase 1 — Re-etiquetar la base actual (PRIMERO)
 
@@ -120,14 +122,14 @@ los hoteles trae `stars` y el 46 % sitio web.
 **¿Se puede limpiar ya o hay que esperar a los restaurantes? (respuesta):** se
 puede en dos tiempos. Lo **aditivo** (agregar la marca de gastronomía destacada,
 dar prioridad) se hizo ya porque no rompe nada. Lo **destructivo** (quitar
-"comida" a ~84 lugares) conviene hacerlo **cuando ya existan los restaurantes**:
+"comida" a 86 lugares de la copia de 2026-09-19) conviene hacerlo **cuando ya existan los restaurantes**:
 hoy un tramo de "Comer" filtra por la etiqueta "comida"; si se quitara de golpe
 a casi todos, "Comer" quedaría vacío o casi vacío. Con la tabla de restaurantes
 lista, "Comer" se llena con restaurantes y ahí sí se puede podar sin riesgo.
 Revisar cultura/naturaleza/playas/descanso (que no dependen de restaurantes) sí
 se puede hacer antes, con criterios de la sección 3.1.
 
-**Impacto medido de podar "comida" hoy (2026-09-19):** 107 lugares la tienen;
+**Impacto medido en la copia de 2026-09-19 (recontar antes de podar):** 107 lugares la tienen;
 solo los 21 destacados la conservarían y **86 la perderían** (56 ciudades, 20
 pueblos mágicos y 10 sitios; entre ellos León, Ciudad Juárez, Zapopan, Saltillo,
 Aguascalientes, Hermosillo, Querétaro, Morelia). **23 de 32 estados quedarían
@@ -138,7 +140,7 @@ pocas ciudades: no reflejan la buena comida tradicional de muchas regiones. Por
 eso la poda solo es segura cuando ya existan los restaurantes (Fase 2), o si se
 agrega un respaldo para que "Comer" no quede vacío.
 
-Estado actual (369 destinos): 358 tienen 2 etiquetas y 11 tienen 3. Etiquetas:
+Fotografía inicial, anterior a las cinco altas (369 destinos): 358 tenían 2 etiquetas y 11 tenían 3. No es el conteo actual de la base. Etiquetas:
 cultura 310 (84 %), naturaleza 247, comida 96, playas 54, descanso 42. Es
 demasiado genérico: 84 % "cultura" no dice nada. Ciudades con "comida": 65 de
 161; pueblos mágicos con "comida": 20 de 100.
@@ -294,12 +296,11 @@ En un tramo personalizado de **Comer** el orden sería:
    verificada), marcados claramente para quien quiere comer y visitar.
 3. **Restaurantes en carretera** (menos prioridad).
 
-Igual para **Dormir** con hoteles. En **Automático** sigue saliendo de todo,
-incluyendo los destinos generales aunque no sean de comida, y **dormir solo
-aplica si el tramo termina después de las 20:00 o cruza la noche** (regla ya
-implementada).
+Igual para **Dormir** con hoteles. En **Automático** siguen saliendo destinos generales; los futuros restaurantes y hoteles solo entran al pedir Comer/Dormir (regla 7b). **Dormir solo aplica si el tramo termina después de las 20:00 o cruza la noche**, regla ya implementada para destinos.
 
 ## 7b. Regla de prioridad por reconocimiento (definida por Angel, 2026-09-19)
+
+> La primera versión subía distinguidos al frente. La regla posterior, ya documentada en 01 y 03 y aplicada por `_repartir_por_franjas`, les da prioridad dentro de cada franja; no garantiza que todos salgan al principio ni impone un máximo global de 2 estrellas. Se mantienen el radio de 40 km y la restricción futura de restaurantes/hoteles a peticiones de Comer/Dormir.
 
 Aplica a **ciudades y pueblos hoy** y a **restaurantes y hoteles cuando existan**:
 
@@ -319,8 +320,8 @@ Aplica a **ciudades y pueblos hoy** y a **restaurantes y hoteles cuando existan*
 3. **Cómo implementarlo sin reescribir nada:** los establecimientos deben
    exponer los mismos campos que ya usa `ai_service.prioridad()`:
    `gastronomia_destacada`, `reconocimiento_gastronomico` y
-   `distancia_a_ruta_km`. Así `prestigio()` / `prioridad()` /
-   `_distinguidos_primero()` funcionan igual para destinos y para restaurantes.
+   `distancia_a_ruta_km`. `prestigio()`, `prioridad()` y el reparto por franjas
+   son la base para adaptar destinos y establecimientos; `_distinguidos_primero()` no existe en el código actual.
    Lo nuevo será el filtro "solo con tramo de Comer/Dormir".
 
 ## 8. Orden de trabajo (checklist)
@@ -338,8 +339,7 @@ Aplica a **ciudades y pueblos hoy** y a **restaurantes y hoteles cuando existan*
 - [ ] Fase 4: restaurantes y hoteles en carretera.
 - [x] Prioridad a ciudades distinguidas cerca de la ruta (hecho, ver 7b).
 - [ ] Fase 5: nueva forma de recomendar (orden de 7 y regla 7b para restaurantes) y precios reales en el gasto.
-- [ ] Actualizar `01_LO_QUE_YA_ESTA_HECHO.md` al terminar cada fase y borrar lo
-      hecho de este plan / de `02_LO_QUE_FALTA.md`.
+- [ ] Actualizar el estado de cada fase en este checklist y documentar sus resultados en `01_LO_QUE_YA_ESTA_HECHO.md`; borrar de `02_LO_QUE_FALTA.md` las tareas terminadas. Este plan conserva sus fases para permitir retomarlo.
 
 ## 9. Decisiones abiertas
 
@@ -347,5 +347,4 @@ Aplica a **ciudades y pueblos hoy** y a **restaurantes y hoteles cuando existan*
    públicos vs copiar calificaciones a mano.)
 2. ¿Los cupos de 4.2 están bien?
 3. ¿Los criterios de etiquetas de 3.1 están bien, o se agregan/quitan?
-4. Leer la lista completa de destinos Michelin 2026 y confirmar cuáles de
-   nuestros lugares entran.
+4. Antes de cargar establecimientos, revisar las fuentes gastronómicas vigentes y su cobertura. El marcado de 21 destinos ya consultó estrellas y Bib Gourmand; incorporar otros reconocimientos requiere evidencia.

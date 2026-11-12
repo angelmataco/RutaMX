@@ -1,5 +1,7 @@
 # Bitácora del proyecto RutaMX
 
+Última actualización: 2026-11-10
+
 Esta carpeta **sí está en GitHub** — es la fuente de verdad compartida
 entre Angel (con Claude) y Roberto (con Codex) para que cualquiera de los
 dos, usando cualquier IA, entienda el proyecto antes de tocar código y no
@@ -13,14 +15,12 @@ lectura obligatoria antes de cualquier cambio.
 
 ## Archivos
 
-- **`01_LO_QUE_YA_ESTA_HECHO.md`** — todo lo que ya funciona en la app,
-  organizado por tema.
+- **`01_LO_QUE_YA_ESTA_HECHO.md`** — lo implementado, su evidencia y limitaciones, organizado por tema. Las secciones históricas de v1 se distinguen de las entradas `[V2]`; estar programado no equivale a probado en navegador o con proveedores reales.
 - **`02_LO_QUE_FALTA.md`** — lo pendiente, con prioridad y next steps.
 - **`03_DECISIONES_Y_NOTAS.md`** — el "por qué" detrás de decisiones que no
   son obvias con solo ver el código (por qué se cambió de X a Y, bugs
   raros que ya se resolvieron, cosas que probamos y no funcionaron).
-- **`04_PLAN_RESTAURANTES_Y_HOTELES.md`** — el plan detallado (todavía sin
-  implementar) para re-etiquetar la base de destinos y agregar restaurantes y
+- **`04_PLAN_RESTAURANTES_Y_HOTELES.md`** — el plan detallado (parcial: gastronomía destacada y prioridad a destinos implementadas; establecimientos pendientes) para re-etiquetar la base de destinos y agregar restaurantes y
   hoteles con calidad, sin pagar nada, y que toda la app y la IA sigan
   fluyendo igual.
 - **`05_EFECTOS_VISUALES_PROTEGIDOS.md`** — los efectos visuales que nunca se
