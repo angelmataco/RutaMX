@@ -8,11 +8,15 @@ que v1 desde `run.py`.
 
 def registrar_v2(app, **opciones):
     """Registra v2 en la app compartida; la composición vive en run.py."""
+    from v2.interfaz.rutas_descubrir import registrar_descubrir
     from v2.interfaz.rutas_guardadas import registrar_guardadas
     from v2.interfaz.rutas_planear import registrar_planear
+    from v2.negocio.catalogo import Catalogo
     from v2.negocio.guardado_rutas import GuardadoRutas
 
     # Un solo servicio de guardado compartido; las pruebas inyectan uno falso.
     guardado = opciones.pop("guardado", None) or GuardadoRutas()
+    catalogo = opciones.pop("catalogo", None) or Catalogo()
     registrar_planear(app, guardado=guardado, **opciones)
     registrar_guardadas(app, guardado=guardado)
+    registrar_descubrir(app, catalogo=catalogo)

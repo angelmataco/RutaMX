@@ -1,0 +1,13 @@
+/* Las superficies .card conservan spotlight y el fondo queda visible. */
+.descubrir-seccion { display: block; min-height: 0; padding-block: 1rem; }
+.descubrir-seccion h2, .descubrir-tarjeta h3 { font-family: var(--font-serif); }
+.descubrir-filtros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding: 1.5rem; }
+.descubrir-filtros label { display: grid; gap: .5rem; font-size: .85rem; }
+.descubrir-filtros input, .descubrir-filtros select { min-width: 0; width: 100%; min-height: 44px; font: inherit; padding: .65rem; color: var(--color-texto); background: var(--color-crema); border: 1px solid var(--color-borde); border-radius: var(--radius-md); }
+.descubrir-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.descubrir-tarjeta { padding: 1.5rem; min-width: 0; overflow-wrap: anywhere; }
+.descubrir-tarjeta p { line-height: 1.6; }
+[data-detalle-contenido] { overflow-wrap: anywhere; }
+[data-detalle-contenido] li { margin-block: 1rem; }
+@media (max-width: 900px) { .descubrir-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .descubrir-lista, .descubrir-filtros { grid-template-columns: minmax(0, 1fr); } }

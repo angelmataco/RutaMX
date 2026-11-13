@@ -1,0 +1,61 @@
+{% from 'partials/icons.html' import icono %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <title>Descubrir — RutaMX</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo-emblema.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/efectos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('planear_v2.static', filename='planear_ia.css') }}">
+<link rel="stylesheet" href="{{ url_for('planear_v2.static', filename='descubrir.css') }}">
+</head>
+<body class="planear-pagina">
+{% include 'partials/iconos_sprite.html' %}
+<a class="planear-saltar" href="#ruta">Ir al catálogo</a>
+<div class="navbar-espacio" data-navbar-espacio>
+  <header class="navbar" data-navbar>
+    <div class="container navbar__inner">
+      <a class="navbar__brand" href="/" aria-label="RutaMX, volver al inicio">
+        <img class="navbar__logo" src="{{ url_for('static', filename='img/logo-emblema.svg') }}" width="48" height="48" alt="">
+        <span class="navbar__marca"><span class="navbar__title">Ruta<span class="navbar__title-mx">MX</span></span><span class="navbar__lema">Road trips México</span></span>
+      </a>
+      <nav class="navbar__links" aria-label="Explorar"><a href="#ruta">Descubrir</a></nav>
+      <div class="navbar__auth"><a class="btn btn--ghost" href="/">Volver al inicio</a></div>
+    </div>
+    <div class="navbar__progreso" data-navbar-progreso></div>
+  </header>
+</div>
+<main class="container planear-contenedor" data-descubrir>
+<header id="inicio" class="planear-intro"><p class="planear-ceja">EL SIGUIENTE CAMINO</p><h1>Descubre tu próxima <em>aventura.</em></h1><p>Explora rutas públicas y conoce las paradas de cada viaje.</p><a class="btn btn--ghost" href="/v2/planear">Planear con IA</a></header>
+<section id="ruta" class="section descubrir-seccion" tabindex="-1" aria-labelledby="titulo-catalogo">
+<h2 id="titulo-catalogo">Rutas para descubrir</h2>
+<form class="card descubrir-filtros" data-filtros>
+<label>Buscar rutas<input type="search" name="q" maxlength="80" placeholder="Nombre, origen o destino"></label>
+<label>Duración en días<input type="number" name="duracion" min="1" max="60" step="1" placeholder="Cualquiera"></label>
+<label>Categoría<select name="categoria"><option value="">Todas</option>{% for categoria in categorias %}<option value="{{ categoria }}">{{ categoria }}</option>{% endfor %}</select></label>
+<label>Región<select name="region"><option value="">Todas</option>{% for region in regiones %}<option value="{{ region }}">{{ region }}</option>{% endfor %}</select></label>
+<button class="btn btn--primary" type="submit">Buscar</button><button class="btn btn--ghost" type="reset">Reiniciar filtros</button>
+</form>
+<p role="status" aria-live="polite" data-catalogo-estado>Cargando rutas…</p>
+<div class="descubrir-lista" data-catalogo-lista aria-label="Resultados"></div>
+</section>
+</main>
+<dialog class="card planear-confirmacion" aria-labelledby="titulo-detalle" data-detalle>
+<h2 id="titulo-detalle">Detalle de la ruta</h2><p role="status" data-detalle-estado></p><div data-detalle-contenido></div><button type="button" class="btn btn--ghost" data-cerrar-detalle>Cerrar</button>
+</dialog>
+<footer class="pie-creditos"><div class="container"><p>Efectos visuales adaptados de <a href="https://rareui.com" target="_blank" rel="noopener">Rare UI</a>.</p></div></footer>
+
+<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/secciones.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/orbe.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/gooey.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/pildora.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/spotlight.js') }}"></script>
+<script src="{{ url_for('static', filename='js/efectos/fondo.js') }}"></script>
+<script src="{{ url_for('planear_v2.static', filename='descubrir.js') }}" defer></script>
+</body>
+</html>
