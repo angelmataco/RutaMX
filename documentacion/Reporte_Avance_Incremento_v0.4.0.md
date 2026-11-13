@@ -21,7 +21,7 @@
 | 1 | v0.1.0 | M-09 Repositorio de rutas (crear, obtener, listar) | 0 cerrados; evidencia parcial en RF-38, 39, 40 y 42 | Hecho, **probado en simulación** (2026-11-03); tag `v0.1.0` publicado |
 | 2 | v0.2.0 | Planear con IA: de la conversación a una ruta estructurada | 12 | Código listo y **probado en simulación** (2026-11-10), publicado en `main`; sin tag |
 | 3 | v0.3.0 | Guardar y recuperar rutas, agregar parada, aclaraciones | 9 | Código listo y **probado en simulación** (2026-11-12); commits locales sin push; sin tag |
-| 4 | v0.4.0 | Descubrir: catálogo, búsqueda, filtros, detalle | 10 | **Este reporte**: código listo y **probado en simulación** (2026-11-12); sin commit, sin migración ejecutada y sin tag |
+| 4 | v0.4.0 | Descubrir: catálogo, búsqueda, filtros, detalle | 10 | **Este reporte**: código listo y **probado en simulación** (2026-11-12); sin commit al corte (se hizo después, el 2026-11-13: `4204079`), sin migración ejecutada y sin tag |
 | 5 | v0.5.0 | Edición por chat completa, copiar, mapa, cierre | 13 | No iniciado |
 
 Ningún incremento nuevo está **cerrado**: el plan pide además verificarlo en un navegador real, la regresión de lo anterior y el tag (sección 7).
@@ -142,7 +142,7 @@ Solo se cuentan los que tienen una prueba concreta: **5 de 33 (15.2%)** probados
 | Módulos del v0.4.0 con código y pruebas | 4 de 5 (M-05 no se tocó) |
 | Pasos de la tabla cerrados al corte | 5 de 6 (este reporte es el sexto) |
 | Archivos nuevos | 14 (9 de código y pantalla, 5 de pruebas) y 1 modificado (`v2/__init__.py`); unas 800 líneas en los archivos de código y pantalla |
-| Commits | Sin commit de este incremento al corte; los de v0.3.0 siguen locales, sin push |
+| Commits | Sin commit de este incremento al corte (11:24); se hizo el 2026-11-13 (`4204079` y `2fef30d`). Los de v0.3.0 siguen locales, sin push |
 | Push y tag del incremento | Sin push y sin tag `v0.4.0` |
 
 ## 4. Diferencias con la app del incremento anterior
