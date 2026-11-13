@@ -697,3 +697,13 @@ El profesor calificó el reporte del v0.2.0 con 18% de 30% porque no veía con c
 4. **Diferencias con la app del incremento anterior:** qué podía hacer el usuario antes y ahora, qué cambió por dentro (RF, pruebas, módulos, archivos, esquema) y qué sigue igual.
 
 Lo demás (revisión cruzada, decisiones, lo no comprobado, cómo reproducir y siguiente paso) va después. Primero se escribe el `.md` y luego se genera el PDF con `venv/bin/python scripts/md_a_pdf.py <reporte>.md <reporte>.pdf`. Los reportes del v0.2.0 y v0.3.0 se reescribieron con esta plantilla.
+
+## [V2] Decisiones del incremento v0.4.0 (2026-11-12)
+
+- **P-01 y P-03 siguen abiertas ante el profesor; el equipo avanzó con una propuesta.** Angel eligió publicar solo con la columna `visibilidad` y una lista corta propuesta de categorías y regiones; aprobó la tabla de pasos que las contiene. Lo propuesto: una ruta es pública solo si `visibilidad = 'publica'`; no hay botón de publicar en la app (el plan prohíbe asumir una función de publicar) y se marca con `base_datos/scripts/publicar_ruta.py`; categorías Playa, Cultural, Naturaleza, Gastronomía y Pueblo Mágico; regiones Noroeste, Noreste, Occidente, Centro y Sureste. No es una respuesta del profesor.
+- **El modelo `RutaGuardada` no cambia.** El catálogo usa SQL propio sobre las columnas nuevas para que v1 no se rompa si la migración no se ha ejecutado; sin ellas responde «migración pendiente».
+- **La migración no se ejecuta en esta sesión.** Las siete columnas ya estaban autorizadas (2026-11-03); el script y sus pruebas existen, pero la ejecución real queda para Angel, con respaldo y regresión.
+- **Autor:** `autor_id` referencia a `usuarios`. El repositorio no infiere autores al leer; al publicar, el script conserva el autor, o pone al dueño de forma explícita si no hay, y solo `--rutamx` fuerza el autor vacío (único modo de que una ruta aparezca como de RutaMx). Del autor solo se muestra nombre e inicial del apellido.
+- **Una ruta no pública se comporta como inexistente** (mismo 404), para no revelar que existe (RNF-15).
+- **Revisión cruzada, hallazgos reales corregidos:** (1) el script de publicar dejaba abierto un contexto de Flask en cada uso (paso 5); (2) el botón «Reiniciar filtros» buscaba con los valores anteriores por usar un microtask antes del restablecimiento de los campos (paso 4); además singular «1 ruta encontrada» y espera de 250 ms en el buscador; (3) la plantilla real no tenía prueba de render (quedó pendiente, ver 02).
+- **Sin PostgreSQL desechable en esta sesión:** no se buscó otra vía; las pruebas de integración de la migración y del repositorio quedaron omitidas.

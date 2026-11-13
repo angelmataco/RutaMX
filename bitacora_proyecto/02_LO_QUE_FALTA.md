@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-11-12
+Última actualización: 2026-11-13
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -210,4 +210,16 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 - [V2] Abrir en «Mis rutas» de v1 una ruta guardada por v2: Angel autorizó (2026-11-12) un cambio mínimo en v1 (`abrirRutaGuardada` en `v1/static/js/main.js`) que redirige a `/v2/rutas` cuando `resumen.rutamx_v2` existe. Programado; solo se comprobó la sintaxis con `node --check`. Sin verificar (2026-11-12): el clic real en «Mis rutas» de v1 en navegador y que las rutas de v1 sigan abriéndose igual.
 - [V2] Limpieza de M-04/M-05: `GestorRutas.agregar_parada` está probada, pero el orquestador agrega la parada armando la propuesta y pasándola por `proponer`; unificar para no tener dos caminos. Además, instalar una ruta guardada usa hoy un adaptador envoltorio en `rutas_planear.py`; un método público de M-04 sería más limpio.
 - [V2] Limitación actual: mientras hay una aclaración pendiente, el siguiente mensaje se toma como su respuesta; para cambiar de viaje hay que reiniciar la conversación.
-- [V2] Cerrar el v0.3.0: regresión de v1 y `base_datos` contra bases aisladas, commit `[V2]` de este incremento y tag `v0.3.0` tras las verificaciones.
+- [V2] Cerrar el v0.3.0: regresión de v1 y `base_datos` contra bases aisladas, y tag `v0.3.0` tras las verificaciones. El commit `[V2]` del incremento ya existe (`f7cbf8e`, local, sin push).
+
+## [V2] Después del v0.4.0 (2026-11-12)
+
+- [V2] Aprobar con el profesor P-01 y P-03: la propuesta del equipo (ruta pública = `visibilidad = 'publica'`, marcada solo con `base_datos/scripts/publicar_ruta.py`, y las listas de categorías y regiones de `base_datos/catalogo_valores.py`) no está aprobada por el profesor. Si cambia, hay que ajustar `catalogo_valores.py`, la migración y el script.
+- [V2] Ejecutar la migración `base_datos/migraciones/agregar_columnas_catalogo.py`: no se ha ejecutado (no se publicaron rutas en esta sesión; rutas públicas en otras bases: sin verificar, 2026-11-12). Antes: probarla en una copia o PostgreSQL desechable (las 5 pruebas de integración de `test_migracion_catalogo.py` se omiten sin él), respaldo previo y regresión de v1 y v2. Sin ejecutarla, `/v2/descubrir/rutas` responde «migración pendiente».
+- [V2] Publicar al menos una ruta (con el script) para que el catálogo no esté vacío: en esta sesión no se publicó ninguna; si hay rutas públicas en otras bases, sin verificar (2026-11-12).
+- [V2] Probar contra PostgreSQL real el SQL del catálogo y del script de publicar (`jsonb_array_length`, `FOR UPDATE`, operador `#>>`, `ILIKE ... ESCAPE`): solo se comprobó el SQL generado con sesión falsa; sin verificar (2026-11-12).
+- [V2] Verificar en navegador `/v2/descubrir` (1280×900 y 375×812): filtros, reinicio (se corrigió a `setTimeout` por orden de eventos, sin ejecutar en navegador), detalle y descarte de respuestas tardías: sin verificar (2026-11-12).
+- [V2] Agregar `v2/tests/test_pantalla_descubrir.py`: render de la plantilla real con las plantillas de v1 (200, anclas con destino, recursos locales, opciones de categoría y región, elementos `data-*`, sin `innerHTML`). La comprobación se hizo a mano y no quedó como prueba; no estaba en la tabla aprobada.
+- [V2] Notas de la revisión de M-02: una parada mal formada hace fallar todo el detalle («No se pudo leer la ruta»), y el servicio limita la duración a 1 a 60 días mientras el repositorio acepta cualquier entero positivo; el script de publicar no impide una duración mayor de 60.
+- [V2] Para el v0.5.0: copiar rutas públicas necesita `ruta_origen_id` (ya incluida en la migración) y `autor_id`.
+- [V2] Cerrar el v0.4.0: commit `[V2]` (al 2026-11-13 el código, las bitácoras y el reporte del v0.4.0 siguen sin commit), migración, regresión de v1 y v2, push de los commits locales y tags `v0.2.0`, `v0.3.0` y `v0.4.0` tras las verificaciones.
