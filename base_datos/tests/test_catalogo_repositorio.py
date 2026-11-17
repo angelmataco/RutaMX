@@ -217,9 +217,9 @@ def _insertar(bd, usuario_id, **valores):
             "vis": "privada", "dur": 2, "cat": "Playa", "reg": "Centro", "desc": "", "autor": None}
     base.update(valores)
     bd.session.execute(text(
-        "INSERT INTO rutas_guardadas (nombre, origen, destino, paradas, usuario_id, visibilidad, "
+        "INSERT INTO rutas_guardadas (nombre, origen, destino, intereses, resumen, paradas, usuario_id, visibilidad, "
         "duracion_dias, categoria, region, descripcion, autor_id) VALUES "
-        "(:nombre, :origen, :destino, CAST(:paradas AS jsonb), :uid, :vis, :dur, :cat, :reg, :desc, :autor)"
+        "(:nombre, :origen, :destino, '{}', '{}', CAST(:paradas AS jsonb), :uid, :vis, :dur, :cat, :reg, :desc, :autor)"
     ), base)
     bd.session.commit()
 

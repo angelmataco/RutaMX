@@ -1,6 +1,7 @@
 # [V2] Reporte de avance: incremento v0.4.0 (Descubrir: catálogo de rutas públicas, búsqueda, filtros y detalle)
 
 - Fecha: 2026-11-12 (CDMX), incremento 4 del plan (el tercero de clase, asignado a la clase 3 de 4 del plan, por confirmar con el calendario real). Equipo: Angel Mata y Roberto Valderrama, con Claude y Codex como apoyo.
+- **Actualización del 2026-11-17 (CDMX):** se agregó `v2/tests/test_pantalla_descubrir.py` y, con un PostgreSQL local desechable que levantó Angel, se ensayaron la migración, la publicación y el SQL del catálogo (probado en simulación con PostgreSQL local, no uso real). Con ese PostgreSQL la suite dio al principio **7 failed, 556 passed** por defectos de las pruebas, que se corrigieron el mismo día: ahora **563 passed, 0 failed, 0 skipped** con PostgreSQL local y **529 passed, 34 skipped** sin él (sección 7); el navegador sigue sin verificar. Las cifras del cuerpo son las del corte del 2026-11-12 salvo donde se indica esta actualización; ver sección 7.
 - Corte de las cifras: 11:24 (CDMX). Fuente de requerimientos: `documentacion/RutaMx_Documento_Requerimientos_v2.0.pdf` (44 RF, 33 RNF). Plan: `documentacion/plan_incrementos.md` (aprobado el 2026-11-05).
 - Palabras de estado: **programado** (existe en el código), **probado en simulación** (pasó pruebas sin lo real) y **verificado en uso real** (probado con lo real, con fecha). Lo que no se pudo comprobar dice **sin verificar**. Hoy **ningún RF está verificado de extremo a extremo en uso real**.
 - **Condición de este incremento:** el plan lo bloquea hasta resolver P-01 (cómo se marca una ruta pública) y P-03 (valores de categoría y región). Siguen **abiertas ante el profesor**. El equipo avanzó con una **propuesta**, que Angel aprobó al aprobar la tabla de pasos: una ruta es pública solo si su columna `visibilidad` vale `publica`, se marca con un script (no hay botón de publicar en la app) y las listas son categorías Playa, Cultural, Naturaleza, Gastronomía y Pueblo Mágico y regiones Noroeste, Noreste, Occidente, Centro y Sureste. No es una respuesta del profesor.
@@ -173,7 +174,8 @@ Se compara la app al terminar el v0.3.0 (el usuario con sesión planeaba, guarda
 | RNF probados en simulación | 4 de 33 | 5 de 33 | +1 (RNF-15) |
 | Pruebas de v2 | 313 pasan y 1 se omite | 382 pasan y 1 se omite | +69 |
 | Pruebas de `base_datos` | 49 pasan y 26 se omiten | 140 pasan y 34 se omiten | +91 pasan y +8 omitidas (necesitan PostgreSQL) |
-| Pruebas en total | 362 pasan y 27 se omiten | 522 pasan y 35 se omiten | +160 pasan y +8 omitidas |
+| Pruebas en total | 362 pasan y 27 se omiten | 522 pasan y 35 se omiten (corte del 2026-11-12) | +160 pasan y +8 omitidas |
+| Actualización del 2026-11-17 (suites seguras, ver cabecera) | — | v2: 389 pasan y 1 excluida con `-k` (la prueba de navegador, que no se ejecutó); total sin PostgreSQL: 529 pasan, 34 se omiten y 1 se excluye con `-k`; total con PostgreSQL local (base nueva): 563 pasan, 0 se omiten y 1 se excluye con `-k` | +7 pasan (`test_pantalla_descubrir.py`); +34 integraciones ejecutadas con PostgreSQL local |
 | Módulos de v2 | Planear, rutas guardadas y servicios | Además el servicio del catálogo (M-02) y la pantalla de Descubrir (M-01) | +1 servicio y +1 pantalla |
 | Base de datos | `rutas_guardadas` sin columnas de catálogo | Script de migración listo; **no ejecutado** | Pendiente |
 | Archivos nuevos | — | 14 | +14 |
@@ -214,13 +216,14 @@ Detalle en `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`.
 | Pendiente | Por qué | Cómo cerrarlo |
 |---|---|---|
 | Aprobación del profesor para P-01 y P-03 | El plan las deja abiertas y se avanzó con una propuesta | Consultar al profesor; ajustar `catalogo_valores.py`, la migración y el script si cambia |
-| Ejecutar la migración de las 7 columnas | No hay base desechable y la ejecución real es de Angel | Probarla en una copia, con respaldo y regresión de v1 y v2; luego `python base_datos/migraciones/agregar_columnas_catalogo.py` |
-| SQL del catálogo y del script contra PostgreSQL real | Las 8 pruebas de integración nuevas se omiten sin `RUTAMX_TEST_DB_URL` | Levantar el PostgreSQL desechable y correr `base_datos/tests` |
-| Publicar al menos una ruta | No se publicaron rutas en esta sesión; la existencia de rutas públicas en otras bases está sin verificar (2026-11-12) | Usar `base_datos/scripts/publicar_ruta.py` después de migrar |
+| Ejecutar la migración de las 7 columnas en Supabase | **Ensayada el 2026-11-17 en un PostgreSQL local desechable** (dos corridas sin error, 7 columnas, filas previas conservadas); la ejecución real es de Angel y sigue sin hacerse | Con respaldo y regresión de v1 y v2: `python base_datos/migraciones/agregar_columnas_catalogo.py` |
+| SQL del catálogo y del script contra PostgreSQL | **Ejecutado el 2026-11-17 en PostgreSQL local** (`jsonb_array_length`, `FOR UPDATE`, `#>>`, `ILIKE ... ESCAPE`, comodín `%` escapado): correcto. Con `RUTAMX_TEST_DB_URL` se ejecutaron las 34 pruebas antes omitidas; al principio 7 fallaban por defectos de las pruebas (INSERT sin `intereses` y `resumen`, esquema no restaurado, contexto de Flask de sesión) y se corrigieron el mismo día. Corridas finales: **con PostgreSQL local `563 passed, 0 failed, 0 skipped, 1 deselected`; sin él `529 passed, 34 skipped, 1 deselected`** (la deseleccionada es la prueba de navegador, excluida con `-k`). Simulación local, no uso real | Sin probar: concurrencia del `FOR UPDATE` y Supabase. Pendiente menor: un caso de integración (`sin_migracion`) depende de correr primero en una base nueva |
+| Publicar al menos una ruta | Con una ruta ficticia funcionó en la base local desechable (2026-11-17); en la base real no se publicó ninguna y rutas públicas en otras bases están sin verificar | Usar `base_datos/scripts/publicar_ruta.py` después de migrar en Supabase |
 | Navegador (`/v2/descubrir`, 1280 y 375 px) | No hay herramienta de navegador usable (Playwright no está instalado; Chromium estuvo bloqueado por macOS) | Abrir la app y revisar a ojo el reinicio, los filtros y el detalle; anotar la fecha |
-| Prueba persistente del render de la plantilla real | No estaba en la tabla aprobada | Agregar `v2/tests/test_pantalla_descubrir.py` en un paso con reserva |
+| Prueba persistente del render de la plantilla real | **Resuelto el 2026-11-17:** `v2/tests/test_pantalla_descubrir.py` (7 pruebas, probado en simulación; no ejecuta JavaScript) | — |
 | IA real, login real de v1 y regresión de v1 y de `base_datos` | Sin llave de IA; sesión simulada; la suite de v1 escribe en Supabase | Llave y modelo, login real y bases aisladas |
-| Commit, push y tags `v0.2.0`, `v0.3.0` y `v0.4.0` | Esperan las verificaciones anteriores | `git push origin main` y luego los tags |
+| Cierre del 2026-11-17 | El sistema rechazó levantar PostgreSQL a este equipo; lo levantó Angel con `!`. El rechazo de Chromium del 2026-11-10 no consta como resuelto y no se reintentó; la regresión de v1 no se corrió por falta de guardia (`instance/config.py`); sin verificar (2026-11-17). Según lo que Angel reportó haber corrido desde `!`, detuvo ese servidor y borró `/tmp/pg_rutamx` (no verificado por esta sesión) | Para repetir el ensayo, Angel levanta otro servidor con `initdb` y `pg_ctl`; ver `documentacion/Evidencia_v0.4.0_*.md` |
+| Push y tags `v0.2.0`, `v0.3.0` y `v0.4.0` | Esperan las verificaciones anteriores; hay 10 commits locales y los cambios de hoy están sin commit | `git push origin main` (lo corre Angel) y luego los tags |
 
 Preguntas abiertas del plan sin respuesta: P-01 y P-03 (con propuesta, sección 6) y P-02 (proveedor de mapas), que decide el v0.5.0.
 
@@ -228,7 +231,8 @@ Preguntas abiertas del plan sin respuesta: P-01 y P-03 (con propuesta, sección 
 
 ```sh
 # Todas las pruebas (sin red, datos ficticios)
-PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest v2/tests base_datos/tests -q   # 522 passed, 35 skipped
+env -u RUTAMX_TEST_DB_URL PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest base_datos/tests v2/tests -q -p no:cacheprovider -k 'not test_navegador_escritorio_y_movil'
+# 529 passed, 34 skipped, 1 deselected (2026-11-17); al corte del 2026-11-12 el comando sin -k daba 522 passed, 35 skipped
 
 # La app: /v2/descubrir abre, pero la lista responde «migración pendiente» hasta migrar
 venv/bin/python run.py                                                              # http://127.0.0.1:5000/v2/descubrir

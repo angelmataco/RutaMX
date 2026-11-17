@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-11-12
+Última actualización: 2026-11-17
 
 ## [V2] Decisiones del plan de incrementos (2026-11-05)
 
@@ -707,3 +707,12 @@ Lo demás (revisión cruzada, decisiones, lo no comprobado, cómo reproducir y s
 - **Una ruta no pública se comporta como inexistente** (mismo 404), para no revelar que existe (RNF-15).
 - **Revisión cruzada, hallazgos reales corregidos:** (1) el script de publicar dejaba abierto un contexto de Flask en cada uso (paso 5); (2) el botón «Reiniciar filtros» buscaba con los valores anteriores por usar un microtask antes del restablecimiento de los campos (paso 4); además singular «1 ruta encontrada» y espera de 250 ms en el buscador; (3) la plantilla real no tenía prueba de render (quedó pendiente, ver 02).
 - **Sin PostgreSQL desechable en esta sesión:** no se buscó otra vía; las pruebas de integración de la migración y del repositorio quedaron omitidas.
+
+## [V2] Cierre del v0.4.0: lo que se pudo y lo que no (2026-11-17)
+
+- **Servidor aportado por Angel:** el sistema rechazó levantar PostgreSQL a este equipo (dos veces, meta 10 y un reintento tras decir «autorizo»); Angel lo levantó desde `!` (`127.0.0.1:55433`, datos en `/tmp/pg_rutamx`). Desde ahí cada paso usó su propia base (`rutamx_prueba`, `rutamx_integracion_prueba`), no una compartida: las pruebas hacen `drop_all`. Al terminar, según lo que Angel reportó haber corrido desde `!` el 2026-11-17, detuvo el servidor (`pg_ctl -D /tmp/pg_rutamx/datos stop`) y borró `/tmp/pg_rutamx` (`rm -rf`); esta sesión no verificó esos comandos por su cuenta.
+- **Aislamiento de la base real:** validar una variable de entorno no basta, porque `crear_app_minima` y `create_app` cargan `instance/config.py`. El ensayo usó un lanzador temporal que reemplaza `crear_app_minima` y comprueba la URI efectiva (host, puerto, base) antes de consultar; el lanzador se borró. Por eso la suite de v1 no se corrió.
+- **Qué es y qué no es evidencia:** una base desechable local es «probado en simulación con PostgreSQL local», no «verificado en uso real». La migración, la publicación y el SQL del catálogo quedaron así; Supabase y el navegador siguen sin verificar.
+- **La suite con PostgreSQL real estaba en 7 failed, 556 passed, y se corrigió el mismo día (meta 12):** las 7 eran defectos de las pruebas (INSERT de prueba sin `intereses` y `resumen`; esquema que no se restauraba entre pruebas de migración; contexto de Flask de sesión en `conftest.py` que volvía vacía la comprobación de fuga). Se arreglaron solo las pruebas, sin tocar producción ni `conftest.py`. Decisión de diseño: la prueba de fuga compara la identidad del contexto activo y cierra el que se haya fugado, en vez de exigir que no haya contexto (comparar `has_app_context()` antes y después no detectaba nada con contexto externo, por la revisión de Codex); se verificó a mano con un script defectuoso en los dos escenarios. Resultado: con PostgreSQL local en una base nueva `563 passed, 0 failed, 0 skipped`; sin él `529 passed, 34 skipped`. Sigue siendo simulación local, no uso real; navegador, Supabase, v1 y concurrencia de `FOR UPDATE` siguen sin verificar. Queda anotado en `02` que un caso de integración depende del orden inicial.
+- **Chromium:** el rechazo del 2026-11-10 no consta como resuelto; no se reintentó ni se buscó otra vía.
+- **Commit, push y tags:** no se hicieron en esta meta; los cambios de hoy quedan sin commit hasta que Angel lo pida.

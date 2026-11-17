@@ -71,7 +71,7 @@ routes.py ──> route_service ──> OSRM (ruta real, distancia, tiempo, geom
 - `estados`: los 32 estados (nombre y clave).
 - `destinos`: nombre, estado, tipo, coordenadas, descripción, `intereses` (arreglo), población, `gastronomia_destacada`, `reconocimiento_gastronomico` y `fuente` (`curada` o `ia_generada`).
 - `usuarios`: nombre, apellido, clave normalizada única y `pin_hash`.
-- `rutas_guardadas`: origen, destino, intereses, `resumen` y `paradas` en JSONB, ligada a `usuario_id`. Las siete columnas del catálogo (v0.4.0) están programadas en una migración que no se ha ejecutado.
+- `rutas_guardadas`: origen, destino, intereses, `resumen` y `paradas` en JSONB, ligada a `usuario_id`. Las siete columnas del catálogo (v0.4.0) están programadas en una migración que se ensayó en un PostgreSQL local desechable (2026-11-17) y no se ha ejecutado en Supabase.
 - Se usa la conexión del *Session pooler* de Supabase, no la directa (esa solo resuelve por IPv6).
 
 ## Idea central en v1: la IA nunca elige el lugar
@@ -114,9 +114,9 @@ Programado y probado en simulación (2026-11-12); la persistencia real, el login
 - **Único cambio en v1** (autorizado por Angel el 2026-11-12): `abrirRutaGuardada` redirige a `/v2/rutas` cuando el resumen trae `rutamx_v2`.
 
 ## [V2] Incremento v0.4.0: Descubrir (2026-11-12)
-Programado y probado en simulación (2026-11-12) con repositorio y sesión falsos; la migración, el SQL real y el navegador están sin verificar (2026-11-12). Cifras en [[RutaMX]].
+Programado y probado en simulación (2026-11-12) con repositorio y sesión falsos; el SQL real, la migración y la publicación se ensayaron en un PostgreSQL local desechable (2026-11-17), sin verificar en Supabase ni en navegador. Cifras en [[RutaMX]].
 - **`base_datos/catalogo_valores.py`:** categorías (Playa, Cultural, Naturaleza, Gastronomía, Pueblo Mágico), regiones (Noroeste, Noreste, Occidente, Centro, Sureste), visibilidades y límites. Es una propuesta del equipo (P-03 abierta).
-- **Migración `base_datos/migraciones/agregar_columnas_catalogo.py`:** agrega a `rutas_guardadas` las siete columnas autorizadas el 2026-11-03 (`descripcion`, `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`) con `IF NOT EXISTS`, en una transacción. **No se ha ejecutado.** El modelo `RutaGuardada` no cambia, para que v1 no se rompa antes de migrar.
+- **Migración `base_datos/migraciones/agregar_columnas_catalogo.py`:** agrega a `rutas_guardadas` las siete columnas autorizadas el 2026-11-03 (`descripcion`, `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`) con `IF NOT EXISTS`, en una transacción. Ensayada dos veces en PostgreSQL local, sin error y conservando las filas anteriores como privadas (2026-11-17); **no se ha ejecutado en Supabase.** El modelo `RutaGuardada` no cambia, para que v1 no se rompa antes de migrar.
 - **Repositorio `catalogo_repositorio.py`:** SQL propio con parámetros enlazados; siempre filtra `visibilidad = 'publica'`; nunca devuelve el usuario, su hash ni el PIN; sin las columnas lanza «migración pendiente».
 - **M-02 `v2/negocio/catalogo.py`:** valida filtros y arma lista y detalle; una ruta privada da el mismo error que una inexistente.
 - **M-01 `v2/interfaz/rutas_descubrir.py`, plantilla y estáticos:** `GET /v2/descubrir`, `GET /v2/descubrir/rutas` y `GET /v2/descubrir/rutas/<id>`, abiertos a visitantes; errores 400, 404 y 503 con mensaje seguro. La pantalla actualiza la lista al cambiar los filtros, descarta respuestas tardías y muestra el detalle en `<dialog>`.

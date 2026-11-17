@@ -130,12 +130,18 @@ Parte de [[RutaMX]]. Sale de `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md` del pr
 **Solución:** el contexto se usa solo para obtener la conexión y se libera antes de seguir. Lo señaló la revisión de [[Codex CLI|Codex]].
 **Prueba:** tres pruebas de que no queda contexto abierto.
 
+## [V2] 28. Pruebas de integración fallaban con PostgreSQL real
+**Síntoma:** al correr por primera vez las pruebas de integración contra un PostgreSQL local desechable, varias fallaban aunque con sesión falsa todo estaba en verde (conteos en [[RutaMX]]).
+**Causa:** eran defectos de las pruebas, no de la app: un INSERT directo sin `intereses` ni `resumen` (PostgreSQL rechaza el NOT NULL; los defaults del ORM no se aplican al SQL directo); las pruebas de migración suponían un esquema anterior que otras pruebas ya habían modificado; y las de fuga de contexto de [[Flask]] comprobaban `has_app_context()`, que con el contexto de sesión de la integración es verdadero antes y después.
+**Solución:** el INSERT incluye esos campos; un fixture restaura el esquema anterior (solo en una base local de prueba); y la prueba de fuga compara la identidad del contexto activo y cierra el que se haya fugado. Lo señaló la revisión de [[Codex CLI|Codex]]: comparar solo `has_app_context()` antes y después no detecta una fuga cuando ya hay contexto externo.
+**Prueba:** un script defectuoso que deja su contexto abierto hace fallar las tres pruebas de fuga con y sin contexto externo. Probado en simulación con PostgreSQL local (2026-11-17); un caso de integración sigue dependiendo de correr primero en una base nueva.
+
 ## Pendiente conocido
 - Supabase responde `tenant/user not found` (proyecto pausado o URL cambiada), así que las pruebas que usan la base fallan; las de v1 hablan con la base real en vez de una aislada. Resultado histórico del 2026-10-29, sin resolver entonces; no se consultó Supabase en esta revisión (2026-11-13).
 - `test_registrar_usuario_duplicado_por_acentos_y_mayusculas` falla porque usa el nombre de una cuenta real ("Ángel Mata"); es un fallo del test, no de la app.
 - Las pruebas de M-09 usan una base aislada, pero la regresión de v1 sigue sin ella: sin verificar (2026-11-03).
 - Con el servidor abierto, la suite completa puede dar `EMAXCONNSESSION` (límite de 15 conexiones de Supabase) en 1 o 2 tests; solos pasan.
-- La migración del catálogo no se ha ejecutado y el SQL del catálogo, del script de publicar y de `actualizar_ruta` no se ha probado contra PostgreSQL real: las pruebas de integración se omiten sin base desechable. Sin verificar (2026-11-12).
+- La migración del catálogo no se ha ejecutado en Supabase. El SQL del catálogo, del script de publicar y de `actualizar_ruta` se probó contra un PostgreSQL local desechable (2026-11-17), sin verificar la concurrencia del `FOR UPDATE` ni la base real.
 - Las capturas del navegador integrado a veces salen en blanco tras abrir ventanas con JS; no es un bug de la app, se repite la captura tras un `hover` o scroll.
 
 Las decisiones detrás de varios de estos arreglos están en [[RutaMX - Decisiones]].

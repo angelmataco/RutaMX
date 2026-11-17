@@ -1,0 +1,101 @@
+"""M-01 Descubrir: render de la plantilla REAL de /v2/descubrir.
+
+A diferencia de test_interfaz_descubrir.py (que sustituye la plantilla por una
+cadena), aquí se usan las plantillas de verdad con las de v1 (navbar, iconos,
+estilos) y los recursos estáticos reales. Sin base, sin red y con datos
+ficticios: el catálogo es el servicio real con un repositorio falso.
+"""
+import re
+from pathlib import Path
+
+from flask import Flask
+import pytest
+
+from base_datos.catalogo_valores import CATEGORIAS, REGIONES
+from v2 import registrar_v2
+from v2.negocio.catalogo import Catalogo
+from v2.negocio.guardado_rutas import GuardadoRutas
+
+RAIZ = Path(__file__).resolve().parents[2]
+
+
+class RepoVacio:
+    def listar_publicas(self, **filtros):
+        return []
+
+    def obtener_publica(self, ruta_id):
+        return None
+
+
+class GuardadoFalso(GuardadoRutas):
+    def __init__(self):
+        pass
+
+
+@pytest.fixture(scope="module")
+def html():
+    app = Flask(
+        __name__,
+        template_folder=str(RAIZ / "v1" / "templates"),
+        static_folder=str(RAIZ / "v1" / "static"),
+    )
+    app.config.update(TESTING=True, SECRET_KEY="llave-ficticia-solo-pruebas")
+    registrar_v2(app, demostracion=True, guardado=GuardadoFalso(), catalogo=Catalogo(RepoVacio()))
+    respuesta = app.test_client().get("/v2/descubrir")
+    assert respuesta.status_code == 200
+    return respuesta.get_data(as_text=True)
+
+
+def test_plantilla_real_responde_200_con_titulo_y_catalogo(html):
+    assert "<title>Descubrir" in html
+    assert 'data-catalogo-lista' in html and 'data-catalogo-estado' in html
+
+
+def test_anclas_internas_tienen_destino_en_la_pagina(html):
+    ids = set(re.findall(r'\sid="([^"]+)"', html))
+    for ancla in re.findall(r'href="#([^"]+)"', html):
+        assert ancla in ids, f"el ancla #{ancla} no tiene destino"
+
+
+def test_recursos_locales_se_sirven_y_no_son_externos_salvo_fuentes(html):
+    for ruta in re.findall(r'(?:src|href)="(/[^"#]+\.(?:css|js|svg))"', html):
+        assert ruta.startswith(("/static/", "/v2/")), ruta
+    externos = re.findall(r'<(?:script|link)[^>]+(?:src|href)="(https?://[^"]+)"', html)
+    assert all(url.startswith("https://fonts.googleapis.com/") for url in externos), externos
+
+
+def test_recursos_locales_responden_200():
+    app = Flask(
+        __name__,
+        template_folder=str(RAIZ / "v1" / "templates"),
+        static_folder=str(RAIZ / "v1" / "static"),
+    )
+    app.config.update(TESTING=True, SECRET_KEY="llave-ficticia-solo-pruebas")
+    registrar_v2(app, demostracion=True, guardado=GuardadoFalso(), catalogo=Catalogo(RepoVacio()))
+    cliente = app.test_client()
+    texto = cliente.get("/v2/descubrir").get_data(as_text=True)
+    rutas = re.findall(r'(?:src|href)="(/[^"#]+\.(?:css|js|svg))"', texto)
+    assert any(r.endswith("descubrir.js") for r in rutas) and any(r.endswith("descubrir.css") for r in rutas)
+    for ruta in rutas:
+        assert cliente.get(ruta).status_code == 200, ruta
+
+
+def test_opciones_de_categoria_y_region_vienen_del_catalogo(html):
+    def opciones(nombre):
+        bloque = re.search(rf'<select name="{nombre}">(.*?)</select>', html, re.S).group(1)
+        return re.findall(r'<option value="([^"]*)"', bloque)
+    assert opciones("categoria") == [""] + list(CATEGORIAS)
+    assert opciones("region") == [""] + list(REGIONES)
+
+
+def test_elementos_data_que_usa_el_js_existen(html):
+    js = (RAIZ / "v2" / "static" / "descubrir.js").read_text(encoding="utf-8")
+    usados = set(re.findall(r"\[(data-[a-z-]+)\]", js))
+    assert usados, "el JS ya no busca elementos data-*"
+    for atributo in usados:
+        assert atributo in html, f"el JS busca [{atributo}] y la plantilla no lo tiene"
+
+
+def test_js_no_usa_innerhtml():
+    js = (RAIZ / "v2" / "static" / "descubrir.js").read_text(encoding="utf-8")
+    assert "innerHTML" not in js and "insertAdjacentHTML" not in js

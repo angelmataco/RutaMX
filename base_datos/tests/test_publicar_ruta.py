@@ -5,6 +5,8 @@ Comprueban validación, autor (conservar, dueño explícito o RutaMx solo con
 salida. Datos ficticios.
 """
 
+from contextlib import contextmanager
+
 import pytest
 
 from base_datos.catalogo_valores import CATEGORIAS, REGIONES
@@ -257,33 +259,55 @@ def _app_falsa():
     return app
 
 
-def test_abrir_sesion_no_deja_contexto_de_flask_activo(monkeypatch):
+def _contexto_activo():
+    """El contexto de Flask que está arriba de la pila (o None si no hay)."""
     from flask import has_app_context
+    from flask.globals import app_ctx
 
+    return app_ctx._get_current_object() if has_app_context() else None
+
+
+@contextmanager
+def _sin_fuga_de_contexto():
+    """Falla si lo de adentro deja un contexto de Flask abierto.
+
+    No exige que no haya contexto: con las pruebas de integración la sesión
+    mantiene uno externo (`conftest.py`), y ahí `has_app_context()` es True
+    antes y después aunque el script deje otro encima. Por eso se compara la
+    identidad del contexto activo, y se cierran los que se hayan fugado para
+    no contaminar las demás pruebas.
+    """
+    from flask.globals import app_ctx
+
+    antes = _contexto_activo()
+    yield
+    fugados = 0
+    while _contexto_activo() is not antes and fugados < 10:
+        app_ctx._get_current_object().pop()
+        fugados += 1
+    assert fugados == 0, f"el script dejó {fugados} contexto(s) de Flask abierto(s)"
+
+
+def test_abrir_sesion_no_deja_contexto_de_flask_activo(monkeypatch):
     monkeypatch.setattr("base_datos.conexion.crear_app_minima", _app_falsa)
-    sesion = pub._abrir_sesion()
-    try:
-        assert not has_app_context()
-    finally:
+    with _sin_fuga_de_contexto():
+        sesion = pub._abrir_sesion()
         sesion.close()
 
 
 def test_abrir_sesion_fallida_tampoco_deja_contexto(monkeypatch):
-    from flask import has_app_context
     from sqlalchemy.orm import Session
 
     monkeypatch.setattr("base_datos.conexion.crear_app_minima", _app_falsa)
     monkeypatch.setattr(Session, "__init__", lambda self, *a, **k: (_ for _ in ()).throw(RuntimeError("sin sesión")))
-    with pytest.raises(RuntimeError):
-        pub._abrir_sesion()
-    assert not has_app_context()
+    with _sin_fuga_de_contexto():
+        with pytest.raises(RuntimeError):
+            pub._abrir_sesion()
 
 
 def test_cada_operacion_real_libera_el_contexto(monkeypatch):
-    from flask import has_app_context
-
     monkeypatch.setattr("base_datos.conexion.crear_app_minima", _app_falsa)
     for _ in range(3):
-        with pytest.raises(ErrorPublicacion):
-            volver_privada(5)  # sqlite no tiene la tabla: falla, pero sin dejar contexto
-        assert not has_app_context()
+        with _sin_fuga_de_contexto():
+            with pytest.raises(ErrorPublicacion):
+                volver_privada(5)  # sqlite no tiene la tabla: falla, pero sin dejar contexto

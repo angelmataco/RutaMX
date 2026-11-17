@@ -7,6 +7,9 @@ omiten sin él: NO cuentan como evidencia. La migración NO se ejecuta contra la
 base real. Datos ficticios.
 """
 
+import os
+from urllib.parse import urlparse
+
 import pytest
 from sqlalchemy import text
 
@@ -94,20 +97,51 @@ def _columnas(bd):
     return {f[0] for f in filas}
 
 
-def test_integracion_esquema_anterior_gana_las_siete_columnas(bd):
+@pytest.fixture()
+def esquema_anterior(bd):
+    """Deja `rutas_guardadas` como estaba antes de la migración.
+
+    Las pruebas de integración se ejecutan sobre la misma base, así que otras
+    pruebas (y la propia migración) pueden haber agregado ya las columnas.
+    Solo corre contra la base desechable local (host local y nombre terminado
+    en _prueba o _test, la misma regla de `conftest.py`) porque borra columnas.
+    Quita las siete columnas, el índice y, con las columnas, sus claves
+    foráneas y CHECK; luego comprueba que no quedó nada del catálogo.
+    """
+    url = urlparse(os.environ["RUTAMX_TEST_DB_URL"])
+    assert url.hostname in {"127.0.0.1", "localhost", "::1"}, "la base de prueba no es local"
+    assert url.path.lstrip("/").endswith(("_prueba", "_test")), "la base de prueba no es desechable"
+
+    bd.session.execute(text("DROP INDEX IF EXISTS ix_rutas_guardadas_visibilidad"))
+    for columna in ("ruta_origen_id", "autor_id", "visibilidad", "duracion_dias",
+                    "categoria", "region", "descripcion"):
+        bd.session.execute(text(f"ALTER TABLE rutas_guardadas DROP COLUMN IF EXISTS {columna} CASCADE"))
+    bd.session.commit()
+
+    assert not COLUMNAS_ESPERADAS & _columnas(bd)
+    restos = bd.session.execute(text(
+        "SELECT conname FROM pg_constraint WHERE conrelid = 'rutas_guardadas'::regclass "
+        "AND (pg_get_constraintdef(oid) ~ '(descripcion|duracion_dias|categoria|region|visibilidad"
+        "|ruta_origen_id|autor_id)')"
+    )).all()
+    assert restos == [], f"quedaron restricciones del catálogo: {restos}"
+    return bd
+
+
+def test_integracion_esquema_anterior_gana_las_siete_columnas(bd, esquema_anterior):
     assert not COLUMNAS_ESPERADAS & _columnas(bd)
     aplicar(bd.session)
     assert COLUMNAS_ESPERADAS <= _columnas(bd)
 
 
-def test_integracion_segunda_ejecucion_no_falla_ni_duplica(bd):
+def test_integracion_segunda_ejecucion_no_falla_ni_duplica(bd, esquema_anterior):
     aplicar(bd.session)
     antes = _columnas(bd)
     aplicar(bd.session)
     assert _columnas(bd) == antes
 
 
-def test_integracion_filas_anteriores_se_conservan_y_son_privadas(bd, crear_usuario):
+def test_integracion_filas_anteriores_se_conservan_y_son_privadas(bd, crear_usuario, esquema_anterior):
     uid = crear_usuario()
     bd.session.execute(text(
         "INSERT INTO rutas_guardadas (nombre, origen, destino, intereses, resumen, paradas, usuario_id) "
@@ -119,7 +153,7 @@ def test_integracion_filas_anteriores_se_conservan_y_son_privadas(bd, crear_usua
     assert tuple(fila) == ("Vieja", "privada", None, None)
 
 
-def test_integracion_visibilidad_invalida_se_rechaza(bd, crear_usuario):
+def test_integracion_visibilidad_invalida_se_rechaza(bd, crear_usuario, esquema_anterior):
     uid = crear_usuario()
     aplicar(bd.session)
     with pytest.raises(Exception):
@@ -129,7 +163,7 @@ def test_integracion_visibilidad_invalida_se_rechaza(bd, crear_usuario):
     bd.session.rollback()
 
 
-def test_integracion_fallo_a_la_mitad_deja_el_esquema_intacto(bd, monkeypatch):
+def test_integracion_fallo_a_la_mitad_deja_el_esquema_intacto(bd, monkeypatch, esquema_anterior):
     monkeypatch.setattr(mig, "SENTENCIAS", mig.SENTENCIAS[:3] + ("ALTER TABLE no_existe ADD COLUMN x INT",))
     with pytest.raises(ErrorMigracion):
         mig.aplicar(bd.session)

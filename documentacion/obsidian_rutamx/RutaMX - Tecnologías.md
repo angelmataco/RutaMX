@@ -22,7 +22,7 @@ Parte de [[RutaMX]]. Contexto de uso en [[RutaMX - Arquitectura]].
 
 ## Datos y servicios externos
 - **Supabase (Postgres)**: estados, destinos, usuarios y rutas guardadas. Usa columnas `ARRAY` y `JSONB`.
-- **[[Supabase y Postgres|PostgreSQL]] 16 local** (Homebrew, 16.15): base desechable solo para las pruebas de M-09; no es parte de la app.
+- **[[Supabase y Postgres|PostgreSQL]] 16 local** (Homebrew, 16.15): base desechable solo para las pruebas de integración (M-09, la migración del catálogo y el SQL del catálogo y de publicar); no es parte de la app.
 - **OSRM** (servidor demo público, gratis y sin key): ruta real por carretera.
 - **Nominatim / OpenStreetMap**: geocodificación y verificación de coordenadas; en la v2 también lo usa el verificador geográfico (M-08).
 - **Google Maps**: solo como enlace y QR para navegar; no se usa su API.
