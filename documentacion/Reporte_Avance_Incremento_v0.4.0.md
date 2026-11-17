@@ -20,9 +20,9 @@
 | # | Versión | Objetivo | RF asignados | Estado al corte |
 |---|---|---|---|---|
 | 1 | v0.1.0 | M-09 Repositorio de rutas (crear, obtener, listar) | 0 cerrados; evidencia parcial en RF-38, 39, 40 y 42 | Hecho, **probado en simulación** (2026-11-03); tag `v0.1.0` publicado |
-| 2 | v0.2.0 | Planear con IA: de la conversación a una ruta estructurada | 12 | Código listo y **probado en simulación** (2026-11-10), publicado en `main`; sin tag |
-| 3 | v0.3.0 | Guardar y recuperar rutas, agregar parada, aclaraciones | 9 | Código listo y **probado en simulación** (2026-11-12); commits locales sin push; sin tag |
-| 4 | v0.4.0 | Descubrir: catálogo, búsqueda, filtros, detalle | 10 | **Este reporte**: código listo y **probado en simulación** (2026-11-12); sin commit al corte (se hizo después, el 2026-11-13: `4204079`), sin migración ejecutada y sin tag |
+| 2 | v0.2.0 | Planear con IA: de la conversación a una ruta estructurada | 12 | Código listo y **probado en simulación** (2026-11-10), publicado en `main`; tag `v0.2.0` en GitHub (2026-11-17, sobre `5e3c83f`) |
+| 3 | v0.3.0 | Guardar y recuperar rutas, agregar parada, aclaraciones | 9 | Código listo y **probado en simulación** (2026-11-12); publicado en `main`; tag `v0.3.0` en GitHub (2026-11-17, sobre `f7cbf8e`) |
+| 4 | v0.4.0 | Descubrir: catálogo, búsqueda, filtros, detalle | 10 | **Este reporte**: código listo y **probado en simulación** (2026-11-12); sin commit al corte (se hizo después, el 2026-11-13: `4204079`), sin migración ejecutada en Supabase; tag `v0.4.0` en GitHub (2026-11-17, sobre `4204079`) |
 | 5 | v0.5.0 | Edición por chat completa, copiar, mapa, cierre | 13 | No iniciado |
 
 Ningún incremento nuevo está **cerrado**: el plan pide además verificarlo en un navegador real, la regresión de lo anterior y el tag (sección 7).
@@ -143,8 +143,8 @@ Solo se cuentan los que tienen una prueba concreta: **5 de 33 (15.2%)** probados
 | Módulos del v0.4.0 con código y pruebas | 4 de 5 (M-05 no se tocó) |
 | Pasos de la tabla cerrados al corte | 5 de 6 (este reporte es el sexto) |
 | Archivos nuevos | 14 (9 de código y pantalla, 5 de pruebas) y 1 modificado (`v2/__init__.py`); unas 800 líneas en los archivos de código y pantalla |
-| Commits | Sin commit de este incremento al corte (11:24); se hizo el 2026-11-13 (`4204079` y `2fef30d`). Los de v0.3.0 siguen locales, sin push |
-| Push y tag del incremento | Sin push y sin tag `v0.4.0` |
+| Commits | Sin commit de este incremento al corte (11:24); se hizo el 2026-11-13 (`4204079` y `2fef30d`). Todos están en GitHub desde el push del 2026-11-17 (`e3aff8c` es el más reciente) |
+| Push y tag del incremento | Push de `main` hecho por Angel el 2026-11-17 (`407a14e..e3aff8c`); tag `v0.4.0` anotado sobre `4204079`, subido y comprobado con `git ls-remote --tags origin` |
 
 ## 4. Diferencias con la app del incremento anterior
 
@@ -223,7 +223,7 @@ Detalle en `bitacora_proyecto/03_DECISIONES_Y_NOTAS.md`.
 | Prueba persistente del render de la plantilla real | **Resuelto el 2026-11-17:** `v2/tests/test_pantalla_descubrir.py` (7 pruebas, probado en simulación; no ejecuta JavaScript) | — |
 | IA real, login real de v1 y regresión de v1 y de `base_datos` | Sin llave de IA; sesión simulada; la suite de v1 escribe en Supabase | Llave y modelo, login real y bases aisladas |
 | Cierre del 2026-11-17 | El sistema rechazó levantar PostgreSQL a este equipo; lo levantó Angel con `!`. El rechazo de Chromium del 2026-11-10 no consta como resuelto y no se reintentó; la regresión de v1 no se corrió por falta de guardia (`instance/config.py`); sin verificar (2026-11-17). Según lo que Angel reportó haber corrido desde `!`, detuvo ese servidor y borró `/tmp/pg_rutamx` (no verificado por esta sesión) | Para repetir el ensayo, Angel levanta otro servidor con `initdb` y `pg_ctl`; ver `documentacion/Evidencia_v0.4.0_*.md` |
-| Push y tags `v0.2.0`, `v0.3.0` y `v0.4.0` | Esperan las verificaciones anteriores; hay 10 commits locales y los cambios de hoy están sin commit | `git push origin main` (lo corre Angel) y luego los tags |
+| Push y tags `v0.2.0`, `v0.3.0` y `v0.4.0` | Hechos por Angel el 2026-11-17: push de `main` (`407a14e..e3aff8c`) y tags anotados `v0.2.0` (`5e3c83f`), `v0.3.0` (`f7cbf8e`) y `v0.4.0` (`4204079`), comprobados con `git ls-remote --tags origin`. Los tags se pusieron sin esperar la regresión de v1 ni la migración en Supabase | Ninguno; la regresión y la migración siguen pendientes |
 
 Preguntas abiertas del plan sin respuesta: P-01 y P-03 (con propuesta, sección 6) y P-02 (proveedor de mapas), que decide el v0.5.0.
 
@@ -246,4 +246,4 @@ venv/bin/python base_datos/scripts/publicar_ruta.py 12 --categoria Playa --regio
 1. Consultar con el profesor P-01 y P-03 y ajustar si cambia la propuesta.
 2. Probar la migración en un PostgreSQL desechable, ejecutarla con respaldo (Angel) y publicar una ruta.
 3. Verificar `/v2/descubrir` en navegador y agregar la prueba persistente de render.
-4. Regresión de v1 y `base_datos`, push de los commits locales y tags `v0.2.0`, `v0.3.0` y `v0.4.0`; después sigue el v0.5.0 (edición completa por chat, copiar, mapa y cierre), que necesita la respuesta a P-02.
+4. Regresión de v1 y migración en Supabase; después sigue el v0.5.0 (edición completa por chat, copiar, mapa y cierre), que necesita la respuesta a P-02.
