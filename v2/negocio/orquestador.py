@@ -88,6 +88,9 @@ class OrquestadorPlaneacion:
             self._pendiente = None
             try:
                 extraidos = _validar_datos(self._ia.extraer_datos(texto, deepcopy(contexto)))
+                if (self._gestor.ruta is not None and not self._por_generar
+                        and extraidos and set(extraidos) <= {"duracion_dias", "intereses"}):
+                    return self._cambiar_preferencias(extraidos)
                 if self._gestor.ruta is not None and not extraidos and not self._por_generar:
                     return self._modificar(texto)
                 candidatos = {**contexto, **extraidos}
@@ -126,7 +129,11 @@ class OrquestadorPlaneacion:
                 return self._responder("aclarar", accion["pregunta"])
             self._aclaracion = None
             if accion["accion"] == "no_soportada":
-                return self._responder("no_soportada", "Por ahora puedes agregar paradas a esta ruta. Para otro viaje, inicia otra conversación.")
+                return self._responder("no_soportada", "Esa acción no está disponible. Sí puedes crear una ruta, agregar o eliminar paradas, reordenarlas y cambiar la duración o el tipo de lugares.")
+            if accion["accion"] in {"eliminar_parada", "reordenar_paradas"}:
+                return self._aplicar_operacion(accion, set())
+            if accion["accion"] == "cambiar_preferencias":
+                return self._cambiar_preferencias({k: v for k, v in accion.items() if k != "accion"})
             if accion["accion"] != "agregar_parada":
                 raise ErrorValidacion("No se pudo interpretar el cambio.")
             # M-07 usa índice desde cero; M-05 recibe posición desde uno.
@@ -142,6 +149,54 @@ class OrquestadorPlaneacion:
             return self._aceptar(propuesta, self._datos, set(), origen="modificar")
         except Exception as error:
             return self._responder("error", mensaje_seguro(error))
+
+    def _cambiar_preferencias(self, cambios):
+        if not cambios or set(cambios) - {"duracion_dias", "intereses"}:
+            raise ErrorValidacion("Solo puedes cambiar la duración o el tipo de lugares.")
+        cambios = _validar_datos(cambios)
+        vigente = self._gestor.ruta
+        if vigente is None:
+            raise ErrorValidacion("Todavía no hay una ruta propuesta.")
+        datos = {c: deepcopy(vigente[c]) for c in (*_OBLIGATORIOS, "intereses")}
+        candidatos = {**datos, **cambios}
+        if candidatos == datos:
+            return self._responder("propuesta", "Las preferencias ya tienen esos valores; el itinerario se conserva.")
+        propuesta = self._ia.generar_ruta(deepcopy(candidatos))
+        if (not isinstance(propuesta, dict)
+                or any(propuesta.get(c) != candidatos[c] for c in _OBLIGATORIOS)):
+            raise ErrorValidacion("No se pudo generar la ruta solicitada. Cambia alguno de los datos e intenta de nuevo.")
+        if propuesta.get("intereses", []) != candidatos["intereses"]:
+            raise ErrorValidacion("La propuesta no respeta los intereses del viaje. Intenta de nuevo.")
+        # _aceptar confirma los datos solo después de aceptar la ruta por D-03.
+        return self._aceptar(propuesta, candidatos, set(), origen="modificar")
+
+    def _aplicar_operacion(self, accion, confirmaciones):
+        anterior = self._gestor.ruta
+        try:
+            if accion["accion"] == "eliminar_parada":
+                posicion = accion.get("posicion")
+                if "posicion" in accion:
+                    if not isinstance(posicion, int) or isinstance(posicion, bool) or posicion < 0:
+                        raise ErrorValidacion("La posición de la parada no es válida.")
+                    posicion += 1  # M-07 desde 0; M-05 desde 1.
+                self._gestor.eliminar_parada(
+                    nombre=accion.get("nombre"), posicion=posicion,
+                    confirmaciones=confirmaciones)
+            else:
+                self._gestor.reordenar_paradas(accion.get("orden"), confirmaciones=confirmaciones)
+        except ErrorRutaRequiereConfirmacion as error:
+            self._por_generar = False
+            self._pendiente = {
+                "operacion": deepcopy(accion), "datos": deepcopy(self._datos),
+                "confirmaciones": set(confirmaciones), "confirmacion": error.pendiente,
+                "origen": "modificar",
+            }
+            return self._responder("confirmar", mensaje_seguro(error))
+        self._pendiente = None
+        self._por_generar = False
+        if self._gestor.ruta == anterior:
+            return self._responder("propuesta", "Las paradas ya tienen ese orden; no hay cambios que aplicar.")
+        return self._responder("propuesta", self._gestor.resumen_chat())
 
     def _aceptar(self, propuesta, datos, confirmaciones, origen="crear"):
         try:
@@ -176,6 +231,8 @@ class OrquestadorPlaneacion:
             return self._responder("cancelado", "Propuesta descartada. Cambia los datos para intentar de nuevo; la ruta anterior se conserva.")
         confirmaciones = pendiente["confirmaciones"] | {pendiente["confirmacion"]}
         try:
+            if "operacion" in pendiente:
+                return self._aplicar_operacion(pendiente["operacion"], confirmaciones)
             return self._aceptar(pendiente["propuesta"], pendiente["datos"], confirmaciones,
                                  origen=pendiente["origen"])
         except Exception as error:

@@ -70,7 +70,7 @@ def test_no_acepta_respuesta_que_no_cumple_solicitud(respuesta):
 
 @pytest.mark.parametrize("fallo", [RuntimeError("secreto"), "no JSON", {}, propuesta(paradas=None)])
 def test_fallo_de_generacion_conserva_ruta_y_datos_nuevos_del_usuario(fallo):
-    o = crear([DATOS, {"duracion_dias": 4}], [propuesta(), fallo])
+    o = crear([DATOS, {"origen": "Lugar A", "duracion_dias": 4}], [propuesta(), fallo])
     anterior = o.procesar("Primer viaje")
     r = o.procesar("Otro viaje de cuatro días")
     assert r["estado"] == "error"
@@ -206,7 +206,7 @@ def test_reintento_tras_fallo_no_pide_de_nuevo_datos_completos(fallo):
 def test_reintento_tras_fallo_geografico_conserva_datos_y_ruta_previa():
     geo = Mock()
     geo.verificar.side_effect = GeografiaFalsa().verificar
-    ia = AdaptadorSimulado(extracciones=[DATOS, {"duracion_dias": 4}, {}],
+    ia = AdaptadorSimulado(extracciones=[DATOS, {"origen": "Lugar A", "duracion_dias": 4}, {}],
                           rutas=[propuesta(), propuesta(duracion_dias=4), propuesta(duracion_dias=4)])
     o = OrquestadorPlaneacion(ia, geo)
     anterior = o.procesar("Viaje")
@@ -285,3 +285,262 @@ def test_fallo_confirmacion_modificacion_no_regenera_en_siguiente_mensaje():
     assert r['estado'] == 'propuesta'
     assert [p['nombre'] for p in r['ruta']['paradas']] == ['Lugar C', 'Lugar E']
     assert ia.generar_ruta.call_count == 1
+
+
+@pytest.mark.parametrize('accion', [
+    {'accion': 'eliminar_parada', 'nombre': 'Lugar C'},
+    {'accion': 'eliminar_parada', 'posicion': 0},
+])
+def test_eliminar_por_chat_actualiza_itinerario_y_permite_cero_paradas(accion):
+    o = con_modificaciones([accion])
+    antes = o.iniciar()
+    r = o.procesar('Quita la parada')
+    assert r['estado'] == 'propuesta' and r['itinerario'] == []
+    assert r['ruta']['paradas'] == []
+    assert r['datos'] == antes['datos']
+    assert r['ruta']['origen'] == antes['ruta']['origen']
+    assert r['ruta']['destino'] == antes['ruta']['destino']
+
+
+def conversacion_con_dos_paradas(acciones, geo=None, **cambios):
+    datos = {**DATOS, **{k: v for k, v in cambios.items() if k in DATOS}}
+    ia = AdaptadorSimulado(extracciones=[datos, {}, {}, {}],
+                          rutas=[propuesta(paradas=[{'nombre': 'Lugar C'}, {'nombre': 'Lugar D'}], **cambios)],
+                          modificaciones=acciones)
+    ia.generar_ruta = Mock(wraps=ia.generar_ruta)
+    ia.interpretar_modificacion = Mock(wraps=ia.interpretar_modificacion)
+    o = OrquestadorPlaneacion(ia, geo or GeografiaFalsa())
+    o.procesar('Viaje')
+    return o
+
+
+def test_reordenar_por_chat_actualiza_secuencia_sin_generar_otra_ruta():
+    o = conversacion_con_dos_paradas([{'accion': 'reordenar_paradas', 'orden': ['Lugar D', 'Lugar C']}])
+    r = o.procesar('Invierte las paradas')
+    assert r['estado'] == 'propuesta'
+    assert [p['nombre'] for p in r['itinerario']] == ['Lugar D', 'Lugar C']
+    assert [p['orden'] for p in r['itinerario']] == [1, 2]
+    assert o._ia.generar_ruta.call_count == 1
+
+
+@pytest.mark.parametrize('accion', [
+    {'accion': 'eliminar_parada', 'nombre': 'Lugar A'},
+    {'accion': 'eliminar_parada', 'nombre': 'Lugar B'},
+    {'accion': 'eliminar_parada', 'nombre': 'Ajeno'},
+    {'accion': 'eliminar_parada', 'posicion': True},
+    {'accion': 'eliminar_parada', 'posicion': -1},
+    {'accion': 'eliminar_parada', 'posicion': 99},
+    {'accion': 'reordenar_paradas', 'orden': ['Ajeno']},
+])
+def test_cambios_invalidos_por_chat_conservan_itinerario(accion):
+    o = con_modificaciones([accion])
+    antes = o.iniciar()
+    r = o.procesar('Cambio')
+    assert r['estado'] == 'error'
+    assert r['ruta'] == antes['ruta'] and r['itinerario'] == antes['itinerario']
+
+
+def test_reordenar_una_parada_informa_sin_cambios():
+    o = con_modificaciones([{'accion': 'reordenar_paradas', 'orden': ['Lugar C']}])
+    antes = o.iniciar()['ruta']
+    r = o.procesar('Reordena')
+    assert r['estado'] == 'propuesta' and r['ruta'] == antes
+    assert 'no hay cambios' in r['mensaje']
+
+
+def test_rf34_enumera_operaciones_y_conserva_ruta():
+    o = con_modificaciones([{'accion': 'no_soportada'}])
+    antes = o.iniciar()['ruta']
+    r = o.procesar('Reserva un hotel')
+    assert r['estado'] == 'no_soportada' and r['ruta'] == antes
+    for texto in ('no está disponible', 'eliminar', 'reordenarlas', 'duración', 'tipo de lugares'):
+        assert texto in r['mensaje']
+
+
+def test_aclaracion_para_eliminar_conserva_intencion():
+    o = con_modificaciones([{'accion': 'aclarar', 'pregunta': '¿Cuál parada?'},
+                           {'accion': 'eliminar_parada', 'nombre': 'Lugar C'}])
+    antes = o.iniciar()['ruta']
+    assert o.procesar('Quita una parada')['estado'] == 'aclarar'
+    assert o.iniciar()['ruta'] == antes
+    assert o.procesar('Lugar C')['ruta']['paradas'] == []
+
+
+@pytest.mark.parametrize('accion', [
+    {'accion': 'eliminar_parada', 'nombre': 'Lugar C'},
+    {'accion': 'reordenar_paradas', 'orden': ['Lugar D', 'Lugar C']},
+])
+def test_confirmar_operacion_nueva_sin_reconsultar_ia(accion):
+    o = conversacion_con_dos_paradas([accion], destino='Lugar A')
+    assert o.confirmar(True)['estado'] == 'propuesta'
+    antes = o.iniciar()['ruta']
+    assert o.procesar('Cambio')['estado'] == 'confirmar'
+    assert o.iniciar()['ruta'] == antes
+    r = o.confirmar(True)
+    assert r['estado'] == 'propuesta' and r['confirmacion'] is None
+    assert r['ruta'] != antes
+    assert o._ia.interpretar_modificacion.call_count == 1
+    assert o._ia.generar_ruta.call_count == 1
+
+
+def test_cancelar_operacion_nueva_conserva_ruta():
+    o = conversacion_con_dos_paradas([{'accion': 'eliminar_parada', 'posicion': 0}], destino='Lugar A')
+    o.confirmar(True)
+    antes = o.iniciar()['ruta']
+    assert o.procesar('Quita primera')['estado'] == 'confirmar'
+    assert o.confirmar(False)['ruta'] == antes
+    assert o.confirmar(True)['estado'] == 'error'
+
+
+def test_fallo_en_confirmacion_de_eliminar_no_regenera_despues():
+    geo = Mock()
+    geo.verificar.side_effect = GeografiaFalsa().verificar
+    o = conversacion_con_dos_paradas([
+        {'accion': 'eliminar_parada', 'posicion': 0},
+        {'accion': 'reordenar_paradas', 'orden': ['Lugar D', 'Lugar C']},
+    ], geo, destino='Lugar A')
+    o.confirmar(True)
+    antes = o.iniciar()['ruta']
+    assert o.procesar('Quita primera')['estado'] == 'confirmar'
+    geo.verificar.side_effect = RuntimeError('secreto')
+    fallo = o.confirmar(True)
+    assert fallo['estado'] == 'error' and fallo['ruta'] == antes
+    assert 'secreto' not in fallo['mensaje']
+    geo.verificar.side_effect = GeografiaFalsa().verificar
+    assert o.procesar('Reordena')['estado'] == 'confirmar'
+    assert o.confirmar(True)['estado'] == 'propuesta'
+    assert o._ia.generar_ruta.call_count == 1
+
+
+def con_preferencias(cambios, respuesta, extraidos=None, geo=None):
+    ia = AdaptadorSimulado(
+        extracciones=[DATOS, {} if extraidos is None else extraidos, {}],
+        rutas=[propuesta(), respuesta],
+        modificaciones=[{'accion': 'cambiar_preferencias', **cambios},
+                        {'accion': 'agregar_parada', 'nombre': 'Lugar E'}])
+    ia.generar_ruta = Mock(wraps=ia.generar_ruta)
+    ia.interpretar_modificacion = Mock(wraps=ia.interpretar_modificacion)
+    o = OrquestadorPlaneacion(ia, geo or GeografiaFalsa())
+    o.procesar('Viaje')
+    return o
+
+
+@pytest.mark.parametrize('cambios', [
+    {'duracion_dias': 5}, {'intereses': ['cultura']},
+    {'duracion_dias': 60, 'intereses': ['naturaleza']},
+])
+def test_preferencias_regeneran_y_actualizan_itinerario(cambios):
+    nueva = propuesta(paradas=[{'nombre': 'Lugar D'}], **cambios)
+    o = con_preferencias(cambios, nueva)
+    r = o.procesar('Cambia las preferencias')
+    assert r['estado'] == 'propuesta'
+    assert [p['nombre'] for p in r['itinerario']] == ['Lugar D']
+    for campo, valor in cambios.items():
+        assert r['ruta'][campo] == valor and r['datos'][campo] == valor
+    assert r['ruta']['origen'] == DATOS['origen']
+    assert r['ruta']['destino'] == DATOS['destino']
+    assert o._ia.generar_ruta.call_count == 2
+
+
+@pytest.mark.parametrize('cambios', [{'duracion_dias': 3}, {'intereses': []},
+                                    {'duracion_dias': 3, 'intereses': []}])
+def test_preferencias_iguales_no_regeneran(cambios):
+    o = con_preferencias(cambios, RuntimeError('No debe llamarse'))
+    antes = o.iniciar()
+    r = o.procesar('Mismas preferencias')
+    assert r['estado'] == 'propuesta'
+    assert r['ruta'] == antes['ruta'] and r['datos'] == antes['datos']
+    assert r['itinerario'] == antes['itinerario']
+    assert o._ia.generar_ruta.call_count == 1
+
+
+@pytest.mark.parametrize('cambios', [
+    {}, {'duracion_dias': 0}, {'duracion_dias': 61}, {'duracion_dias': True},
+    {'duracion_dias': '4'}, {'intereses': 'cultura'}, {'intereses': [None]},
+    {'duracion_dias': 4, 'origen': 'Otro lugar'},
+])
+def test_preferencias_invalidas_no_cambian_datos_ni_ruta(cambios):
+    o = con_preferencias(cambios, RuntimeError('No debe llamarse'))
+    antes = o.iniciar()
+    r = o.procesar('Cambia preferencias')
+    assert r['estado'] == 'error'
+    assert r['ruta'] == antes['ruta'] and r['datos'] == antes['datos']
+    assert o._ia.generar_ruta.call_count == 1
+
+
+@pytest.mark.parametrize('fallo', [RuntimeError('secreto'), {},
+    propuesta(duracion_dias=4, destino='Otro'),
+    propuesta(duracion_dias=3), propuesta(duracion_dias=4, intereses=['ajenos']),
+    propuesta(duracion_dias=4, paradas=None)])
+def test_fallo_preferencias_conserva_datos_anteriores_y_no_regenera_luego(fallo):
+    o = con_preferencias({'duracion_dias': 4}, fallo)
+    antes = o.iniciar()
+    r = o.procesar('Cuatro días')
+    assert r['estado'] == 'error'
+    assert r['ruta'] == antes['ruta'] and r['datos'] == antes['datos']
+    assert r['itinerario'] == antes['itinerario'] and 'secreto' not in r['mensaje']
+    r = o.procesar('Agrega E')
+    assert r['estado'] == 'propuesta'
+    assert r['ruta']['duracion_dias'] == 3
+    assert o._ia.generar_ruta.call_count == 2
+
+
+def test_preferencia_extraida_tambien_es_atomica_sin_pasarla_por_modificacion():
+    o = con_preferencias({}, RuntimeError('secreto'), extraidos={'duracion_dias': 4})
+    antes = o.iniciar()
+    r = o.procesar('Cuatro días')
+    assert r['estado'] == 'error'
+    assert r['ruta'] == antes['ruta'] and r['datos'] == antes['datos']
+    o._ia.interpretar_modificacion.assert_not_called()
+
+
+def test_preferencia_extraida_valida_actualiza_ruta():
+    o = con_preferencias({}, propuesta(duracion_dias=4), extraidos={'duracion_dias': 4})
+    r = o.procesar('Cuatro días')
+    assert r['estado'] == 'propuesta' and r['ruta']['duracion_dias'] == 4
+    assert r['datos']['duracion_dias'] == 4
+
+
+def test_preferencias_con_fallo_geografico_preservan_ambos_estados():
+    geo = Mock()
+    geo.verificar.side_effect = GeografiaFalsa().verificar
+    o = con_preferencias({'duracion_dias': 4}, propuesta(duracion_dias=4), geo=geo)
+    antes = o.iniciar()
+    geo.verificar.side_effect = RuntimeError('secreto')
+    r = o.procesar('Cuatro días')
+    assert r['estado'] == 'error'
+    assert r['ruta'] == antes['ruta'] and r['datos'] == antes['datos']
+
+
+@pytest.mark.parametrize('respuesta', [True, False, 'fallo'])
+def test_preferencias_pendientes_no_confirman_datos_hasta_aceptar(respuesta):
+    geo = Mock()
+    geo.verificar.side_effect = GeografiaFalsa().verificar
+    repetida = propuesta(duracion_dias=4, paradas=[{'nombre': 'Lugar C'}, {'nombre': 'Lugar C'}])
+    o = con_preferencias({'duracion_dias': 4}, repetida, geo=geo)
+    antes = o.iniciar()
+    pendiente = o.procesar('Cuatro días')
+    assert pendiente['estado'] == 'confirmar'
+    assert pendiente['datos'] == antes['datos'] and pendiente['ruta'] == antes['ruta']
+    if respuesta == 'fallo':
+        geo.verificar.side_effect = RuntimeError('secreto')
+    r = o.confirmar(respuesta is not False)
+    if respuesta is True:
+        assert r['estado'] == 'propuesta'
+        assert r['ruta']['duracion_dias'] == r['datos']['duracion_dias'] == 4
+    else:
+        assert r['estado'] == ('cancelado' if respuesta is False else 'error')
+        assert r['datos'] == antes['datos'] and r['ruta'] == antes['ruta']
+    assert o._ia.generar_ruta.call_count == 2
+
+
+def test_quitar_intereses_regenera_con_lista_vacia():
+    ia = AdaptadorSimulado(
+        extracciones=[{**DATOS, 'intereses': ['cultura']}, {}],
+        rutas=[propuesta(intereses=['cultura']), propuesta(intereses=[])],
+        modificaciones=[{'accion': 'cambiar_preferencias', 'intereses': []}])
+    o = OrquestadorPlaneacion(ia, GeografiaFalsa())
+    o.procesar('Viaje cultural')
+    r = o.procesar('Quita preferencias')
+    assert r['estado'] == 'propuesta'
+    assert r['datos']['intereses'] == r['ruta']['intereses'] == []

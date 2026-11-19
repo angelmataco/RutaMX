@@ -512,3 +512,110 @@ def test_agregar_parada_no_modifica_lo_que_recibe_ni_la_copia_devuelta_afecta():
     nueva = g.agregar_parada("Mérida")
     nueva["paradas"].clear()
     assert nombres(g) == ["Puebla", "Tehuacán", "Mérida"]
+
+
+@pytest.mark.parametrize('identificador', [{'nombre': ' pUeBLa '}, {'posicion': 1}])
+def test_eliminar_conserva_demas_paradas_y_extremos(identificador):
+    g = gestor_con_ruta()
+    antes = g.ruta
+    nueva = g.eliminar_parada(**identificador)
+    assert nueva['paradas'] == antes['paradas'][1:]
+    for campo in ('origen', 'destino', 'duracion_dias', 'intereses'):
+        assert nueva[campo] == antes[campo]
+    assert g.itinerario()[0]['orden'] == 1
+    assert [p['nombre'] for p in g.puntos_mapa()] == ['Ciudad de México', 'Tehuacán', 'Oaxaca']
+
+
+def test_eliminar_ultima_parada_es_valido():
+    g = gestor_con_ruta()
+    g.eliminar_parada(posicion=2)
+    g.eliminar_parada(posicion=1)
+    assert g.ruta['paradas'] == [] and g.itinerario() == []
+
+
+@pytest.mark.parametrize('identificador', [
+    {}, {'nombre': 'Puebla', 'posicion': 1}, {'nombre': 'Atlantis'},
+    {'nombre': 'Ciudad de México'}, {'nombre': 'Oaxaca'},
+    *[{'posicion': p} for p in (0, -1, 3, True, '1', 1.5)],
+])
+def test_eliminar_invalido_preserva_ruta(identificador):
+    g = gestor_con_ruta()
+    antes = g.ruta
+    with pytest.raises(ErrorValidacion):
+        g.eliminar_parada(**identificador)
+    assert g.ruta == antes
+
+
+def test_eliminar_nombre_ambiguo_pide_posicion():
+    g = gestor_con_ruta()
+    g.agregar_parada('Puebla', confirmaciones={CONFIRMACION_PARADAS_REPETIDAS})
+    antes = g.ruta
+    with pytest.raises(ErrorValidacion, match='Precisa la posición'):
+        g.eliminar_parada(nombre='Puebla')
+    assert g.ruta == antes
+    assert len(g.eliminar_parada(posicion=1)['paradas']) == 2
+
+
+def test_reordenar_preserva_contenido_y_actualiza_vistas():
+    g = gestor_con_ruta()
+    antes = g.ruta
+    nueva = g.reordenar_paradas([' tehuacán ', 'PUEBLA'])
+    assert nueva['paradas'] == list(reversed(antes['paradas']))
+    assert [p['nombre'] for p in g.itinerario()] == ['Tehuacán', 'Puebla']
+    assert [p['nombre'] for p in g.puntos_mapa()][1:-1] == ['Tehuacán', 'Puebla']
+    nueva['paradas'].clear()
+    assert len(g.ruta['paradas']) == 2
+
+
+@pytest.mark.parametrize('orden', [[], ['Puebla'], ['Puebla', 'Atlantis'],
+    ['Puebla', 'Puebla'], ['Puebla', 'Tehuacán', 'Mérida'], 'Puebla', [True]])
+def test_reordenar_invalido_preserva_ruta(orden):
+    g = gestor_con_ruta()
+    antes = g.ruta
+    with pytest.raises(ErrorValidacion):
+        g.reordenar_paradas(orden)
+    assert g.ruta == antes
+
+
+@pytest.mark.parametrize('paradas', [[], [{'nombre': 'Puebla'}], propuesta()['paradas']])
+def test_reordenar_mismo_orden_no_consulta_geografia(paradas):
+    verificador = VerificadorFalso()
+    g = gestor(verificador)
+    g.proponer(propuesta(paradas=paradas))
+    antes = g.ruta
+    verificador.falla = True
+    llamadas = len(verificador.llamadas)
+    assert g.reordenar_paradas([p['nombre'] for p in paradas]) == antes
+    assert len(verificador.llamadas) == llamadas
+
+
+@pytest.mark.parametrize('operacion', ['eliminar', 'reordenar'])
+def test_modificacion_con_fallo_geografico_intermedio_es_atomica(operacion):
+    verificador = VerificadorFalso()
+    g = gestor_con_ruta(verificador)
+    antes = g.ruta
+    verificar = verificador.verificar
+
+    def falla_en_parada(nombre):
+        if nombre == 'Tehuacán':
+            raise ConnectionError('secreto')
+        return verificar(nombre)
+
+    verificador.verificar = falla_en_parada
+    with pytest.raises(ErrorRutaInvalida):
+        if operacion == 'eliminar':
+            g.eliminar_parada(nombre='Puebla')
+        else:
+            g.reordenar_paradas(['Tehuacán', 'Puebla'])
+    assert g.ruta == antes
+
+
+@pytest.mark.parametrize('operacion', ['eliminar', 'reordenar'])
+def test_operaciones_nuevas_sin_ruta_no_crean_una(operacion):
+    g = gestor()
+    with pytest.raises(ErrorValidacion):
+        if operacion == 'eliminar':
+            g.eliminar_parada(posicion=1)
+        else:
+            g.reordenar_paradas([])
+    assert g.ruta is None

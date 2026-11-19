@@ -25,6 +25,7 @@ disponible. No habla con la IA (M-07), con la base (M-09) ni con Flask.
 """
 
 from copy import deepcopy
+from collections import Counter
 from math import isfinite
 
 from v2.utilerias import (
@@ -231,6 +232,54 @@ class GestorRutas:
                 raise ErrorValidacion(
                     f"La posición de la parada debe estar entre 1 y {len(paradas) + 1}.")
             paradas.insert(indice, parada)
+            return copia
+
+        return self.aplicar(transformacion, confirmaciones)
+
+    def eliminar_parada(self, nombre=None, posicion=None, confirmaciones=()):
+        """Elimina una parada identificada por nombre o posición desde 1."""
+        ruta = self._exigir_ruta()
+        if (nombre is None) == (posicion is None):
+            raise ErrorValidacion("Indica solo el nombre o la posición de la parada.")
+        if nombre is not None:
+            clave = limpiar_texto(nombre, "parada").casefold()
+            if clave in {ruta["origen"].casefold(), ruta["destino"].casefold()}:
+                raise ErrorValidacion("No se puede eliminar el origen ni el destino.")
+            indices = [i for i, p in enumerate(ruta["paradas"])
+                       if p["nombre"].casefold() == clave]
+            if not indices:
+                raise ErrorValidacion("No existe esa parada en la ruta.")
+            if len(indices) > 1:
+                raise ErrorValidacion("Hay varias paradas con ese nombre. Precisa la posición.")
+            indice = indices[0]
+        elif (isinstance(posicion, int) and not isinstance(posicion, bool)
+              and 1 <= posicion <= len(ruta["paradas"])):
+            indice = posicion - 1
+        else:
+            raise ErrorValidacion("La posición de la parada no es válida.")
+
+        def transformacion(copia):
+            copia["paradas"].pop(indice)
+            return copia
+
+        return self.aplicar(transformacion, confirmaciones)
+
+    def reordenar_paradas(self, orden, confirmaciones=()):
+        """Exige todos los nombres con su multiplicidad; preserva cada parada."""
+        ruta = self._exigir_ruta()
+        nombres = validar_lista_de_textos(orden, "orden", MAX_PARADAS)
+        claves = [n.casefold() for n in nombres]
+        actuales = [p["nombre"].casefold() for p in ruta["paradas"]]
+        if Counter(claves) != Counter(actuales):
+            raise ErrorValidacion("No se pudo identificar el orden: incluye todas las paradas actuales.")
+        if claves == actuales:
+            return self.ruta
+
+        def transformacion(copia):
+            disponibles = {}
+            for parada in copia["paradas"]:
+                disponibles.setdefault(parada["nombre"].casefold(), []).append(parada)
+            copia["paradas"] = [disponibles[clave].pop(0) for clave in claves]
             return copia
 
         return self.aplicar(transformacion, confirmaciones)
