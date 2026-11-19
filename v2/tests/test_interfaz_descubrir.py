@@ -17,6 +17,7 @@ from base_datos.repositorios.catalogo_repositorio import ErrorMigracionPendiente
 from v2 import registrar_v2
 from v2.negocio.catalogo import Catalogo, ErrorCatalogo
 from v2.negocio.guardado_rutas import GuardadoRutas
+from v2.utilerias import ErrorValidacion
 
 
 def fila(id, **cambios):
@@ -70,7 +71,7 @@ class GuardadoFalso(GuardadoRutas):
         pass
 
 
-def crear_app(catalogo):
+def crear_app(catalogo, copia=None):
     app = Flask(__name__)
     app.config.update(TESTING=True, SECRET_KEY="llave-ficticia-solo-pruebas")
     app.jinja_loader = DictLoader({
@@ -78,7 +79,7 @@ def crear_app(catalogo):
         "rutas_guardadas.html": "guardadas",
         "descubrir.html": "cats={{ categorias|join(',') }};regs={{ regiones|join(',') }}",
     })
-    registrar_v2(app, demostracion=True, guardado=GuardadoFalso(), catalogo=catalogo)
+    registrar_v2(app, demostracion=True, guardado=GuardadoFalso(), catalogo=catalogo, copia=copia)
     return app
 
 
@@ -178,6 +179,23 @@ def test_detalle_de_ruta_publica(cliente):
     assert not {"publica", "usuario_id", "autor_id"} & set(ruta)
 
 
+def test_detalle_sin_resumen_trae_mapa_vacio_y_no_expone_resumen(cliente):
+    ruta = cliente.get("/v2/descubrir/rutas/1").json["ruta"]
+    assert ruta["puntos_mapa"] == [] and ruta["puntos_omitidos"] == 0 and "resumen" not in ruta
+
+
+def test_detalle_con_resumen_devuelve_puntos_en_orden_sin_el_resumen():
+    resumen = {"rutamx_v2": {"ruta": {
+        "origen": "Lugar A", "destino": "Lugar B",
+        "origen_lugar": {"id": "x:1", "latitud": 19.4, "longitud": -99.1},
+        "destino_lugar": {"id": "x:2", "latitud": 17.0, "longitud": -96.7},
+        "paradas": [{"nombre": "Parada 1", "lugar": {"id": "x:3", "latitud": 18.0, "longitud": -97.0}}]}}}
+    repo = RepoFalso([fila(1, resumen=resumen)])
+    ruta = crear_app(Catalogo(repo)).test_client().get("/v2/descubrir/rutas/1").json["ruta"]
+    assert [p["nombre"] for p in ruta["puntos_mapa"]] == ["Lugar A", "Parada 1", "Lugar B"]
+    assert "resumen" not in ruta and "id" not in ruta["puntos_mapa"][0]
+
+
 def test_privada_e_inexistente_dan_el_mismo_404(cliente):
     privada, inexistente = cliente.get("/v2/descubrir/rutas/4"), cliente.get("/v2/descubrir/rutas/999")
     assert privada.status_code == inexistente.status_code == 404
@@ -248,3 +266,87 @@ def test_no_pide_sesion_aunque_exista_otra(cliente):
     with cliente.session_transaction() as sesion:
         sesion["usuario_id"] = 5
     assert cliente.get("/v2/descubrir/rutas").json["total"] == 3
+
+
+class CopiaFalsa:
+    def __init__(self, error=None):
+        self.llamadas = []
+        self.error = error
+
+    def copiar(self, ruta_id, usuario_id):
+        self.llamadas.append((ruta_id, usuario_id))
+        if self.error:
+            raise self.error
+        return {'id': 99, 'nombre': 'Copia ficticia'}
+
+
+def cliente_copia(repo, servicio=None, usuario=7):
+    servicio = CopiaFalsa() if servicio is None else servicio
+    cliente = crear_app(Catalogo(repo), copia=servicio).test_client()
+    cliente.get('/v2/descubrir')
+    with cliente.session_transaction() as sesion:
+        token = sesion['planear_v2_csrf']
+        if usuario is not None:
+            sesion['usuario_id'] = usuario
+    return cliente, servicio, {'X-RutaMX-CSRF': token}
+
+
+def test_copiar_usa_sesion_e_ignora_usuario_en_cuerpo(repo):
+    cliente, servicio, cabeceras = cliente_copia(repo)
+    r = cliente.post('/v2/descubrir/rutas/1/copiar', headers=cabeceras,
+                     json={'usuario_id': 999})
+    assert r.status_code == 201 and r.json['ruta']['id'] == 99
+    assert servicio.llamadas == [(1, 7)]
+    assert r.headers['Cache-Control'] == 'no-store'
+
+
+@pytest.mark.parametrize('usuario', [None, True, 0, -1, '7'])
+def test_copiar_sin_sesion_valida_da_401_sin_copiar(repo, usuario):
+    cliente, servicio, cabeceras = cliente_copia(repo, usuario=usuario)
+    r = cliente.post('/v2/descubrir/rutas/1/copiar', headers=cabeceras)
+    assert r.status_code == 401 and r.json['requiere_sesion'] is True
+    assert 'Inicia sesión' in r.json['error']
+    assert servicio.llamadas == []
+
+
+@pytest.mark.parametrize('cabeceras', [{}, {'X-RutaMX-CSRF': 'ajeno'}, {'X-RutaMX-CSRF': 'ñ'}])
+def test_copiar_csrf_invalido_da_403(repo, cabeceras):
+    cliente, servicio, _ = cliente_copia(repo)
+    r = cliente.post('/v2/descubrir/rutas/1/copiar', headers=cabeceras)
+    assert r.status_code == 403 and servicio.llamadas == []
+
+
+def test_pagina_preserva_csrf_existente(repo):
+    cliente, _, cabeceras = cliente_copia(repo)
+    cliente.get('/v2/descubrir')
+    with cliente.session_transaction() as sesion:
+        assert sesion['planear_v2_csrf'] == cabeceras['X-RutaMX-CSRF']
+
+
+@pytest.mark.parametrize('identificador', ['abc', '-1', '1.5', '1' * 10])
+def test_copiar_id_invalido_no_llama_servicio(repo, identificador):
+    cliente, servicio, cabeceras = cliente_copia(repo)
+    r = cliente.post(f'/v2/descubrir/rutas/{identificador}/copiar', headers=cabeceras)
+    assert r.status_code == 400 and servicio.llamadas == []
+
+
+def test_copiar_errores_del_servicio_se_traducen(repo):
+    from v2.negocio.copia_rutas import ErrorCopia, RutaNoEncontrada
+    for error, codigo in [(RutaNoEncontrada('No se encontró la ruta.'), 404),
+                          (ErrorValidacion('ID inválido.'), 400),
+                          (ErrorCopia('No se pudo copiar la ruta.'), 503),
+                          (RuntimeError('postgresql://clave-secreta'), 503)]:
+        cliente, servicio, cabeceras = cliente_copia(repo, CopiaFalsa(error))
+        r = cliente.post('/v2/descubrir/rutas/1/copiar', headers=cabeceras)
+        assert r.status_code == codigo
+        assert 'clave-secreta' not in r.text
+        assert servicio.llamadas == [(1, 7)]
+
+
+def test_anonimo_puede_iniciar_sesion_y_copiar_misma_ruta(repo):
+    cliente, servicio, cabeceras = cliente_copia(repo, usuario=None)
+    assert cliente.post('/v2/descubrir/rutas/2/copiar', headers=cabeceras).status_code == 401
+    with cliente.session_transaction() as sesion:
+        sesion['usuario_id'] = 8  # simulación de la sesión que crea M-10
+    assert cliente.post('/v2/descubrir/rutas/2/copiar', headers=cabeceras).status_code == 201
+    assert servicio.llamadas == [(2, 8)]

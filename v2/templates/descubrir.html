@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="rutamx-csrf" content="{{ csrf }}">
   
   <title>Descubrir — RutaMX</title>
   <link rel="icon" href="{{ url_for('static', filename='img/logo-emblema.svg') }}" type="image/svg+xml">
@@ -45,7 +46,18 @@
 </section>
 </main>
 <dialog class="card planear-confirmacion" aria-labelledby="titulo-detalle" data-detalle>
-<h2 id="titulo-detalle">Detalle de la ruta</h2><p role="status" data-detalle-estado></p><div data-detalle-contenido></div><button type="button" class="btn btn--ghost" data-cerrar-detalle>Cerrar</button>
+<h2 id="titulo-detalle">Detalle de la ruta</h2><p role="status" data-detalle-estado></p>
+<section class="descubrir-mapa-bloque" data-mapa-bloque hidden aria-labelledby="titulo-recorrido">
+<h3 id="titulo-recorrido">Recorrido</h3>
+<p role="status" aria-live="polite" data-mapa-estado></p>
+<div class="descubrir-mapa" data-mapa role="img" aria-label="Mapa del recorrido" hidden></div>
+<p class="descubrir-mapa-pie" data-mapa-pie hidden>Los puntos se unen en el orden del itinerario; la línea no representa el trayecto por carretera.</p>
+</section>
+<div data-detalle-contenido></div><button type="button" class="btn btn--ghost" data-cerrar-detalle>Cerrar</button>
+<button type="button" class="btn btn--primary" data-copiar-ruta hidden>Copiar a mis rutas</button>
+<p role="status" aria-live="polite" data-copia-estado></p>
+<p data-copia-sesion hidden>Inicia sesión en el inicio y vuelve aquí para copiar esta misma ruta. <a href="/" target="_blank" rel="noopener">Iniciar sesión</a></p>
+<a class="btn btn--ghost" href="/v2/rutas" data-copia-lista hidden>Ver mis rutas</a>
 </dialog>
 <footer class="pie-creditos"><div class="container"><p>Efectos visuales adaptados de <a href="https://rareui.com" target="_blank" rel="noopener">Rare UI</a>.</p></div></footer>
 

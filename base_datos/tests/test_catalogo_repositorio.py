@@ -14,6 +14,7 @@ from base_datos.repositorios import catalogo_repositorio as repo
 from base_datos.repositorios.catalogo_repositorio import (
     ErrorMigracionPendiente,
     listar_publicas,
+    copiar_publica,
     obtener_publica,
 )
 from base_datos.repositorios.rutas_repositorio import ErrorRepositorio
@@ -38,6 +39,14 @@ class SesionFalsa:
         self.filas = list(filas)
         self.error = error
         self.llamadas = []
+        self.commits = 0
+        self.rollbacks = 0
+
+    def commit(self):
+        self.commits += 1
+
+    def rollback(self):
+        self.rollbacks += 1
 
     def __enter__(self):
         return self
@@ -153,6 +162,17 @@ def test_detalle_de_ruta_publica(sesion):
     assert "usuario_id" not in ruta
 
 
+def test_detalle_trae_resumen_solo_para_el_mapa(sesion):
+    sesion.filas = [fila(resumen={"rutamx_v2": {"ruta": {}}})]
+    ruta = obtener_publica(7)
+    assert "r.resumen" in sesion.llamadas[0][0]
+    assert ruta["resumen"] == {"rutamx_v2": {"ruta": {}}}
+    sesion.filas = [fila(resumen=None)]
+    assert obtener_publica(7)["resumen"] == {}
+    sesion.filas = [fila()]  # sin la columna en la fila: no falla
+    assert obtener_publica(7)["resumen"] == {}
+
+
 def test_detalle_privado_o_inexistente_es_none(sesion):
     assert obtener_publica(7) is None
 
@@ -204,6 +224,69 @@ def test_migracion_pendiente_es_un_error_del_repositorio():
     assert issubclass(ErrorMigracionPendiente, ErrorRepositorio)
 
 
+
+# ------------------------------------------- copiar (sesión falsa, v0.5.0)
+
+def test_copiar_es_una_sola_sentencia_con_condicion_publica(sesion):
+    sesion.filas = [(99,)]
+    assert copiar_publica(7, 3) == 99
+    assert len(sesion.llamadas) == 1
+    consulta, parametros = sesion.llamadas[0]
+    assert consulta.lstrip().startswith("INSERT INTO rutas_guardadas")
+    assert "SELECT" in consulta and "visibilidad = :publica" in consulta
+    assert "ruta_origen_id" in consulta and "RETURNING id" in consulta
+    assert parametros == {"id": 7, "usuario_id": 3, "publica": "publica", "privada": "privada"}
+    assert sesion.commits == 1
+
+
+def test_copiar_no_escribe_autor_ni_toca_la_original(sesion):
+    sesion.filas = [(99,)]
+    copiar_publica(7, 3)
+    consulta = sesion.llamadas[0][0].upper()
+    assert "AUTOR_ID" not in consulta
+    assert "UPDATE" not in consulta and "DELETE" not in consulta
+
+
+def test_copiar_ruta_inexistente_o_privada_devuelve_none_sin_commit(sesion):
+    sesion.filas = []
+    assert copiar_publica(7, 3) is None
+    assert sesion.commits == 0 and sesion.rollbacks == 1
+
+
+@pytest.mark.parametrize("ruta_id,usuario_id", [
+    (None, 1), ("7", 1), (7.0, 1), (True, 1), (0, 1), (-1, 1),
+    (7, None), (7, "1"), (7, 1.0), (7, True), (7, 0), (7, -2),
+])
+def test_copiar_rechaza_identificadores_invalidos_sin_consultar(sesion, ruta_id, usuario_id):
+    with pytest.raises(ErrorRepositorio):
+        copiar_publica(ruta_id, usuario_id)
+    assert sesion.llamadas == []
+
+
+def test_copiar_con_columnas_faltantes_da_migracion_pendiente(sesion):
+    class Original(Exception):
+        pgcode = "42703"
+
+    class ErrorSQL(Exception):
+        orig = Original()
+
+    sesion.error = ErrorSQL("detalle interno")
+    with pytest.raises(ErrorMigracionPendiente) as info:
+        copiar_publica(7, 3)
+    assert "detalle interno" not in str(info.value)
+    assert sesion.commits == 0 and sesion.rollbacks == 1
+
+
+def test_copiar_con_otro_error_es_mensaje_seguro_sin_commit(sesion):
+    sesion.error = RuntimeError("SELECT secreto FROM tabla")
+    with pytest.raises(ErrorRepositorio) as info:
+        copiar_publica(7, 3)
+    assert str(info.value) == "No se pudo copiar la ruta."
+    assert "secreto" not in str(info.value)
+    assert not isinstance(info.value, ErrorMigracionPendiente)
+    assert sesion.commits == 0 and sesion.rollbacks == 1
+
+
 # ------------------------------------------- integración (PostgreSQL desechable)
 
 def _preparar_columnas(bd):
@@ -249,3 +332,97 @@ def test_integracion_detalle_privado_es_none(bd, crear_usuario):
     uid = crear_usuario()
     _insertar(bd, uid, nombre="Privada", vis="privada")
     assert obtener_publica(1) is None
+
+
+def _contar(bd, **filtros):
+    from sqlalchemy import text
+    donde = " AND ".join(f"{c} = :{c}" for c in filtros) or "TRUE"
+    return bd.session.execute(text(f"SELECT count(*) FROM rutas_guardadas WHERE {donde}"), filtros).scalar()
+
+
+def _fila(bd, ruta_id):
+    from sqlalchemy import text
+    return dict(bd.session.execute(text(
+        "SELECT nombre, origen, destino, intereses, resumen, paradas, descripcion, duracion_dias, "
+        "categoria, region, usuario_id, visibilidad, autor_id, ruta_origen_id "
+        "FROM rutas_guardadas WHERE id = :id"), {"id": ruta_id}).mappings().first())
+
+
+def test_integracion_copiar_crea_copia_privada_y_no_toca_la_original(bd, crear_usuario):
+    _preparar_columnas(bd)
+    autor = crear_usuario("Ana")
+    otro = crear_usuario("Beto")
+    _insertar(bd, autor, nombre="Ruta publica", vis="publica", autor=autor,
+              paradas='[{"nombre":"P"}]', desc="Texto ficticio", dur=4, cat="Cultural", reg="Sureste")
+    antes = _fila(bd, 1)
+    copia_id = copiar_publica(1, otro)
+    assert copia_id and copia_id != 1
+    assert _fila(bd, 1) == antes
+    copia = _fila(bd, copia_id)
+    assert copia["usuario_id"] == otro and copia["visibilidad"] == "privada"
+    assert copia["autor_id"] is None and copia["ruta_origen_id"] == 1
+    for campo in ("nombre", "origen", "destino", "paradas", "descripcion", "duracion_dias", "categoria", "region"):
+        assert copia[campo] == antes[campo]
+
+
+def test_integracion_copiar_dos_veces_crea_dos_copias_independientes(bd, crear_usuario):
+    _preparar_columnas(bd)
+    uid = crear_usuario("Ana")
+    _insertar(bd, uid, nombre="Ruta publica", vis="publica", autor=uid)
+    primera, segunda = copiar_publica(1, uid), copiar_publica(1, uid)
+    assert primera != segunda
+    assert _contar(bd, ruta_origen_id=1) == 2
+
+
+def test_integracion_copiar_privada_o_inexistente_no_crea_nada(bd, crear_usuario):
+    _preparar_columnas(bd)
+    uid = crear_usuario("Ana")
+    _insertar(bd, uid, nombre="Privada", vis="privada")
+    assert copiar_publica(1, uid) is None
+    assert copiar_publica(999, uid) is None
+    assert _contar(bd) == 1
+
+
+def test_integracion_copiar_con_fallo_no_deja_copia_parcial(bd, crear_usuario):
+    _preparar_columnas(bd)
+    uid = crear_usuario("Ana")
+    _insertar(bd, uid, nombre="Ruta publica", vis="publica", autor=uid)
+    with pytest.raises(ErrorRepositorio):
+        copiar_publica(1, 987654)  # usuario inexistente: viola la llave foránea
+    bd.session.rollback()
+    assert _contar(bd) == 1
+
+
+def _quitar_columnas_catalogo(bd):
+    """Deja la tabla como antes de la migración (solo en la base desechable local).
+
+    `bd` solo trunca datos y el esquema migrado persiste en toda la sesión, así
+    que esta prueba lo quita de forma explícita y comprueba que no quedó nada.
+    """
+    import os
+    from urllib.parse import urlparse
+    from sqlalchemy import text
+    url = urlparse(os.environ["RUTAMX_TEST_DB_URL"])
+    assert url.hostname in {"127.0.0.1", "localhost", "::1"}, "la base de prueba no es local"
+    assert url.path.lstrip("/").endswith(("_prueba", "_test")), "la base de prueba no es desechable"
+    bd.session.execute(text("DROP INDEX IF EXISTS ix_rutas_guardadas_visibilidad"))
+    for columna in COLUMNAS_CATALOGO:
+        bd.session.execute(text(f"ALTER TABLE rutas_guardadas DROP COLUMN IF EXISTS {columna} CASCADE"))
+    bd.session.commit()
+    presentes = {f[0] for f in bd.session.execute(text(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'rutas_guardadas'")).all()}
+    assert not set(COLUMNAS_CATALOGO) & presentes
+
+
+COLUMNAS_CATALOGO = ("ruta_origen_id", "autor_id", "visibilidad", "duracion_dias",
+                     "categoria", "region", "descripcion")
+
+
+def test_integracion_copiar_sin_migracion_da_migracion_pendiente(bd, crear_usuario):
+    uid = crear_usuario("Ana")
+    _quitar_columnas_catalogo(bd)
+    try:
+        with pytest.raises(ErrorMigracionPendiente):
+            copiar_publica(1, uid)
+    finally:
+        _preparar_columnas(bd)  # deja el esquema migrado para las demás pruebas

@@ -99,3 +99,58 @@ def test_elementos_data_que_usa_el_js_existen(html):
 def test_js_no_usa_innerhtml():
     js = (RAIZ / "v2" / "static" / "descubrir.js").read_text(encoding="utf-8")
     assert "innerHTML" not in js and "insertAdjacentHTML" not in js
+
+
+def test_detalle_incluye_copia_sesion_y_csrf(html):
+    assert re.search(r'<meta name="rutamx-csrf" content="[^"]+">', html)
+    dialogo = re.search(r'<dialog\b.*?</dialog>', html, re.S).group(0)
+    assert 'data-copiar-ruta' in dialogo and 'Copiar a mis rutas' in dialogo
+    assert 'data-copia-estado' in dialogo and 'aria-live="polite"' in dialogo
+    assert 'data-copia-sesion' in dialogo and 'href="/" target="_blank" rel="noopener"' in dialogo
+    assert 'href="/v2/rutas" data-copia-lista hidden' in dialogo
+
+
+def test_detalle_incluye_bloque_del_mapa_con_avisos_accesibles(html):
+    dialogo = re.search(r'<dialog\b.*?</dialog>', html, re.S).group(0)
+    assert 'data-mapa-bloque' in dialogo and '>Recorrido<' in dialogo
+    assert re.search(r'role="status"[^>]*data-mapa-estado', dialogo)
+    assert 'data-mapa' in dialogo and 'role="img"' in dialogo
+    assert 'la línea no representa el trayecto por carretera' in dialogo
+    # El bloque va entre el estado del detalle y el contenido, y el botón de copiar queda fuera del mapa.
+    assert dialogo.index('data-detalle-estado') < dialogo.index('data-mapa-bloque') < dialogo.index('data-detalle-contenido')
+    mapa = re.search(r'<section[^>]*data-mapa-bloque.*?</section>', dialogo, re.S).group(0)
+    assert 'data-copiar-ruta' not in mapa
+
+
+def test_js_carga_leaflet_del_mismo_cdn_que_v1_y_solo_bajo_demanda(html):
+    js = (RAIZ / "v2" / "static" / "descubrir.js").read_text(encoding="utf-8")
+    base = (RAIZ / "v1" / "templates" / "base.html").read_text(encoding="utf-8")
+    for url in ("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"):
+        assert url in js and url in base
+    assert "leaflet" not in html.lower().replace("data-", "")  # diferido: la página no lo carga de inicio
+
+
+def test_js_del_mapa_trae_los_textos_acordados():
+    js = (RAIZ / "v2" / "static" / "descubrir.js").read_text(encoding="utf-8")
+    for texto in ("Cargando mapa…", "El mapa no pudo cargarse. El resto de la ruta sigue disponible.",
+                  "Esta ruta no tiene ubicaciones para mostrar en el mapa.", "sin coordenadas válidas"):
+        assert texto in js
+    for contrato in ("invalidateSize", "mapa.remove()", "fitBounds", "padding: [24, 24]", "--color-terracota"):
+        assert contrato in js
+
+
+def test_css_del_mapa_tiene_alto_fijo_de_escritorio_y_movil():
+    css = (RAIZ / "v2" / "static" / "descubrir.css").read_text(encoding="utf-8")
+    assert re.search(r"\.descubrir-mapa \{[^}]*height: 260px", css)
+    assert re.search(r"@media \(max-width: 600px\) \{ \.descubrir-mapa \{ height: 200px; \} \}", css)
+
+
+def test_js_del_mapa_protege_contra_mapas_viejos_y_espera_css_y_js():
+    js = (RAIZ / "v2" / "static" / "descubrir.js").read_text(encoding="utf-8")
+    # Cada mapa actúa solo sobre su propia instancia y solo mientras sea el vigente.
+    assert "const propio = window.L.map" in js and "if (mapa !== propio) return;" in js
+    assert "falloDelMapa(propio)" in js and "instancia !== mapa" in js
+    # La carga espera estilos y script; el fallo de cualquiera es RF-12.
+    assert "estilos.onload" in js and "estilos.onerror" in js and "listos === necesarios" in js
+    # window.L solo prueba que el script existe: el éxito depende de una bandera con ambas cargas.
+    assert "leafletCompleto && window.L" in js and "leafletCompleto = true" in js

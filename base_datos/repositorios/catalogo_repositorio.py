@@ -1,6 +1,7 @@
-"""Consulta del catálogo de rutas públicas (M-09 y M-02, v0.4.0).
+"""Consulta y copia del catálogo de rutas públicas (M-09 y M-02, v0.4.0 y v0.5.0).
 
-Solo lectura. Usa SQL propio sobre las columnas que agrega la migración
+Consulta (solo lectura) y `copiar_publica`, la única escritura: una copia
+privada de una ruta pública para quien la copia. Usa SQL propio sobre las columnas que agrega la migración
 `agregar_columnas_catalogo.py`; no toca el modelo `RutaGuardada`, para que v1
 no se rompa antes de migrar. Si faltan esas columnas se lanza
 `ErrorMigracionPendiente`, con un mensaje claro y sin detalles de la base.
@@ -19,6 +20,7 @@ from base_datos.catalogo_valores import (
     LIMITE_PALABRA_CLAVE,
     LIMITE_RESULTADOS,
     REGIONES,
+    VISIBILIDAD_PRIVADA,
     VISIBILIDAD_PUBLICA,
 )
 from base_datos.repositorios.rutas_repositorio import ErrorRepositorio, _abrir_sesion
@@ -133,7 +135,7 @@ def obtener_publica(ruta_id):
     if not _es_entero(ruta_id):
         raise ErrorRepositorio("El identificador de la ruta no es válido.")
     consulta = (
-        f"SELECT {_COLUMNAS_LISTA}, r.descripcion, r.paradas {_DESDE} "
+        f"SELECT {_COLUMNAS_LISTA}, r.descripcion, r.paradas, r.resumen {_DESDE} "
         "WHERE r.id = :id AND r.visibilidad = :publica"
     )
     try:
@@ -146,6 +148,55 @@ def obtener_publica(ruta_id):
             detalle = _vista(fila)
             detalle["descripcion"] = fila["descripcion"] or ""
             detalle["paradas"] = list(fila["paradas"] or [])
+            # Solo para que M-02 saque las coordenadas del mapa; nunca sale a la interfaz.
+            detalle["resumen"] = fila.get("resumen") or {}
             return detalle
     except Exception as error:
         raise _traducir(error, "No se pudo leer la ruta.") from error
+
+
+_COPIAR = """
+    INSERT INTO rutas_guardadas (
+        nombre, origen, destino, presupuesto, intereses, resumen, paradas,
+        descripcion, duracion_dias, categoria, region,
+        usuario_id, visibilidad, ruta_origen_id
+    )
+    SELECT nombre, origen, destino, presupuesto, intereses, resumen, paradas,
+           descripcion, duracion_dias, categoria, region,
+           :usuario_id, :privada, id
+    FROM rutas_guardadas
+    WHERE id = :id AND visibilidad = :publica
+    RETURNING id
+"""
+
+
+def copiar_publica(ruta_id, usuario_id):
+    """Copia una ruta pública a las rutas privadas de `usuario_id`.
+
+    Una sola sentencia `INSERT ... SELECT`: o existe la copia completa o no
+    existe nada, y la original nunca se escribe. El dueño es siempre el
+    argumento; `autor_id` queda vacío porque la copia es privada. Devuelve el
+    id de la copia, o `None` si la ruta no existe o no es pública (se trata
+    igual que en el detalle). Copiar dos veces crea dos copias independientes.
+    """
+    if not _es_entero(ruta_id) or ruta_id <= 0:
+        raise ErrorRepositorio("El identificador de la ruta no es válido.")
+    if not _es_entero(usuario_id) or usuario_id <= 0:
+        raise ErrorRepositorio("El identificador de usuario no es válido.")
+    try:
+        with _abrir_sesion() as sesion:
+            try:
+                fila = sesion.execute(text(_COPIAR), {
+                    "id": ruta_id, "usuario_id": usuario_id,
+                    "publica": VISIBILIDAD_PUBLICA, "privada": VISIBILIDAD_PRIVADA,
+                }).first()
+                if fila is None:
+                    sesion.rollback()
+                    return None
+                sesion.commit()
+                return fila[0]
+            except Exception:
+                sesion.rollback()
+                raise
+    except Exception as error:
+        raise _traducir(error, "No se pudo copiar la ruta.") from error

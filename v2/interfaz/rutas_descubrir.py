@@ -1,17 +1,20 @@
 """M-01: pantalla y endpoints de Descubrir (catálogo de rutas públicas).
 
-Abierto a visitantes: no pide sesión y no lee `session`. Solo habla con M-02
-(`Catalogo`), que ya entrega datos públicos; aquí no hay SQL ni reglas del
+Consulta abierta a visitantes; copiar exige sesión y CSRF. Habla con M-02
+(`Catalogo`) y M-05 (`CopiaRutas`); aquí no hay SQL ni reglas del
 catálogo. Cada error se convierte en un mensaje seguro: los de validación dan
 400, la ruta privada o inexistente da el mismo 404 y los fallos del catálogo
 (incluida la migración pendiente) dan 503 sin afectar el resto de v2.
 """
 import re
+from secrets import compare_digest, token_urlsafe
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, session
 
 from base_datos.catalogo_valores import CATEGORIAS, REGIONES
 from v2.negocio.catalogo import Catalogo, ErrorCatalogo, RutaNoEncontrada
+from v2.negocio.copia_rutas import CopiaRutas, RutaNoEncontrada as CopiaNoEncontrada
+from v2.interfaz.rutas_guardadas import usuario_de_sesion, respuesta_sin_sesion
 from v2.utilerias import ErrorValidacion, mensaje_seguro
 
 MENSAJE_SIN_RESULTADOS = "No hay rutas que coincidan con tu búsqueda. Cambia las palabras o reinicia los filtros."
@@ -29,14 +32,39 @@ def _duracion_de(texto):
     return int(texto)
 
 
-def registrar_descubrir(app, *, catalogo=None):
+def registrar_descubrir(app, *, catalogo=None, copia=None):
     servicio = Catalogo() if catalogo is None else catalogo
+    servicio_copia = CopiaRutas() if copia is None else copia
     bp = Blueprint("descubrir_v2", __name__, url_prefix="/v2/descubrir",
                    template_folder="../templates")
 
     @bp.get("")
     def pagina():
-        return render_template("descubrir.html", categorias=CATEGORIAS, regiones=REGIONES)
+        if "planear_v2_csrf" not in session:
+            session["planear_v2_csrf"] = token_urlsafe(32)
+        return render_template("descubrir.html", categorias=CATEGORIAS, regiones=REGIONES,
+                               csrf=session["planear_v2_csrf"])
+
+    @bp.post("/rutas/<ruta_id>/copiar")
+    def copiar(ruta_id):
+        usuario_id = usuario_de_sesion()
+        if usuario_id is None:
+            return respuesta_sin_sesion()
+        esperado = session.get("planear_v2_csrf", "")
+        recibido = request.headers.get("X-RutaMX-CSRF", "")
+        if not esperado or not compare_digest(esperado.encode(), recibido.encode()):
+            return jsonify(error="La sesión de la página venció. Recarga e intenta de nuevo."), 403
+        if not _IDENTIFICADOR.fullmatch(ruta_id):
+            return jsonify(error="El identificador de la ruta no es válido."), 400
+        try:
+            copia_creada = servicio_copia.copiar(int(ruta_id), usuario_id)
+            return jsonify(ruta=copia_creada, mensaje="Ruta copiada a mis rutas."), 201
+        except CopiaNoEncontrada as error:
+            return jsonify(error=mensaje_seguro(error)), 404
+        except ErrorValidacion as error:
+            return jsonify(error=mensaje_seguro(error)), 400
+        except Exception as error:
+            return jsonify(error=mensaje_seguro(error)), 503
 
     @bp.get("/rutas")
     def lista():

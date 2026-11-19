@@ -17,6 +17,7 @@ def registrar_v2(app, **opciones):
     # Un solo servicio de guardado compartido; las pruebas inyectan uno falso.
     guardado = opciones.pop("guardado", None) or GuardadoRutas()
     catalogo = opciones.pop("catalogo", None) or Catalogo()
+    copia = opciones.pop("copia", None)
     registrar_planear(app, guardado=guardado, **opciones)
     registrar_guardadas(app, guardado=guardado)
-    registrar_descubrir(app, catalogo=catalogo)
+    registrar_descubrir(app, catalogo=catalogo, copia=copia)
