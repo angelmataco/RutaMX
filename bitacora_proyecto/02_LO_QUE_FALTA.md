@@ -1,6 +1,6 @@
 # Lo que falta — RutaMX
 
-Última actualización: 2026-11-17
+Última actualización: 2026-11-19
 
 Este archivo es solo lo que **todavía no está hecho**. En cuanto algo se
 termina, se mueve a `01_LO_QUE_YA_ESTA_HECHO.md` (con su explicación) y
@@ -163,7 +163,7 @@ _(vacío por ahora)_
 ## Pendientes del documento de requerimientos v2.0 (confirmar con el cliente)
 
 - **P-01:** ningún RF describe cómo se marca una ruta como pública (el perfil «Creador de rutas» y RNF-15 lo suponen).
-- **P-02:** confirmar si el sitio ya tiene proveedor de mapas y credenciales; de eso depende HU-06 (RF-11 y RF-12).
+- **P-02:** el equipo la resolvió el 2026-11-19 con Leaflet y OpenStreetMap, como v1 (D-V5-1); no hay respuesta del profesor. Si el profesor pide otro proveedor, solo cambia la carga de `descubrir.js`.
 - **P-03:** definir los valores de categoría y región de los filtros (RF-05) al cargar las rutas públicas.
 - Roberto debe validar el documento v2.0 (rol de validador) antes de entregarlo.
 
@@ -176,8 +176,7 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
   `duracion_dias`, `categoria`, `region`, `visibilidad`, `ruta_origen_id`, `autor_id`), pero **no se ha ejecutado**: es una tabla de la v1.
   Hace falta un script de migración con `ALTER TABLE` (SQLAlchemy `create_all` no modifica tablas existentes),
   probado primero en una copia y con respaldo previo.
-- [V2] Completar M-09 (ya tiene crear, obtener, listar y actualizar, ver `01`): falta copiar
-  (la original no cambia, sin sesión no se crea nada), con pruebas en simulación y datos ficticios.
+- [V2] Ejecutar con PostgreSQL local las 5 integraciones nuevas de `copiar_publica`, omitidas sin base.
 - Cerrar P-01 y P-03 (ver abajo): de ellos depende cómo se publica una ruta y qué valores tienen categoría y región.
 
 ## Después de la reorganización y del plan de M-09 (2026-10-29)
@@ -197,7 +196,7 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 - [V2] Conectar la IA real (falta `ANTHROPIC_API_KEY` e `IA_V2_MODELO`; Angel no tiene llave): RF-21 y RF-36 siguen probados solo en simulación, sin verificar (2026-11-10).
 - [V2] Antes de publicar, exigir una `SECRET_KEY` real (config.py usa un valor de desarrollo) y poner tope propio a `/v2/planear/reiniciar`.
 - [V2] Cerrar la integración del v0.2.0: revisión visual, regresión aislada de v1/base_datos y tag tras las verificaciones. Sus módulos y demostración están publicados en `origin/main` hasta `407a14e` (verificado el 2026-11-10 con `git status -sb`, `git rev-parse` y `git ls-remote origin refs/heads/main`); no repetir su implementación.
-- [V2] Para el v0.5.0: M-09 debe sumar copiar. Eliminar rutas no está en la v2.0 y no se planea.
+- [V2] Eliminar rutas guardadas no está en la v2.0 y no se planea (no confundir con eliminar paradas).
 - [V2] Sigue pendiente ejecutar el cambio de esquema de las siete columnas que Angel autorizó el 2026-11-03 (script, prueba en copia y respaldo). Cualquier otro cambio de esquema necesita nueva aprobación.
 
 - [V2] Regresión integrada de la app compartida con v2: v1 sigue sin regresión verificada al corte de 2026-11-10 porque su suite escribe en Supabase; las 19 pruebas de integración de base_datos se omiten sin PostgreSQL desechable (`RUTAMX_TEST_DB_URL`).
@@ -220,8 +219,14 @@ Diseño listo en `documentacion/RutaMx_Persistencia_y_Diseno_de_BD.pdf`; el cód
 - [V2] Concurrencia del `FOR UPDATE` de `publicar_ruta.py` y SQL contra la base real (Supabase): el SQL (`jsonb_array_length`, `FOR UPDATE`, `#>>`, `ILIKE ... ESCAPE`) ya se ejecutó en PostgreSQL local con resultado correcto (2026-11-17); no se probó contención ni Supabase.
 - [V2] Verificar en navegador `/v2/descubrir` (1280×900 y 375×812): filtros, reinicio (se corrigió a `setTimeout` por orden de eventos, sin ejecutar en navegador), detalle y descarte de respuestas tardías: sin verificar (2026-11-12).
 - [V2] Notas de la revisión de M-02: una parada mal formada hace fallar todo el detalle («No se pudo leer la ruta»), y el servicio limita la duración a 1 a 60 días mientras el repositorio acepta cualquier entero positivo; el script de publicar no impide una duración mayor de 60.
-- [V2] Para el v0.5.0: copiar rutas públicas necesita `ruta_origen_id` (ya incluida en la migración) y `autor_id`.
 - [V2] Cerrar el v0.4.0: commit `[V2]` (hecho el 2026-11-13: código en `4204079` y bitácoras, reporte y borradores en `2fef30d`), migración en Supabase y regresión de v1. El push de `main` (`e3aff8c`) y los tags `v0.2.0`, `v0.3.0` y `v0.4.0` los hizo Angel el 2026-11-17 y se comprobaron con `git ls-remote --tags origin`.
 - [V2] Fragilidad de orden en las pruebas de integración: `base_datos/tests/test_catalogo_repositorio.py::test_integracion_sin_migracion_da_migracion_pendiente` supone que la tabla `rutas_guardadas` no está migrada y pasa solo porque corre primero en una base nueva (el mismo caso con `esquema_anterior` lo haría independiente del orden). Las 7 pruebas que fallaban con PostgreSQL ya se corrigieron el 2026-11-17 (ver `01`); con una base nueva la suite da `563 passed, 0 failed, 0 skipped`, sin ella `529 passed, 34 skipped`.
 - [V2] Regresión de v1: bloqueada, sin verificar (2026-11-17). `v1/tests/test_auth_service.py` usa `create_app('development')` con `instance/config.py` y no hay una guardia que fuerce una base local. Antes de correrla hace falta esa guardia (cambio en pruebas de v1, que Angel debe aprobar) o una base aislada.
 - [V2] Navegador de `/v2/descubrir`: no consta que se haya resuelto el rechazo de Chromium del 2026-11-10 (`Permission denied (1100)`); no se reintentó el 2026-11-17. La sección «Condiciones para completar» de `documentacion/Evidencia_v0.4.0_navegador.md` quedó con el plan viejo (PostgreSQL propio en 55434, «paso 5»): ahora bastaría la base `rutamx_navegador_prueba` en el servidor local (55433), forzando la URI efectiva antes de `db.init_app`. Para probarlo con datos hace falta una base local: levantar otro PostgreSQL con `initdb` y `pg_ctl` (el sistema le rechazó ese comando a este equipo, así que lo corre Angel con `!`).
+- [V2] v0.5.0 (2026-11-19): sigue sin verificar con una IA real que el modelo devuelva los JSON nuevos de eliminar, reordenar y cambiar preferencias.
+- [V2] Cerrar el v0.5.0: Angel hace los commits (sugeridos en la bitácora 01, un `[V2]` por módulo), el tag `v0.5.0` y el push, y anota el hash aquí y en el reporte. Aún no hay commits ni tag del incremento.
+- [V2] CA-18.4 (limitación, 2026-11-19): M-07 interpreta una operación por mensaje; una solicitud con varias operaciones no ejecuta las soportadas y salta las demás. No es un defecto escondido: está declarado en el reporte.
+- [V2] RF-06, RF-08, RF-11 y RF-12 siguen «programados» y RF-43 «parcial» hasta que se revise el navegador (son el único camino de 39 a 42 de 44 RF). RNF-13 (HTTPS) y RNF-23 (navegadores): sin verificar (2026-11-19).
+
+- [V2] v0.5.0, copia desde Descubrir: verificar en navegador de escritorio y 375 px el botón, errores, doble clic y el flujo anónimo → login real → volver al mismo detalle → copiar (CA-08.4). Bloqueo documentado de Chromium; se requiere revisión manual de Angel, sin verificar (2026-11-19). La simulación de DOM/fetch y las sesiones de prueba no verifican ese uso real.
+- [V2] Mapa del detalle de Descubrir (v0.5.0, 2026-11-19): sin verificar en navegador real (Chromium bloqueado, no se reintentó). Falta que Angel confirme a mano en `/v2/descubrir` el mapa en 1280×900 y 375×812 (marcadores, línea, popups, encuadre y que no se vea gris), el aviso con la red cortada y el aviso de ubicaciones omitidas. P-02 (proveedor de mapas) se resolvió por decisión del equipo con Leaflet y OSM, sin respuesta del profesor.

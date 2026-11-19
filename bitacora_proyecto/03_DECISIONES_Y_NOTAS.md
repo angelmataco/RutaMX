@@ -1,6 +1,6 @@
 # Decisiones y notas — RutaMX
 
-Última actualización: 2026-11-17
+Última actualización: 2026-11-19
 
 ## [V2] Decisiones del plan de incrementos (2026-11-05)
 
@@ -716,3 +716,56 @@ Lo demás (revisión cruzada, decisiones, lo no comprobado, cómo reproducir y s
 - **La suite con PostgreSQL real estaba en 7 failed, 556 passed, y se corrigió el mismo día (meta 12):** las 7 eran defectos de las pruebas (INSERT de prueba sin `intereses` y `resumen`; esquema que no se restauraba entre pruebas de migración; contexto de Flask de sesión en `conftest.py` que volvía vacía la comprobación de fuga). Se arreglaron solo las pruebas, sin tocar producción ni `conftest.py`. Decisión de diseño: la prueba de fuga compara la identidad del contexto activo y cierra el que se haya fugado, en vez de exigir que no haya contexto (comparar `has_app_context()` antes y después no detectaba nada con contexto externo, por la revisión de Codex); se verificó a mano con un script defectuoso en los dos escenarios. Resultado: con PostgreSQL local en una base nueva `563 passed, 0 failed, 0 skipped`; sin él `529 passed, 34 skipped`. Sigue siendo simulación local, no uso real; navegador, Supabase, v1 y concurrencia de `FOR UPDATE` siguen sin verificar. Queda anotado en `02` que un caso de integración depende del orden inicial.
 - **Chromium:** el rechazo del 2026-11-10 no consta como resuelto; no se reintentó ni se buscó otra vía.
 - **Commit, push y tags:** no se hicieron en esta meta; los cambios de hoy quedan sin commit hasta que Angel lo pida.
+
+## [V2] Alcance y tiempos del informe de clase (2026-11-17)
+
+Angel aclaró que el reporte v0.4.0 debe informar la clase del 17 de noviembre, con el trabajo previo solo como contexto. Se conserva el formato acordado, pero se sustituye el corte principal del día 12 por el estado consolidado de hoy. Los 14 minutos del día 12 no miden esta sesión: se retiran de la comparación planeado contra real. La referencia sigue siendo una clase de 90 minutos; el tiempo efectivo y la diferencia quedan como no calculables porque falta un registro completo de inicio y fin. Las horas 08:50:42 y 08:53:44 son hitos de commits, no duración de clase. No se infieren horas humanas de los segundos de pytest. El tag v0.4.0 identifica el código previo (`4204079`); las correcciones de pruebas de hoy pertenecen a un commit posterior (`e3aff8c`).
+
+## [V2] v0.5.0, M1: criterio de validación de las acciones nuevas (2026-11-19)
+
+- **Campos extra:** el plan (M1.2) pide lista cerrada de campos con rechazo de cualquier campo extra, así que `eliminar_parada` y `reordenar_paradas` rechazan campos ajenos igual que `cambiar_preferencias` (en esta última, además, por D-04). No se cambió el comportamiento previo de `agregar_parada`, `aclarar` y `no_soportada`, que siguen ignorando campos ajenos. La revisión de `codex-par` corrigió una primera versión que los ignoraba.
+- **Duplicados en `orden`:** se comparan con `casefold`, igual que hará M-05 para identificar paradas por nombre; `["A", " a "]` es inválido.
+- **`intereses` vacío:** `cambiar_preferencias` con `intereses: []` es válido en el contrato (equivale a quitar la preferencia); si M-04 decide otra cosa, lo resuelve ahí (paso 3).
+- **Por qué:** el plan `documentacion/Plan_Trabajo_Incremento_v0.5.0_RutaMX.md` (D-V5-3 y M1.2) fija los formatos y la lista cerrada de campos.
+
+## [V2] v0.5.0, M2: confirmación de operaciones y órdenes sin cambios (2026-11-19)
+
+Eliminar y reordenar se ejecutan con los métodos del Gestor sobre `aplicar()`, sin refactorizar el camino anterior de agregar (D-V5-4). Cuando D-03 pide confirmación, M-04 guarda la acción normalizada y sus confirmaciones, no una mutación de la ruta vigente. Al confirmar reintenta la operación sin consultar la IA; si la fuente geográfica falla, conserva la ruta y el siguiente mensaje sigue siendo una modificación, no una regeneración. Se probó también cancelar y volver a modificar después de una confirmación fallida.
+
+Reordenar exige el mismo conjunto de nombres con multiplicidad. Con nombres repetidos confirmados conserva el orden relativo entre las ocurrencias del mismo nombre; eliminar por nombre ambiguo exige posición. Un orden idéntico, incluidas rutas de cero o una parada, devuelve la ruta sin revalidar geografía: no hay cambio que validar (CA-15.4). El adaptador mantiene el contrato de orden no vacío y sin nombres duplicados; el Gestor admite multiplicidad para no perder paradas cuando se lo llama directamente.
+
+## [V2] v0.5.0, M3: las preferencias se confirman junto con la ruta (2026-11-19)
+
+D-V5-5 cambia deliberadamente el tratamiento de editar solo duración/intereses: antes `procesar()` podía reconocer la duración en `extraer_datos` y guardarla antes de validar la nueva propuesta, dejando los datos distintos de la ruta tras un fallo. Ahora ese caso y la acción explícita `cambiar_preferencias` regeneran con los datos de la ruta vigente y solo `_aceptar` instala ambos después de D-03. Mientras se pregunta una confirmación, los candidatos viven en la propuesta pendiente; cancelar o fallar no modifica las preferencias aceptadas. Se conservó el comportamiento de creación (incluidos nuevos viajes con origen/destino), que guarda los datos solicitados para permitir reintentar una generación fallida.
+
+Esta distinción se prueba en ambos caminos de entrada y en la siguiente modificación tras un error. Los valores idénticos se comparan después de validar: no generan otra propuesta. `intereses: []` elimina la preferencia y es válido en M-04, igual que en M-07. Las confirmaciones reutilizan la propuesta ya generada, sin gastar otra llamada al proveedor.
+
+## [V2] v0.5.0, M4: la copia vive en el repositorio del catálogo (2026-11-19)
+
+- **Dónde:** `copiar_publica` está en `catalogo_repositorio.py` y no en `rutas_repositorio.py` (D-V5-6): ahí ya viven el SQL propio de las columnas del catálogo y la traducción del error 42703. El modelo `RutaGuardada` no se toca, igual que en el v0.4.0, para no romper v1 antes de migrar.
+- **Una sola sentencia:** el `INSERT ... SELECT` hace que la copia sea todo o nada sin transacciones a mano; si la ruta dejó de ser pública entre la lectura del detalle y la copia, devuelve `None` y el servicio responde «no encontrada», igual que para privadas e inexistentes.
+- **Sin deduplicación:** copiar dos veces crea dos copias independientes (CA-07.4). `autor_id` queda vacío porque la copia es privada; si algún día se publica, lo asigna el script administrativo.
+- **Servicio:** `CopiaRutas` vive en M-05 (`v2/negocio/`) porque aplica la regla de negocio (qué datos son copiables) y esconde los detalles de la base; el dueño llega solo desde la sesión.
+- **Límite de la evidencia:** la copia real contra PostgreSQL no se ejecutó hoy (sin servidor local); queda como pendiente en 02.
+- **Corrección por revisión (2026-11-19):** la integración «copiar sin migración» ya no supone el orden de las pruebas. Quita explícitamente las siete columnas del catálogo (solo en la base local desechable, con la misma guardia de host y nombre), comprueba que no quedan y restaura el esquema migrado al terminar. La del caso antiguo `test_integracion_sin_migracion_da_migracion_pendiente` conserva su fragilidad de orden ya documentada en `02`. Sigue sin ejecutarse contra PostgreSQL real: lectura y simulación solamente.
+
+## [V2] v0.5.0, M5: volver al mismo detalle para copiar tras iniciar sesión (2026-11-19)
+
+Descubrir sigue abierto sin cuenta; solo copiar requiere usuario y CSRF. Se reutiliza la cookie firmada existente, el token `planear_v2_csrf` y el aviso 401 de M-10. Ante 401 el diálogo conserva el detalle y abre el inicio en otra pestaña mediante un enlace; el usuario inicia sesión y vuelve a pulsar Copiar en el mismo detalle. No se envía una copia automática: cada clic explícito crea una copia independiente según CA-07.4. La prueba de servidor simula el cambio de sesión y el ensayo de JS simula 401/reintento, pero CA-08.4 sigue sin verificar con login y navegador reales.
+
+Mientras se envía la copia se deshabilita el botón para evitar clics simultáneos. El contador vigente del detalle también protege la respuesta de copia: cerrar, cambiar ruta o buscar invalida las respuestas antiguas. Un fallo de red deja reintentar, pero no permite saber si el servidor llegó a confirmar una copia antes de perder la conexión; no se agregó deduplicación (decisión del plan).
+
+## [V2] v0.5.0, M6: decisiones del mapa del detalle (2026-11-19)
+
+- **P-02 (proveedor de mapas), resuelta por el equipo y no por el profesor (D-V5-1):** para D-06 «proveedor configurado» es Leaflet 1.9.4 con teselas de OpenStreetMap, el mismo que ya usa v1 (`v1/templates/base.html`), sin llave ni proveedor nuevo. «Proveedor no disponible» es que la librería o las teselas no carguen, y entonces aplica RF-12.
+- **Coordenadas (D-V5-2):** salen de las que la ruta ya guardó (`resumen.rutamx_v2.ruta`), sin geocodificar al abrir el detalle ni llamar a Nominatim. El orden de los puntos es el del itinerario (origen, paradas, destino); el `orden` de cada punto es su lugar en el itinerario completo, así que una parada omitida deja un hueco en la numeración en vez de renumerar. La línea une los puntos en ese orden y no es el trayecto por carretera (eso lo hace el mapa de v1 con OSRM); el pie de la pantalla lo dice.
+- **Dónde se arma:** en M-02 (`Catalogo`) y no en el repositorio, para que M-09 siga devolviendo datos y M-02 decida qué se publica; el repositorio solo agrega `resumen` al detalle y M-02 no lo reenvía. `Catalogo` reutiliza la regla de coordenadas del gestor (`_coordenada_valida`) para no tener dos definiciones de «coordenada válida».
+- **Debate 4:** se fusionó la propuesta de `claude-par` (circleMarker, 260/200 px, popup DOM) con la de `codex-par` (pie sobre la línea, aviso de omitidos, textos de los avisos); numerar marcadores se descartó a favor de popups con tipo y orden, para no depender de iconos con HTML.
+- **Límites:** el mapa no calcula rutas por carretera, no corrige coordenadas y no consulta nada en caliente; una ruta publicada sin ruta estructurada de v2 (por ejemplo, creada en v1) muestra «sin ubicaciones» aunque tenga paradas.
+
+## [V2] v0.5.0, M7: decisiones D-V5-1 a D-V5-7 y criterio de conteo (2026-11-19)
+
+- **Resumen de las siete decisiones del plan, tal como se aplicaron:** D-V5-1 mapa con Leaflet y OpenStreetMap, como v1 (P-02 la resuelve el equipo); D-V5-2 coordenadas de lo que la ruta ya guardó, sin consultar servicios; D-V5-3 la edición por chat amplía el contrato de M-07 y no crea otro chat; D-V5-4 las operaciones nuevas pasan por `aplicar()` (atómico); D-V5-5 cambiar preferencias regenera la propuesta y confirma los datos solo al aceptar; D-V5-6 copiar es un `INSERT ... SELECT` en M-09 con servicio en M-05; D-V5-7 el endpoint de copiar reutiliza sesión y CSRF, y el dueño sale de la sesión. El detalle de cada una está en las secciones M1 a M6 de arriba.
+- **Criterio de conteo del reporte (88.6%, 39 de 44):** el plan estimaba 42 de 44 (95.5%). Se aplicó el mismo criterio que dejó RF-06 y RF-08 como «programados» en el v0.4.0: lo que depende solo de JavaScript sin ejecutar en navegador no cuenta como completo. Quedan programados RF-06, 08, 11 y 12, y parcial RF-43 (falta la vista de mapa). Si Angel revisa el navegador, el techo es 42 de 44. RNF se mantiene en 5 de 33: la matriz respalda RNF-26 y RNF-33 pero Angel decide si basta.
+- **Regresión del cierre:** 746 passed, 39 skipped, 1 deselected, 0 fallidas, sin PostgreSQL. Una corrida intermedia dio 1 fallo en una prueba de contrato de texto que la corrección del mapa dejó desactualizada; se arregló la aserción, no el código.
+- **Resolución del usuario en M6:** ante el desacuerdo sobre `window.L`, el usuario resolvió a favor de la revisora (`codex-par`); la carga de Leaflet ahora exige estilos y script.
