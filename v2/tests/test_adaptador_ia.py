@@ -156,6 +156,18 @@ def test_fabrica_sdk_con_limite_y_sin_reintentos(monkeypatch):
     ({'accion': 'aclarar', 'pregunta': ' ¿En dónde? '},
      {'accion': 'aclarar', 'pregunta': '¿En dónde?'}),
     ({'accion': 'no_soportada', 'ruta': 'ignorar'}, {'accion': 'no_soportada'}),
+    ({'accion': 'eliminar_parada', 'nombre': ' Parada ficticia '},
+     {'accion': 'eliminar_parada', 'nombre': 'Parada ficticia'}),
+    ({'accion': 'eliminar_parada', 'posicion': 0},
+     {'accion': 'eliminar_parada', 'posicion': 0}),
+    ({'accion': 'reordenar_paradas', 'orden': [' B ', 'A']},
+     {'accion': 'reordenar_paradas', 'orden': ['B', 'A']}),
+    ({'accion': 'cambiar_preferencias', 'duracion_dias': 5},
+     {'accion': 'cambiar_preferencias', 'duracion_dias': 5}),
+    ({'accion': 'cambiar_preferencias', 'intereses': [' playa ']},
+     {'accion': 'cambiar_preferencias', 'intereses': ['playa']}),
+    ({'accion': 'cambiar_preferencias', 'duracion_dias': 2, 'intereses': ['cultura']},
+     {'accion': 'cambiar_preferencias', 'duracion_dias': 2, 'intereses': ['cultura']}),
 ])
 def test_modificaciones_normalizadas(ruta, respuesta, esperada):
     original = deepcopy(ruta)
@@ -171,6 +183,33 @@ def test_modificaciones_normalizadas(ruta, respuesta, esperada):
     {'accion': 'agregar_parada', 'nombre': 'X', 'descripcion': 2},
     *[{'accion': 'agregar_parada', 'nombre': 'X', 'posicion': p}
       for p in [True, -1, 1.5, '1', None]],
+    # eliminar_parada: exactamente un identificador, bien tipado.
+    {'accion': 'eliminar_parada'},
+    {'accion': 'eliminar_parada', 'nombre': 'X', 'posicion': 0},
+    {'accion': 'eliminar_parada', 'nombre': ''},
+    {'accion': 'eliminar_parada', 'nombre': 3},
+    {'accion': 'eliminar_parada', 'nombre': 'X', 'latitud': 1},
+    {'accion': 'eliminar_parada', 'posicion': 0, 'descripcion': 'x'},
+    *[{'accion': 'eliminar_parada', 'posicion': p} for p in [True, -1, 1.5, '1', None]],
+    # reordenar_paradas: lista no vacía de textos sin duplicados.
+    {'accion': 'reordenar_paradas'},
+    {'accion': 'reordenar_paradas', 'orden': []},
+    {'accion': 'reordenar_paradas', 'orden': ['A'], 'origen': 'X'},
+    {'accion': 'reordenar_paradas', 'orden': 'A'},
+    {'accion': 'reordenar_paradas', 'orden': ['A', '']},
+    {'accion': 'reordenar_paradas', 'orden': ['A', 4]},
+    {'accion': 'reordenar_paradas', 'orden': ['A', ' a ']},
+    {'accion': 'reordenar_paradas', 'orden': ['p'] * 31},
+    # cambiar_preferencias: al menos una, valores válidos y ningún campo ajeno.
+    {'accion': 'cambiar_preferencias'},
+    {'accion': 'cambiar_preferencias', 'origen': 'Lugar ficticio C'},
+    {'accion': 'cambiar_preferencias', 'duracion_dias': 3, 'destino': 'X'},
+    {'accion': 'cambiar_preferencias', 'duracion_dias': 0},
+    {'accion': 'cambiar_preferencias', 'duracion_dias': True},
+    {'accion': 'cambiar_preferencias', 'duracion_dias': '3'},
+    {'accion': 'cambiar_preferencias', 'intereses': 'playa'},
+    {'accion': 'cambiar_preferencias', 'intereses': [None]},
+    {'accion': 'cambiar_preferencias', 'intereses': ['x'] * 11},
 ])
 def test_modificacion_invalida(ruta, respuesta):
     with pytest.raises(ErrorValidacion, match=ERROR_RESPUESTA):
@@ -205,3 +244,13 @@ def test_fallo_modificacion_conserva_ruta(ruta):
     with pytest.raises(ErrorServicioExterno, match=ERROR_SERVICIO):
         ia.interpretar_modificacion('Agrega X', ruta)
     assert ruta == original
+
+
+def test_instruccion_del_proveedor_lista_las_cinco_intenciones(ruta):
+    cliente = cliente_con({'accion': 'eliminar_parada', 'posicion': 0})
+    ia = AdaptadorAnthropic('modelo-prueba', cliente=cliente)
+    assert ia.interpretar_modificacion('Quita la primera', ruta) == {'accion': 'eliminar_parada', 'posicion': 0}
+    sistema = cliente.messages.create.call_args.kwargs['system']
+    for accion in ('agregar_parada', 'eliminar_parada', 'reordenar_paradas',
+                   'cambiar_preferencias', 'aclarar', 'no_soportada'):
+        assert accion in sistema
